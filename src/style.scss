@@ -1,0 +1,362 @@
+
+$ruler: 16px;
+$color-red: #AE1100;
+$color-bg: #EBECF0;
+$color-shadow: #BABECC;
+$color-white: #FFF;
+
+
+body, html {
+  background-color:$color-bg;
+}
+
+body, p, input, select, textarea, button {
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.2px;
+    font-size: $ruler;
+}
+
+div, p {
+  color: $color-shadow;
+  text-shadow: 1px 1px 1px $color-white;
+}
+
+
+// form {
+ 
+//   padding: $ruler;
+//   width: $ruler*20;
+//     margin: 0 auto;
+// }
+._container {
+ width: 100%;
+display: flex;
+flex-direction: column;
+
+align-items:center;
+margin-top: 80px;
+
+
+}
+
+.segment {
+  font-size: $ruler*1.5;
+  // padding: $ruler*2 0;
+ 
+}
+
+button, input,select {
+
+ width: 100%;
+
+  font-size: $ruler;
+  // border-radius: $ruler*20;
+  border-radius: 12px;
+   padding: $ruler;
+  background-color:$color-bg;
+  text-shadow: 1px 1px 0 $color-white;
+}
+
+
+// label {
+//   display: block;
+//   margin-bottom: $ruler*1.5;
+//   width: 100%;
+// }
+select {
+  margin-right: $ruler/0.13;
+  box-shadow:  inset 2px 2px 5px $color-shadow, inset -5px -5px 10px $color-white;
+  width: 100%;
+  
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  appearance: none;
+  -webkit-appearance: none;
+
+  &:focus {
+    box-shadow:  inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+  }
+}
+
+input {
+ 
+  margin-right: $ruler/2;
+  box-shadow:  inset 2px 2px 5px $color-shadow, inset -5px -5px 10px $color-white;
+  width: 100%;
+
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  appearance: none;
+  -webkit-appearance: none;
+
+  &:focus {
+    box-shadow:  inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+  }
+}
+
+
+
+button {
+
+  color:#61677C;
+  // padding: $ruler/2;
+    padding: 10px 30px;
+  width: 100%;
+  height: 100%;
+  box-shadow: -5px -5px 20px $color-white,  5px 5px 20px $color-shadow;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    box-shadow: -2px -2px 5px $color-white, 2px 2px 5px $color-shadow;
+  }
+  
+  &:active {
+    box-shadow: inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+  }
+  
+  // .icon {
+  //   margin-right: $ruler/2;
+  // }
+  
+  // &.unit {
+  //   border-radius: $ruler/2;
+  //   line-height: 0;
+  //   width: $ruler*3;
+  //   height: $ruler*3;
+  //   display:inline-flex;
+  //   justify-content: center;
+  //   align-items:center;
+  //   margin: 0 $ruler/2;
+  //   font-size: $ruler*1.2;
+    
+  //   // .icon {
+  //   //   margin-right: 0; 
+  //   // }
+  // }
+  
+  &.red {
+    display: block;
+    width: 100%;
+    color:$color-red;
+  }
+}
+
+// .input-group {
+//   display: flex;
+//   align-items: center;
+//   justify-content: flex-start;
+  
+//   label {
+//     margin: 0;
+//     flex: 1;
+//   }
+// }
+
+
+
+// @use 'sass:color';
+// // @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100;500;900&display=swap");
+// @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap");
+// $form-bg: #e9e6e4;
+// $bg: #e9e6e4;
+// $fg: #121418;
+// $body-bg: #e9e6e4;
+// $title-color: #121418;
+// $subtitle-color: #161419;
+// $border-color: #94918f;
+// :root {
+// 	font-family: "Montserrat", sans-serif;
+//   letter-spacing: -0.2px;
+//     font-size: 14px;
+// }
+
+
+// body {
+//   background-color: #{$body-bg};
+//   height: 100%;
+// 	width: 100%;
+// 	// font-size: 100%;
+// 	// line-height: 1;
+// 	//  font-size: 14px;
+// 	-ms-text-size-adjust: 100%;
+// 	-moz-text-size-adjust: 100%;
+// 	-webkit-text-size-adjust: 100%;
+  
+	
+//   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+//     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+//     sans-serif;
+//   -webkit-font-smoothing: antialiased;
+//   -moz-osx-font-smoothing: grayscale;
+// }
+// code {
+//   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+//     monospace;   
+// }
+
+
+// form {
+//   background-color: #{$form-bg};
+//   color: #{$subtitle-color};
+//   display: grid;
+//   gap: 1em;
+//   padding: 1rem;
+// }
+
+// select {
+
+// 	all: unset;
+//  height: 27px;
+//  width: 120px;
+// 	border: none;
+// 	border-radius: 0.3em;
+// 	padding: 0.3em 0.8em;
+// 	background-color: transparent;
+// 	box-shadow: 
+// 		-0.2em -0.15em 0.2em 0 transparentize(darken($bg, 20%), .5),
+// 		0.2em 0.15em .2em 0 transparentize(lighten($bg, 20%), .5);
+	
+// }
+// input {
+
+//   all: unset;
+//  height: 27px;
+//  width: 170px;
+//   border: none;
+//   border-radius: 0.3em;
+//   padding: 0.3em 0.8em;
+//   background-color: transparent;
+//   box-shadow: 
+//     -0.2em -0.15em 0.2em 0 transparentize(darken($bg, 20%), .5),
+// 		0.2em 0.15em .2em 0 transparentize(lighten($bg, 20%), .5);
+		
+// }
+
+// :is([type='submit']):not(:active),
+// {
+//   box-shadow: 
+//     -0.2em -0.15em 0.2em 0 transparentize(lighten($bg, 20%), .5),
+// 		0.2em 0.15em .2em 0 transparentize(darken($bg, 20%), .5);
+// }
+// // [type='range'] {
+// //   box-shadow: none;
+// // }
+
+
+// fieldset {
+// 	width: 60%;
+//   border: 0.1em solid #{$bg};
+//   border-radius: 0.7em;
+//   padding: 2em 2em 2em;
+// 	box-shadow: -0.25em -0.2em 0.5em 0 transparentize(lighten($bg, 20%), 0.2) inset,
+// 		0.25em 0.2em 0.5em 0 transparentize(darken($bg, 20%), 0.2) inset;
+  
+// }
+
+// .fieldset {
+// 	width: 70%;
+//   border: 0.1em solid #{$bg};
+//   border-radius: 0.7em;
+//   padding: 1em 1em 1em;
+// 	box-shadow: -0.1em -0.1em 0.8em 0 transparentize(lighten($bg, 20%), 0.1) inset,
+// 		0.1em 0.1em 0.3em 0 transparentize(darken($bg, 20%), 0.1) inset;
+  
+// }
+
+
+
+
+// legend {
+//   translate: 0 2.5em;
+// }
+
+
+// .btngroup legend {
+//   display: none;
+// }
+// .btngroup {
+//   box-shadow: none;
+//   padding-top: 1em;
+// 	float: right;	
+ 
+// }
+// .btn  {
+//   display: flex;
+// justify-content: center;
+// font-weight:400;
+//   color: rgba(11, 1, 182, 0.844);
+// }
+// ._sub {
+//   width: 80px;
+//   height:25px;
+//   font-size: 14px;
+// }
+// ._sub-small {
+//   width: 90px;
+//   height:20px;
+//   font-size: 12px;
+// }
+/* layout */
+
+// h1 {
+//   background-color: #{$form-bg};
+//   color: color.scale($title-color, $saturation: 30%, $lightness: 70%);
+//   font-weight: 900;
+//   padding: 1em 1rem 0;
+//   margin: 0;
+  
+//   text-shadow: 
+//     -0.05em -0.05em 0.1em transparentize(darken($bg, 20%), .1),
+// 		0.05em 0.05em 0.1em transparentize(lighten($bg, 20%), .1);
+// }
+// body {
+//   background-color: #{$body-bg};
+//   font-size: 1.2rem;
+//   font-weight: 100;
+// }
+// form {
+//   background-color: #{$form-bg};
+//   color: #{$subtitle-color};
+//   display: grid;
+//   gap: 1em;
+//   padding: 1rem;
+// }
+// fieldset {
+//   display: grid;
+//   grid-template-columns: repeat(8, 1fr);
+//   gap: 1.5em;
+//   align-items: center;
+//   grid-auto-flow: column;
+// }
+// legend {
+//   grid-column: 1 / -1;
+//   color: color.scale(complement($title-color), $saturation: 70%, $lightness: 50%);
+//   font-weight: 500;
+//   font-size: 1.4rem;
+// }
+// label {
+//   grid-column: 1 / 3;
+  
+// }
+// fieldset > label:first-of-type {
+//   grid-row: 1;
+// }
+// input:not(:is([type='button'], [type='submit'], [type='reset'])){
+//   grid-column: 3 / -1;
+// }
+// input:is([type='checkbox'], [type='radio']) + label {
+//   grid-column: 1 / 5;
+// }
+
+// input:-webkit-autofill {
+//   box-shadow: 
+//     -0.2em -0.15em 0.2em 0 transparentize(darken($bg, 20%), .5),
+// 		0.2em 0.15em .2em 0 transparentize(lighten($bg, 20%), .5),
+//     0 0 0px 1000px #{$bg} inset;
+// }
+// input:focus {
+//   outline: 1px inset transparentize(darken($border-color, 20%), .9);
+//   outline-offset: .5em;
+// }

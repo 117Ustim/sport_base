@@ -1,0 +1,80 @@
+.editClientBase_buttonBack {
+  margin: 10px 10px;
+  width: 100px;
+}
+
+.block-category {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 50px 50px;
+}
+
+// .block_output-category-exercises {
+//   display: flex;
+//   flex-direction: column;
+//   width: 100%;
+
+// }
+
+
+.column_category {
+  display: flex;
+  gap: 5px;
+  padding:0 50px;
+
+}
+.text_category {
+  display: flex;
+ padding-top: 5px;
+  flex-direction: column;
+ 
+  gap: 3px;
+  align-items: center;
+  background: $bgList;
+  width: 240px;
+  height: 30px;
+  border: 1px solid $border;
+  border-radius: $br;
+  font-size: 16px;
+ 
+}
+// -------------------------------------------Delete-------------------------------------------
+.text_exercises {
+padding-left: 2px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background: $bgList;
+  width: 240px;
+  height: 30px;
+  border: 1px solid $border;
+  border-radius: $br;
+  font-size: 12px;
+  color: #4a4f5f;
+  font-weight: 200;
+}
+
+.delete {
+  width: 30px !important;
+   margin: 0px 5px;
+  height: 8px !important;
+  box-shadow: 0px 0px 0px , 0px 0px 0px ;
+  border: 1px solid #fff;
+  span {
+   
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: red;
+    height: 0px;
+  }
+}
+.block-text-exercises {
+ margin-top: 25px;
+}
+.block-exercises{
+  margin: 3px 0;
+}

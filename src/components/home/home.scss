@@ -1,0 +1,60 @@
+
+.home {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  // top: 20px;
+  // left: 70px;
+  width: 100%;
+ 
+ 
+
+}
+.form-add {
+  display: flex;
+ flex-direction: column;
+  align-items: center;
+  gap: 70px;
+}
+.home_input {
+ display: flex;
+
+ gap: 30px;
+}
+.block_search {
+  display: flex;
+align-items:center;
+}
+
+._s {
+  
+  h1 {
+  
+    margin: 0 20px;
+  }
+
+}
+
+.form_search {
+  display: flex;
+  gap: 50px;
+  
+}
+ 
+
+.button_search {
+  display: flex;
+  align-items: center;
+
+
+}
+.button-add_button-addExercises {
+  display: flex;
+justify-content: end;
+gap: 50px;
+margin-bottom: 50px;
+}
+.list-clients {
+margin: 50px 50px;
+}
+

@@ -1,0 +1,28 @@
+.button_block {
+  display: flex;
+  justify-content:center;
+  align-items:center;
+  gap: 20px;
+  
+}
+.buttonDel {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+   height: 5px;
+   width: 10px;
+  font-size: 8px;
+  border: 1px solid #fff;
+  box-shadow: 0px 0px 0px , 0px 0px 0px ;
+span {
+  color: red;
+}
+&:hover {
+  box-shadow: -2px -2px 5px $color-white, 2px 2px 5px $color-shadow;
+  font-size: 9px;
+}
+
+&:active {
+  box-shadow: inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+}
+}

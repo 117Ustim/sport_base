@@ -1,0 +1,26 @@
+.labtabs {
+  position: absolute;
+  top: 200px;
+  left: 300px;
+}
+.add-button_tab {
+  display: flex;
+  justify-content: space-between;
+}
+.drawer {
+  display: flex;
+}
+.block_day {
+  display: flex;
+  flex-direction: column;
+}
+.date {
+  display: flex;
+  align-items: end;
+  gap: 30px;
+}
+.exercises {
+  display: flex;
+  align-items: end;
+  gap: 30px;
+}

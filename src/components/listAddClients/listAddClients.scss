@@ -1,0 +1,99 @@
+$bgList: rgba(215, 215, 241, 0.4);
+$border: rgb(206, 204, 204);
+$br: 3px;
+
+.feature {
+  display: flex;
+  margin: 3px 0;
+}
+
+.feature-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+
+  .index {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $bgList;
+    width: 15px;
+    height: 30px;
+    border: 1px solid $border;
+    border-radius: $br;
+
+    span {
+      font-size: 12px;
+
+      color: #9599a5;
+    }
+  }
+  .surname {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    background: $bgList;
+    width: 300px;
+    height: 30px;
+    border: 1px solid $border;
+    border-radius: $br;
+    font-size: 14px;
+    strong {
+      margin-left: 8px;
+      color: #4a4f5f;
+      font-weight: 200;
+    }
+    span {
+      color: #4a4f5f;
+    }
+  }
+  .gym {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $bgList;
+    width: 90px;
+    height: 30px;
+    border: 1px solid $border;
+    border-radius: $br;
+
+    span {
+      font-size: 12px;
+
+      color: #9599a5;
+    }
+  }
+  .button_block {
+    background: $bgList;
+    width: 170px;
+    height: 30px;
+    border: 1px solid $border;
+    border-radius: $br;
+  }
+
+  .buttonPlan {
+    box-shadow:
+      0px 0px 0px,
+      0px 0px 0px;
+    font-size: 11px;
+    background: rgba(199, 199, 242, 0.4);
+    width: 130px;
+    height: 30px;
+    border: 1px solid $border;
+    border-radius: $br;
+    &:hover {
+      box-shadow:
+        -2px -2px 3px rgba(199, 199, 242, 0.4),
+        2px 2px 3px $color-shadow;
+      font-size: 12px;
+    }
+
+    &:active {
+      box-shadow:
+        inset 1px 1px 2px $color-shadow,
+        inset -1px -1px 2px $color-white;
+    }
+  }
+}
+

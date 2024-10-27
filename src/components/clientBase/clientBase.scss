@@ -1,0 +1,40 @@
+.button_back_edit {
+  display: flex;
+
+  .button_backPlanClient {
+    .back_button {
+      font-size: 8px !important;
+      height: 20px;
+    }
+    margin: 3px 5px;
+   
+  }
+  .edit_exerciseClient {
+    .edit_button {
+      font-size: 8px !important;
+      height: 20px;
+    }
+    margin: 3px 0 0 20px;
+   
+  }
+  .createBase {
+    .save_button {
+      font-size: 8px !important;
+      height: 20px; 
+      // color:rgb(255, 13, 13) !important;
+    }
+    margin: 3px 0 0 970px;
+   
+   
+  }
+  .saveBase {
+    .save_button {
+      font-size: 8px !important;
+      height: 20px; 
+      color:rgb(255, 13, 13) !important;
+    }
+    margin: 3px 0 0 50px;
+   
+   
+  }
+}

@@ -1,0 +1,24 @@
+.addWeeks_basicTabs {
+  display: flex;
+
+  justify-content: center;
+  align-items:center;
+  width: auto!important;
+  height: 25px!important;
+  margin-bottom: 20px;
+  font-size: 13px;
+
+}
+.basicTabs-blockButtons {
+  display: flex;
+  justify-content: space-between;
+}
+.basicTabs-addExercises {
+  width: auto;
+  height: 25px !important;
+  font-size: 13px;
+ display: flex;
+ justify-content: center;
+
+ align-items:center;
+}
