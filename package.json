@@ -2,6 +2,7 @@
   "name": "new_project_sportbase",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://117Ustim.github.io/wedding",
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
@@ -30,7 +31,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build tsc",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+
   },
   "eslintConfig": {
     "extends": [
@@ -49,5 +53,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
