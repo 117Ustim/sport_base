@@ -38,3 +38,136 @@
    
   }
 }
+
+// Зменшуємо ширину колонок з номерами
+.MuiTableCell-root.MuiTableCell-head.MuiTableCell-alignCenter.MuiTableCell-sizeSmall.num,
+.MuiTableCell-root.MuiTableCell-body.MuiTableCell-alignCenter.MuiTableCell-sizeSmall {
+  width: 60px !important;
+  max-width: 60px !important;
+  min-width: 60px !important;
+  padding: 4px !important;
+  border-left: 1px solid #e0e0e0 !important;
+  border-right: 1px solid #e0e0e0 !important;
+}
+
+// Також зменшуємо для всіх колонок з класом num (тільки TableCell, не TextField)
+.MuiTableCell-root.num {
+  width: 60px !important;
+  max-width: 60px !important;
+  min-width: 60px !important;
+  padding: 4px !important;
+  border-left: 1px solid #e0e0e0 !important;
+  border-right: 1px solid #e0e0e0 !important;
+}
+
+// Прибираємо border для TextField з класом num
+.MuiFormControl-root.MuiTextField-root.num {
+  border: none !important;
+  
+  // Прибираємо закруглення
+  .MuiOutlinedInput-root {
+    border-radius: 0 !important;
+    
+    fieldset {
+      border-radius: 0 !important;
+      border: none !important;
+    }
+    
+    &:hover fieldset {
+      border: none !important;
+    }
+    
+    &.Mui-focused fieldset {
+      border: none !important;
+    }
+  }
+  
+  input {
+    border-radius: 0 !important;
+  }
+  
+  // Прибираємо нижнє підкреслення
+  .MuiInput-underline:before,
+  .MuiInput-underline:after,
+  .MuiInput-underline:hover:not(.Mui-disabled):before {
+    border-bottom: none !important;
+  }
+}
+
+// Колонка "Упражнение" - фіксована ширина
+.MuiTableCell-root.MuiTableCell-head.MuiTableCell-sizeSmall:first-child,
+.MuiTableCell-root.MuiTableCell-body.MuiTableCell-sizeSmall:first-child {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding: 8px 16px !important;
+}
+
+// Таблиця прижата до лівого краю
+.MuiTableContainer-root {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+}
+
+.MuiTable-root {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+// Заголовок категорії - прижатий до лівого краю
+.MuiTypography-root.MuiTypography-h6 {
+  margin-left: 0 !important;
+  text-align: left !important;
+  padding-left: 10px !important;
+}
+
+// Кастомний курсор для drag з анімованою SVG іконкою
+.category-drag-handle {
+  cursor: grab !important;
+  cursor: -webkit-grab !important;
+  cursor: -moz-grab !important;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  border-radius: 8px;
+  
+  &:hover {
+    background-color: rgba(74, 144, 226, 0.08);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    cursor: grabbing !important;
+    cursor: -webkit-grabbing !important;
+    cursor: -moz-grabbing !important;
+    background-color: rgba(74, 144, 226, 0.15);
+    transform: translateY(0);
+  }
+}
+
+// Кастомна іконка руки для курсора
+.category-drag-handle {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234a90e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grab !important;
+  
+  &:active {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grabbing !important;
+  }
+}
+
+// Анімація при перетягуванні категорії
+[style*="opacity: 0.5"] {
+  .category-drag-handle {
+    box-shadow: 0 8px 16px rgba(74, 144, 226, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+// Або можна використати кастомну іконку
+// Розкоментуйте, якщо хочете використати свою іконку
+/*
+[style*="cursor: grab"] {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234a90e2" stroke-width="2"><path d="M9 11V6a2 2 0 0 1 4 0v5M9 11a2 2 0 1 1 4 0M9 11v7a2 2 0 0 0 4 0v-7m-4 0h4m0 0V6a2 2 0 0 1 4 0v5m0 0a2 2 0 0 1 4 0v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-5a2 2 0 0 1 4 0z"/></svg>'), auto !important;
+}
+*/

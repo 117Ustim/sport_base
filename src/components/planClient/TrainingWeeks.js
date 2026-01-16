@@ -1,33 +1,27 @@
 import ExerciseContent from '../traning/ExerciseContent';
 import BasicTabs from '../tabs/BasicTabs';
 import React, { useEffect, useState } from 'react';
-import { BASIC_URL } from '../../constants';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-
-
+import { trainingWeeksService } from '../../firebase/services';
 
 const TrainingWeeks = (props) => {
   const params = useParams();
   const [tabs, setTabs] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(`${BASIC_URL}/training-weeks/${params.trainingId}`)
-      .then((resp) => {
-        setTabs(resp.data);
+    trainingWeeksService.getByTrainingId(params.trainingId)
+      .then((data) => {
+        setTabs(data);
       });
   }, [params]);
 
   const addWeek = () => {
-    axios
-      .post(`${BASIC_URL}/training-weeks`, {
-        name: tabs.length + 1,
-        clientId: params.trainingId,
-      })
-      .then((resp) => {
-        setTabs([...tabs, resp.data]);
-      });
+    trainingWeeksService.create({
+      name: tabs.length + 1,
+      clientId: params.trainingId,
+    }).then((data) => {
+      setTabs([...tabs, data]);
+    });
   };
 
   return (

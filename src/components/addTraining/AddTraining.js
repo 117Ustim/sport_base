@@ -12,7 +12,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MobileDatePicker } from "@mui/x-date-pickers/MobileDatePicker";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import axios from "axios";
+import { clientBaseService, categoriesService } from "../../firebase/services";
 import { useState, useEffect } from "react";
 
 export default function AddTraining() {
@@ -43,17 +43,14 @@ export default function AddTraining() {
   // console.log(exercisesArray, "base");
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:9000/clients-base/${params.id}`)
-      .then((response) => {console.log(response.data,'data')
-        setExercises(response.data);
+    clientBaseService.getByClientId(params.id)
+      .then((data) => {
+        console.log(data, 'data');
+        setExercises(data);
       });
-    axios.get("http://localhost:9000/categories").then((response) => {
-      // console.log(response);
-      setCategories(response.data);
+    categoriesService.getAll().then((data) => {
+      setCategories(data);
     });
-
-   
   }, []);
 
   const handleChange = (newValue) => {

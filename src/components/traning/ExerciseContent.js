@@ -1,5 +1,5 @@
 import Exercise from "./Exercise";
-import axios from "axios";
+import { categoriesService, exercisesService } from "../../firebase/services";
 import React, { useEffect, useState } from "react";
 import TemporaryDrawer from '../drawer/TemporaryDrawer';
 import ListExercises from '../listExercises/ListExercises';
@@ -22,17 +22,13 @@ const ExerciseContent = (props) => {
     console.log(addExercisesDay,'add')
 
   useEffect(() => {
-  
-     
-
-      axios.get('http://localhost:9000/categories').then((response) => {
-        console.log(response.data);
-        setCategories(response.data);
+      categoriesService.getAll().then((data) => {
+        console.log(data);
+        setCategories(data);
       });
   
-      axios.get('http://localhost:9000/exercises').then((response) => {
-        setExercises(response.data);
-        //  console.log(response.data, 'data');
+      exercisesService.getAll().then((data) => {
+        setExercises(data);
       });
   }, []);
 

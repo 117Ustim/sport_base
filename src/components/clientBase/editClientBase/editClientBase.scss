@@ -73,8 +73,35 @@ padding-left: 2px;
   }
 }
 .block-text-exercises {
- margin-top: 25px;
+  margin-top: 25px;
 }
-.block-exercises{
+
+.block-exercises {
   margin: 3px 0;
+}
+
+// Drag and Drop styles
+.draggable-exercise {
+  transition: all 0.2s ease;
+  margin: 3px 0;
+  position: relative;
+  
+  // Дозволяємо drag events проходити через дочірні елементи
+  * {
+    pointer-events: none;
+  }
+  
+  // Але дозволяємо кліки на кнопку Delete
+  .delete {
+    pointer-events: auto;
+  }
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+  
+  &.drag-over {
+    border-top: 2px solid #4a90e2;
+    padding-top: 5px;
+  }
 }

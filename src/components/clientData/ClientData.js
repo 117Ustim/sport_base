@@ -5,8 +5,7 @@ import { useNavigate } from 'react-router';
 import { EMPTY_CLIENT } from '../../constants';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-
-import axios from 'axios';
+import { clientsService } from '../../firebase/services';
 import { SnackbarProvider, enqueueSnackbar } from 'notistack';
 
 export default function ClientData({contactId}) {
@@ -22,9 +21,9 @@ export default function ClientData({contactId}) {
 
   useEffect(() => {
     // запрос на сервер по id на изменение данных
-    axios.get(`http://localhost:9000/clients/${contactId}`).then((resp) => {
-      console.log(resp.data.data);
-      setDataUpdateClient(resp.data.data);
+    clientsService.getById(contactId).then((resp) => {
+      console.log(resp?.data);
+      setDataUpdateClient(resp?.data || EMPTY_CLIENT);
     });
   }, [contactId]);
 
@@ -36,13 +35,9 @@ export default function ClientData({contactId}) {
 
   const onAddContactClick = () => {
     // Запрос на редактирование
-    axios
-      .put(`http://localhost:9000/clients/${contactId}`, {
-        data: dataUpdateClient,
-      })
-      .then((resp) => {
-        // window.alert('Изменения сохранены');
-      });
+    clientsService.update(contactId, dataUpdateClient).then((resp) => {
+      // window.alert('Изменения сохранены');
+    });
     enqueueSnackbar('Изменения сохранены!', { autoHideDuration: 1500 });
   };
 

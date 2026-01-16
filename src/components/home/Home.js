@@ -1,14 +1,15 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useSearchParams } from 'react-router-dom';
 import { EMPTY_CLIENT } from '../../constants';
 import { createSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { gymsService, clientsService } from '../../firebase/services';
 import ListAddClients from '../listAddClients/ListAddClients';
 import TemporaryDrawer from './../drawer/TemporaryDrawer';
 import AddClient from '../addClient/AddClient';
 import ClientData from './../clientData/ClientData';
+import settingsIcon from '../settings/settings-icon.svg';
 
 
 export default function Home() {
@@ -19,6 +20,21 @@ export default function Home() {
 
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
   const [openDrawer, setOpenDrawer] = useState({ right: false });
+  const [gyms, setGyms] = useState([]);
+
+  useEffect(() => {
+    loadGyms();
+  }, []);
+
+  const loadGyms = () => {
+    gymsService.getAll()
+      .then((data) => {
+        setGyms(data);
+      })
+      .catch((error) => {
+        console.error('Помилка завантаження залів:', error);
+      });
+  };
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -28,13 +44,16 @@ export default function Home() {
 
   const onAddContactClick = () => {
     setContacts(EMPTY_CLIENT);
-
-    axios.post('http://localhost:9000/clients', contacts).then((data) => {});
-     setOpenDrawer({ right: false });
+    clientsService.create(contacts).then(() => {});
+    setOpenDrawer({ right: false });
   };
 
   const onButtonExercises = () => {
     navigate('/edit_client_base');
+  };
+
+  const onSettingsClick = () => {
+    navigate('/settings');
   };
 
   const toggleDrawer = (anchor, open) => (event) => {
@@ -61,33 +80,18 @@ export default function Home() {
 
   return (
     <div className='home '>
+      
+      {/* ------------------------------------Settings Icon------------- */}
+      <div className='settings-icon' onClick={onSettingsClick}>
+        <img src={settingsIcon} alt='Settings' />
+      </div>
 
       
      {/* ------------------------------------button-add_addExercises------------- */}
       {/* <form> */}
         <div className="_container">
 
-        <div className='button-add_button-addExercises'>
-          <div className='button-add'>
-            <button
-              className='red'
-              type='button'
-              // value='Додати клiента'
-              onClick={(e) => toggleDrawer('right', true)(e)}>
-              <i className='icon ion-md-lock'></i>Додати клiента
-            </button>
-          </div>
-
-          <div className='button_addExercises'>
-            <button
-              className='red'
-              type='button'
-              // value='Додати клiента'
-              onClick={onButtonExercises}>
-              <i className='icon ion-md-lock'></i>Додати вправу
-            </button>
-          </div>
-        </div>
+        {/* Removed buttons - moved to Settings page */}
       {/* </form> */}
 
 
@@ -104,8 +108,11 @@ export default function Home() {
                   <option className='select' value={''} defaultValue={''}>
                     Зал
                   </option>
-                  <option value={'Аватар'}>Аватар</option>
-                  <option value={'Галактика'}>Галактiка</option>
+                  {gyms.map((gym) => (
+                    <option key={gym.id} value={gym.name}>
+                      {gym.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

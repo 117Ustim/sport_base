@@ -1,4 +1,23 @@
+import React, { useState, useEffect } from 'react';
+import { gymsService } from '../../firebase/services';
+
 export default function AddClient({ contacts, onChange, onAddContactClick }) {
+  const [gyms, setGyms] = useState([]);
+
+  useEffect(() => {
+    loadGyms();
+  }, []);
+
+  const loadGyms = () => {
+    gymsService.getAll()
+      .then((data) => {
+        setGyms(data);
+      })
+      .catch((error) => {
+        console.error('Помилка завантаження залів:', error);
+      });
+  };
+
   return (
     <div className='addClient'>
        
@@ -10,7 +29,7 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
             <h1>Додати клiента</h1>
           </div>
           <input
-            placeholder='Призвiще'
+            placeholder='Прізвище'
             value={contacts.surname}
             onChange={onChange}
             name='surname'
@@ -40,8 +59,11 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
             <option value={''} defaultValue={''}>
               Зал
             </option>
-            <option value={'Аватар'}>Аватар</option>
-            <option value={'Галактика'}>Галактiка</option>
+            {gyms.map((gym) => (
+              <option key={gym.id} value={gym.name}>
+                {gym.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className='add-button'>

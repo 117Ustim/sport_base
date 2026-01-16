@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { categoriesService, exercisesService } from '../../firebase/services';
 import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -23,19 +23,13 @@ export default function LabTabs() {
   // ------------------------------------------------------------------------------------
 
   useEffect(() => {
-    // axios
-    //   .get(`http://localhost:9000/clients-base/${params.id}`)
-    //   .then((response) => {console.log(response.data,'rrrr')
-    //     setExercises(response.data);
-    //   });
-    axios.get('http://localhost:9000/categories').then((response) => {
-      console.log(response.data);
-      setCategories(response.data);
+    categoriesService.getAll().then((data) => {
+      console.log(data);
+      setCategories(data);
     });
 
-    axios.get('http://localhost:9000/exercises').then((response) => {
-      setExercises(response.data);
-      // console.log(response.data, 'data');
+    exercisesService.getAll().then((data) => {
+      setExercises(data);
     });
   }, []);
 

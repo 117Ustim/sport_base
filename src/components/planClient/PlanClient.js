@@ -2,13 +2,9 @@
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
- import BasicList from "../list/BasicList";
+import BasicList from "../list/BasicList";
 import BasicModal from "../modal/BasicModal";
-import axios from "axios";
-
-
-
-const trainigUrl = "http://localhost:9000/client-trainings";
+import { trainingsService } from "../../firebase/services";
 
 export default function PlanClient() {
   const navigate = useNavigate();
@@ -20,8 +16,8 @@ export default function PlanClient() {
 
 
   useEffect(() => {
-    axios.get(`${trainigUrl}/${params.id}`).then((resp) => {
-      setWeeks(resp.data);
+    trainingsService.getByClientId(params.id).then((data) => {
+      setWeeks(data);
     });
    
   }, [params.id]);
@@ -36,13 +32,10 @@ export default function PlanClient() {
   };
 
   const onButtonAddTraining = async (text) => {
-    const { data } = await axios.post(
-      "http://localhost:9000/client-trainings",
-      {
-        ...text,
-        clientId: params.id,
-      },
-    );
+    const data = await trainingsService.create({
+      ...text,
+      clientId: params.id,
+    });
     setWeeks([...weeks, data]);
     setIsModalOpen(false);
   };
