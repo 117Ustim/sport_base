@@ -1,0 +1,51 @@
+.listExercises {
+  width: 250px;
+}
+
+.blockPosition {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+}
+
+.dataList {
+  display: flex;
+  gap: 7px;
+  margin: 10px 0;
+
+  h5 {
+    color: #4a4f5f;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  span {
+    color: #4a4f5f;
+    text-decoration: underline;
+  }
+}
+
+.buttonAdd {
+  margin-bottom: 16px;
+
+  button {
+    width: 100%;
+    padding: 8px 16px;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #357abd;
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+}

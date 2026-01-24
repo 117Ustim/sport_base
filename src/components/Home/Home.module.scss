@@ -1,0 +1,133 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding-top: 20px;
+}
+
+.settingsIcon {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    filter: grayscale(100%) brightness(0.5);
+  }
+  
+  &:hover {
+    transform: rotate(90deg);
+    
+    img {
+      filter: grayscale(100%) brightness(0.3);
+    }
+  }
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.homeInput {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.blockSearch {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  width: 100%;
+}
+
+.segment {
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+}
+
+.formSearch {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.homeGym,
+.homeSex {
+  flex: 1;
+  
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #ffffff;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: #c0c0c0;
+    }
+    
+    &:focus {
+      outline: none;
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+  }
+}
+
+.buttonSearch {
+  display: flex;
+  align-items: center;
+  
+  button {
+    width: 100%;
+    padding: 12px 24px;
+    background: #4a90e2;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: #357abd;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+.listClients {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}

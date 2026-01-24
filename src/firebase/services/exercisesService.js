@@ -1,51 +1,22 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  deleteDoc,
-  query,
-  where
-} from 'firebase/firestore';
-import { db } from '../config';
+import { BaseService } from './baseService';
+import { where } from 'firebase/firestore';
 
-const COLLECTION_NAME = 'exercises';
-
-export const exercisesService = {
-  // Получить все упражнения
-  async getAll() {
-    try {
-      const exercisesRef = collection(db, COLLECTION_NAME);
-      const snapshot = await getDocs(exercisesRef);
-      
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error('Error getting exercises:', error);
-      throw error;
-    }
-  },
+class ExercisesService extends BaseService {
+  constructor() {
+    super('exercises');
+  }
 
   // Получить упражнения по полу
   async getBySex(sex) {
     try {
-      const exercisesRef = collection(db, COLLECTION_NAME);
-      const q = query(exercisesRef, where('sex', '==', sex));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      return await this.query([where('sex', '==', sex)]);
     } catch (error) {
       console.error('Error getting exercises by sex:', error);
       throw error;
     }
-  },
+  }
 
-  // Создать новое упражнение
+  // Переопределяем create для специфичной логики
   async create(exerciseData) {
     try {
       const dataToSave = {
@@ -58,23 +29,50 @@ export const exercisesService = {
         dataToSave.clientId = exerciseData.clientId;
       }
 
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), dataToSave);
-      return { id: docRef.id, ...exerciseData };
+      // Добавляем order если он есть
+      if (exerciseData.order !== undefined) {
+        dataToSave.order = exerciseData.order;
+      }
+
+      const id = await super.create(dataToSave);
+      return { id, ...exerciseData };
     } catch (error) {
       console.error('Error creating exercise:', error);
       throw error;
     }
-  },
+  }
 
-  // Удалить упражнение
-  async delete(id) {
+  // Обновить порядок упражнений
+  async updateOrder(exercises) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, id);
-      await deleteDoc(docRef);
-      return true;
+      // Обновляем порядок для каждого упражнения
+      const updatePromises = exercises.map((exercise, index) => {
+        return super.update(exercise.id, { order: index });
+      });
+      
+      await Promise.all(updatePromises);
+      console.log('Exercise order updated successfully');
     } catch (error) {
-      console.error('Error deleting exercise:', error);
+      console.error('Error updating exercise order:', error);
       throw error;
     }
   }
-};
+
+  // Получить все упражнения с сортировкой по порядку
+  async getAll() {
+    try {
+      const exercises = await super.getAll();
+      // Сортируем по полю order, если оно есть
+      return exercises.sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : 999999;
+        const orderB = b.order !== undefined ? b.order : 999999;
+        return orderA - orderB;
+      });
+    } catch (error) {
+      console.error('Error getting exercises:', error);
+      throw error;
+    }
+  }
+}
+
+export const exercisesService = new ExercisesService();

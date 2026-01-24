@@ -1,0 +1,144 @@
+.exerciseRow {
+  padding: 8px;
+  margin-bottom: 6px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  cursor: move;
+
+  &:hover {
+    background-color: #e8e8e8;
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    background-color: #bbdefb;
+  }
+}
+
+.exerciseContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dragHandle {
+  color: #999;
+  font-size: 18px;
+  cursor: grab;
+  user-select: none;
+  line-height: 1;
+  
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.exerciseIndex {
+  font-weight: bold;
+  color: #1976d2;
+  min-width: 25px;
+}
+
+.exerciseTitle {
+  font-size: 18px;
+  font-weight: 500;
+  flex: 1;
+  min-width: auto;
+   color: #696969;
+
+}
+
+.timeLabel {
+  font-size: 14px;
+  color: #666;
+  margin-right: 5px;
+}
+
+.multiplySymbol {
+  font-size: 18px;
+  color: #666;
+  font-weight: bold;
+}
+
+.weightFromDatabase {
+  font-size: 20px;
+  color: #666;
+  min-width: 60px;
+  text-align: center;
+  font-weight: 500;
+  margin-right: 130px;
+}
+
+.deleteExerciseButton {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: #d32f2f;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(211, 47, 47, 0.1);
+  }
+}
+
+.groupRow {
+  background-color: #e3f2fd;
+  
+  &:hover {
+    background-color: #bbdefb;
+  }
+}
+
+.groupExercises {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.groupExerciseItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exerciseParams {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.plusSign {
+  font-size: 18px;
+  color: #1976d2;
+  font-weight: bold;
+  margin: 0 4px;
+}
+
+.confirmButton {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #45a049;
+  }
+}

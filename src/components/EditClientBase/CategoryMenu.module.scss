@@ -1,0 +1,203 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+.menu {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.menuHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+  }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #333;
+  }
+}
+
+.menuContent {
+  padding: 10px 0;
+}
+
+.menuSection {
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.menuButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: background 0.2s;
+  text-align: left;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+
+  .icon {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1976d2;
+  }
+}
+
+.addForm {
+  padding: 15px 20px;
+  background: #f9f9f9;
+
+  input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+
+    &:focus {
+      outline: none;
+      border-color: #1976d2;
+    }
+  }
+}
+
+.formButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.saveButton,
+.cancelButton {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton {
+  background: #1976d2;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #1565c0;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.cancelButton {
+  background: #f5f5f5;
+  color: #666;
+
+  &:hover {
+    background: #e0e0e0;
+  }
+}
+
+.deleteList {
+  padding: 10px 20px;
+  background: #f9f9f9;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.categoryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  span {
+    font-size: 14px;
+    color: #333;
+  }
+}
+
+.deleteButton {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #d32f2f;
+  }
+}
+
+.emptyMessage {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  padding: 20px 0;
+  margin: 0;
+}

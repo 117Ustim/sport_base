@@ -1,0 +1,108 @@
+$bgList: rgba(215, 215, 241, 0.4);
+$border: rgb(206, 204, 204);
+$br: 3px;
+
+.buttonBack {
+  width: 200px;
+  margin: 10px 10px;
+  
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.saveButton {
+  width: 200px;
+  height: 40px;
+  padding: 0 15px !important;
+  min-width: 120px;
+  color: red !important;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.saveButtonDisabled {
+  opacity: 0.5;
+}
+
+.blockCategory {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 50px 50px;
+}
+
+.columnCategory {
+  display: flex;
+  gap: 5px;
+  padding: 0 50px;
+}
+
+.textCategory {
+  display: flex;
+  padding-top: 5px;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  background: $bgList;
+  width: 288px;
+  height: 30px;
+  border: 1px solid $border;
+  border-radius: $br;
+  font-size: 16px;
+  color: #1976d2;
+}
+
+.textExercises {
+  padding-left: 2px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background: $bgList;
+  width: 288px;
+  height: 35px;
+  border: 1px solid $border;
+  border-radius: $br;
+  font-size: 14px !important;
+  color: #4a4f5f;
+  font-weight: 400;
+}
+
+.delete {
+  width: 30px !important;
+  margin: 0px 5px;
+  height: 8px !important;
+  box-shadow: 0px 0px 0px, 0px 0px 0px;
+  border: 1px solid #fff;
+  
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: red;
+    height: 0px;
+  }
+}
+
+.blockTextExercises {
+  margin-top: 25px;
+}
+
+.blockExercises {
+  margin: 6px 0;
+}
+
+.sortableExerciseWrapper {
+  transition: all 0.2s ease;
+  margin: 3px 0;
+  position: relative;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+}

@@ -1,42 +1,30 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc,
-  query,
-  where
-} from 'firebase/firestore';
-import { db } from '../config';
+import { BaseService } from './baseService';
+import { where } from 'firebase/firestore';
 
-const COLLECTION_NAME = 'trainingWeeks';
+class TrainingWeeksService extends BaseService {
+  constructor() {
+    super('trainingWeeks');
+  }
 
-export const trainingWeeksService = {
   // Получить недели тренировки
   async getByTrainingId(trainingId) {
     try {
-      const weeksRef = collection(db, COLLECTION_NAME);
-      const q = query(weeksRef, where('trainingId', '==', trainingId));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      return await this.query([where('trainingId', '==', trainingId)]);
     } catch (error) {
       console.error('Error getting training weeks:', error);
       throw error;
     }
-  },
+  }
 
-  // Создать неделю тренировки
+  // Переопределяем create для специфичной логики
   async create(weekData) {
     try {
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+      const id = await super.create({
         name: weekData.name,
         trainingId: weekData.clientId // в оригинале clientId это trainingId
       });
       return { 
-        id: docRef.id, 
+        id, 
         ...weekData 
       };
     } catch (error) {
@@ -44,4 +32,6 @@ export const trainingWeeksService = {
       throw error;
     }
   }
-};
+}
+
+export const trainingWeeksService = new TrainingWeeksService();

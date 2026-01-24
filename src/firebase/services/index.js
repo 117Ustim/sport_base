@@ -7,3 +7,5 @@ export { trainingsService } from './trainingsService';
 export { clientBaseService } from './clientBaseService';
 export { trainingWeeksService } from './trainingWeeksService';
 export { authService } from './authService';
+export { workoutsService } from './workoutsService';
+export { workoutHistoryService } from './workoutHistoryService';

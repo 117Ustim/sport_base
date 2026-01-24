@@ -1,0 +1,117 @@
+.customSelect {
+  position: relative;
+  user-select: none;
+
+  &.setsSelector {
+    width: 50px;
+    margin-right: 5px;
+  }
+
+  &.repsSelector {
+    width: 50px;
+    margin-left: 5px;
+  }
+
+  &.timeSelector {
+    width: 80px;
+    margin-left: 0;
+  }
+}
+
+.selectTrigger {
+
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  color: rgb(62, 61, 61);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  min-height: 30px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  &.open {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+  }
+
+  .arrow {
+    display: none;
+  }
+}
+
+.selectDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: fadeInScale 0.2s ease-out;
+  min-width: 60px;
+  padding: 6px;
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 3px;
+
+    &:hover {
+      background: #777;
+    }
+  }
+}
+
+.selectOption {
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 4px;
+  color: rgb(57, 56, 56);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #95a6f05f 0%, #c7c3ca 100%);
+    color: rgb(145, 19, 19);
+    transform: scale(1.05);
+    font-weight: 600;
+  }
+}

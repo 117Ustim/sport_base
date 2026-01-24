@@ -1,0 +1,152 @@
+.manageGyms {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  
+  h2 {
+    font-size: 24px;
+    color: #333;
+    margin: 0;
+  }
+}
+
+.close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    color: #333;
+  }
+}
+
+.form {
+  margin-bottom: 30px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+  
+  &:focus {
+    outline: none;
+    border-color: #808080;
+  }
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btnAdd {
+  background: #4CAF50;
+  color: white;
+  
+  &:hover {
+    background: #45a049;
+  }
+}
+
+.btnCancel {
+  background: #999;
+  color: white;
+  
+  &:hover {
+    background: #777;
+  }
+}
+
+.btnEdit {
+  background: #2196F3;
+  color: white;
+  padding: 8px 15px;
+  font-size: 13px;
+  
+  &:hover {
+    background: #0b7dda;
+  }
+}
+
+.btnDelete {
+  background: #f44336;
+  color: white;
+  padding: 8px 15px;
+  font-size: 13px;
+  
+  &:hover {
+    background: #da190b;
+  }
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  
+  h3 {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 15px;
+  }
+}
+
+.empty {
+  color: #999;
+  text-align: center;
+  padding: 20px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.name {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}

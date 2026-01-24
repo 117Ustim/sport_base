@@ -1,0 +1,72 @@
+.weeksSelector {
+  .weeksHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+
+    .sidebarTitle {
+      margin: 0;
+    }
+  }
+}
+
+.sidebarTitle {
+  margin: 0 0 15px 0;
+  color: #1976d2;
+  font-size: 16px;
+}
+
+.addWeekIconButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: #f57c00;
+  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+
+  &:hover {
+    background-color: #e65100;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.weeksButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekButton {
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:hover {
+    background-color: #e0e0e0;
+  }
+
+  &.activeWeek {
+    background-color: #f57c00;
+    color: white;
+    font-weight: 400;
+  }
+}

@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
-import Home from "./components/home/Home";
-import ClientData from "./components/clientData/ClientData";
-import ListAddClients from "./components/listAddClients/ListAddClients";
-import { Route, Routes } from "react-router";
-import PlanClient from "./components/planClient/PlanClient";
-import ClientBase from "./components/clientBase/ClientBase";
-import EditClientBase from "./components/clientBase/editClientBase/EditClientBase";
-import AddTraining from "./components/addTraining/AddTraining";
-import Settings from "./components/settings/Settings";
-import ManageClients from "./components/settings/ManageClients";
-import TrainingWeeks from './components/planClient/TrainingWeeks';
-import Login from "./components/login/Login";
+import Home from "./components/Home";
+import ListAddClients from "./components/ListAddClients";
+import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import PlanClient from "./components/PlanClient";
+import ClientBase from "./components/ClientBase";
+import EditClientBase from "./components/EditClientBase";
+import EditClientExercises from "./components/EditClientExercises";
+import CreateWorkout from "./components/CreateWorkout";
+import WorkoutDetails from "./components/WorkoutDetails";
+import Settings from "./components/Settings";
+import ManageClients from "./components/Settings/ManageClients";
+import TrainingWeeks from './components/PlanClient/TrainingWeeks';
+import Login from "./components/Login";
 import { authService } from "./firebase/services";
 import { initCategories } from "./firebase/initData";
 
@@ -38,63 +39,68 @@ export default function App() {
     return <div className="app-loading">Завантаження...</div>;
   }
 
-  // Если не авторизован - показываем страницу входа
-  if (!user) {
-    return <Login onLoginSuccess={() => {}} />;
-  }
-
   return (
     <div className='app'>
       <Routes>
+        {/* Роут для логина */}
+        <Route
+          path='/login'
+          element={user ? <Navigate to="/" replace /> : <Login onLoginSuccess={() => {}} />}
+        />
+        
+        {/* Защищенные роуты - доступны только авторизованным */}
         <Route
           path='/'
-          element={<Home />}
+          element={user ? <Home /> : <Navigate to="/login" replace />}
         />
         <Route
           path='/settings'
-          element={<Settings />}
+          element={user ? <Settings /> : <Navigate to="/login" replace />}
         />
         <Route
           path='/manage-clients'
-          element={<ManageClients />}
+          element={user ? <ManageClients /> : <Navigate to="/login" replace />}
         />
         <Route
           path='/edit_client_base'
-          element={<EditClientBase />}
+          element={user ? <EditClientBase /> : <Navigate to="/login" replace />}
         />
         <Route
           path='/edit_client_base/:id'
-          element={<EditClientBase />}
+          element={user ? <EditClientBase /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path='/edit_client_exercises/:id'
+          element={user ? <EditClientExercises /> : <Navigate to="/login" replace />}
         />
         <Route
           path='/list_add_clients'
-          element={<ListAddClients />}
+          element={user ? <ListAddClients /> : <Navigate to="/login" replace />}
         />
     
-      <Route
-          path='/client_data/:id'
-          element={<ClientData />}
-        />
-        <Route
-          path='/plan_client/:id/:name'
-          element={<PlanClient />}
-        />
-        <Route
-          path='/client_base/:id'
-          element={<ClientBase />}
-        />
-        <Route path="/plan_client/:id/:name/" element={<PlanClient />}>
+        <Route 
+          path="/plan_client/:id/:name" 
+          element={user ? <PlanClient /> : <Navigate to="/login" replace />}
+        >
           <Route path=":trainingId" element={<TrainingWeeks />} />
         </Route>
-       <Route
-          path='/add_training/:id'
-          element={<AddTraining/>}
+        <Route
+          path='/client_base/:id'
+          element={user ? <ClientBase /> : <Navigate to="/login" replace />}
         />
-      
+        <Route
+          path='/create_workout/:id'
+          element={user ? <CreateWorkout/> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path='/edit_workout/:id/:workoutId'
+          element={user ? <CreateWorkout/> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path='/workout_details/:clientId/:workoutId'
+          element={user ? <WorkoutDetails/> : <Navigate to="/login" replace />}
+        />
       </Routes>
-     
     </div>
-   
-   
   );
 }

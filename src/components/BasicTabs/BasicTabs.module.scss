@@ -1,0 +1,46 @@
+.addWeeks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: auto !important;
+  height: 25px !important;
+  margin-bottom: 20px;
+  font-size: 13px;
+  padding: 4px 12px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #357abd;
+  }
+}
+
+.blockButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.addExercises {
+  width: auto;
+  height: 25px !important;
+  font-size: 13px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 12px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #357abd;
+  }
+}

@@ -53,6 +53,13 @@ export const clientsService = {
         }
       }));
 
+      // Сортируем по фамилии в алфавитном порядке
+      formattedClients.sort((a, b) => {
+        const surnameA = (a.data?.surname || '').toLowerCase();
+        const surnameB = (b.data?.surname || '').toLowerCase();
+        return surnameA.localeCompare(surnameB, 'uk'); // 'uk' для украинского алфавита
+      });
+
       // Пагинация
       const page = filters.page || 0;
       const pageLimit = filters.limit || 10;

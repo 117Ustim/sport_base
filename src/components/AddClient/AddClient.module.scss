@@ -1,0 +1,26 @@
+.addClient {
+  background-color: #EBECF0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.inputs {
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.segment {
+  h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+}
+
+.button {
+  margin-top: -40px;
+}

@@ -1,0 +1,98 @@
+.selectedDayExercises {
+  flex: 1.17;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.sectionTitle {
+  margin: 0 0 10px 0;
+  color: #1976d2;
+  font-size: 18px;
+}
+
+.infoMessageSmall {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 20px 0;
+  padding: 8px 12px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  border-left: 3px solid #1976d2;
+
+  strong {
+    color: #1976d2;
+  }
+}
+
+.dayExercisesSection {
+  margin-bottom: 30px;
+}
+
+.daySectionTitle {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #f57c00;
+  font-weight: 700;
+  padding: 8px 12px;
+  background-color: #fff3e0;
+  border-radius: 4px;
+  border-left: 4px solid #f57c00;
+}
+
+.exercisesList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.infoMessage {
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+  margin: 0;
+  text-align: center;
+  padding: 40px;
+}
+
+.groupDraftSection {
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  border: 2px dashed #4caf50;
+}
+
+.groupDraftHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.groupDraftTitle {
+  margin: 0;
+  font-size: 16px;
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+.confirmGroupButton {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background-color: #45a049;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+}

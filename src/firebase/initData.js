@@ -15,7 +15,8 @@ const DEFAULT_CATEGORIES = [
   { id: '3', name: 'Спина' },
   { id: '4', name: 'Плечі' },
   { id: '5', name: 'Руки' },
-  { id: '6', name: 'Аеробне' }
+  { id: '6', name: 'Аеробне' },
+  { id: '7', name: 'Общее' }
 ];
 
 // Инициализация категорий (вызвать один раз)
@@ -40,6 +41,43 @@ export const initCategories = async () => {
     return true;
   } catch (error) {
     console.error('Ошибка инициализации категорий:', error);
+    throw error;
+  }
+};
+
+// Добавить недостающие категории в существующую базу
+export const addMissingCategories = async () => {
+  try {
+    const categoriesRef = collection(db, 'categories');
+    const snapshot = await getDocs(categoriesRef);
+    
+    // Получаем существующие ID категорий
+    const existingIds = snapshot.docs.map(doc => doc.id);
+    
+    // Находим недостающие категории
+    const missingCategories = DEFAULT_CATEGORIES.filter(
+      cat => !existingIds.includes(cat.id)
+    );
+    
+    if (missingCategories.length === 0) {
+      console.log('Все категории уже существуют');
+      return { added: 0, categories: [] };
+    }
+
+    // Добавляем недостающие категории
+    for (const category of missingCategories) {
+      const docRef = doc(db, 'categories', category.id);
+      await setDoc(docRef, { name: category.name });
+      console.log(`✅ Добавлена категория: ${category.name}`);
+    }
+    
+    console.log(`✅ Добавлено ${missingCategories.length} категорий`);
+    return { 
+      added: missingCategories.length, 
+      categories: missingCategories.map(c => c.name) 
+    };
+  } catch (error) {
+    console.error('❌ Ошибка добавления категорий:', error);
     throw error;
   }
 };
