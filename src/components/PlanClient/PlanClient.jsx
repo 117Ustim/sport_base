@@ -66,14 +66,19 @@ export default function PlanClient() {
   const onDeleteWorkout = async (e, workoutId, workoutName) => {
     e.stopPropagation();
     
+    console.log('Attempting to delete workout:', { workoutId, workoutName });
+    
     showConfirm(
       `Ви впевнені, що хочете видалити тренування "${workoutName}"?`,
       async () => {
         try {
+          console.log('User confirmed deletion, calling workoutsService.delete...');
           await workoutsService.delete(workoutId);
+          console.log('Delete successful, updating local state...');
           setWorkouts(workouts.filter(w => w.id !== workoutId));
           showNotification('Тренування видалено', 'success');
         } catch (error) {
+          console.error('Delete failed:', error);
           showNotification('Помилка при видаленні тренування', 'error');
         }
       }

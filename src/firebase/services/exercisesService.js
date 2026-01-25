@@ -51,7 +51,6 @@ class ExercisesService extends BaseService {
       });
       
       await Promise.all(updatePromises);
-      console.log('Exercise order updated successfully');
     } catch (error) {
       console.error('Error updating exercise order:', error);
       throw error;

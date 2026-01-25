@@ -37,7 +37,6 @@ class CategoriesService extends BaseService {
       const needsMigration = categories.some(cat => cat.column === undefined);
       
       if (needsMigration) {
-        console.log('Migrating categories to add column field...');
         await this.migrateColumns(categories);
         // Перезагружаем после миграции
         const updatedCategories = await super.getAll();
@@ -79,7 +78,6 @@ class CategoriesService extends BaseService {
       });
       
       await Promise.all(updatePromises);
-      console.log('Categories migrated successfully');
     } catch (error) {
       console.error('Error migrating categories:', error);
       throw error;
@@ -98,7 +96,6 @@ class CategoriesService extends BaseService {
           column: i % 2 // 0 - левая колонка, 1 - правая колонка (четные слева, нечетные справа)
         });
       }
-      console.log('Categories initialized');
     } catch (error) {
       console.error('Error initializing categories:', error);
       throw error;
@@ -141,7 +138,6 @@ class CategoriesService extends BaseService {
       });
       
       await Promise.all(updatePromises);
-      console.log('Categories order and columns updated successfully');
     } catch (error) {
       console.error('Error updating categories order:', error);
       throw error;

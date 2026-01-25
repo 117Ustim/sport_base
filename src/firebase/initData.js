@@ -27,7 +27,6 @@ export const initCategories = async () => {
     
     // Если категории уже есть - не создаём
     if (!snapshot.empty) {
-      console.log('Категории уже существуют');
       return false;
     }
 
@@ -37,7 +36,6 @@ export const initCategories = async () => {
       await setDoc(docRef, { name: category.name });
     }
     
-    console.log('Категории успешно созданы!');
     return true;
   } catch (error) {
     console.error('Ошибка инициализации категорий:', error);
@@ -60,7 +58,6 @@ export const addMissingCategories = async () => {
     );
     
     if (missingCategories.length === 0) {
-      console.log('Все категории уже существуют');
       return { added: 0, categories: [] };
     }
 
@@ -68,10 +65,8 @@ export const addMissingCategories = async () => {
     for (const category of missingCategories) {
       const docRef = doc(db, 'categories', category.id);
       await setDoc(docRef, { name: category.name });
-      console.log(`✅ Добавлена категория: ${category.name}`);
     }
     
-    console.log(`✅ Добавлено ${missingCategories.length} категорий`);
     return { 
       added: missingCategories.length, 
       categories: missingCategories.map(c => c.name) 
@@ -87,7 +82,6 @@ export const testConnection = async () => {
   try {
     const testRef = collection(db, 'People');
     await getDocs(testRef);
-    console.log('✅ Подключение к Firebase успешно!');
     return true;
   } catch (error) {
     console.error('❌ Ошибка подключения к Firebase:', error);
@@ -100,12 +94,10 @@ export const initTestUser = async () => {
   try {
     // Пытаемся создать тестового пользователя
     await createUserWithEmailAndPassword(auth, TEST_USER.email, TEST_USER.password);
-    console.log('✅ Тестовий користувач створений:', TEST_USER.email);
     return true;
   } catch (error) {
     // Если пользователь уже существует - это нормально
     if (error.code === 'auth/email-already-in-use') {
-      console.log('ℹ️ Тестовий користувач вже існує:', TEST_USER.email);
       return true;
     }
     console.error('❌ Помилка створення тестового користувача:', error);

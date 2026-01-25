@@ -22,6 +22,10 @@
   cursor: pointer;
   transition: background-color 0.2s;
   width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   
   &:hover {
     background-color: #1565c0;
@@ -37,6 +41,21 @@
   }
 }
 
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .saveBtn {
   composes: button;
   background-color: #d32f2f;
@@ -47,6 +66,11 @@
 
   &:active:not(:disabled) {
     background-color: #b71c1c;
+  }
+  
+  .spinner {
+    border-top-color: white;
+    border-color: rgba(255, 255, 255, 0.3);
   }
 }
 
@@ -213,6 +237,21 @@
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   padding: 0 20px;
+  overflow: visible;
+}
+
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: 40px;
+  
+  p {
+    font-size: 1.2rem;
+    color: #757575;
+    text-align: center;
+  }
 }
 
 .categoryColumn {
@@ -220,6 +259,7 @@
   flex-direction: column;
   gap: 0;
   min-height: 100px;
+  overflow: visible;
 }
 
 // Категория
@@ -228,6 +268,7 @@
   border-radius: 8px;
   padding: 5px;
   break-inside: avoid;
+  overflow: visible;
 
   &.dragging {
     opacity: 0.5;
@@ -240,11 +281,13 @@
   cursor: grab;
   transition: background-color 0.2s ease, transform 0.1s ease;
   border-radius: 8px;
-
-  &:hover {
     background-color: rgba(74, 144, 226, 0.08);
-    transform: translateY(-1px);
-  }
+ 
+
+  // &:hover {
+  //   background-color: rgba(74, 144, 226, 0.08);
+  //   transform: translateY(-1px);
+  // }
 
   &:active {
     cursor: grabbing;
@@ -254,7 +297,7 @@
 
   h2 {
     margin: 0 0 10px 10px;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 500;
     text-align: left;
     color: #1976d2;
@@ -264,7 +307,7 @@
 // Контейнер таблицы
 .tableContainer {
   width: 100%;
-  overflow-x: auto;
+  overflow: visible;
   background-color: white;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
               0px 1px 1px 0px rgba(0,0,0,0.14),
@@ -276,18 +319,21 @@
 .exerciseTable {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  overflow: visible;
 
   thead {
     background-color: #fafafa;
 
     th {
+      
       padding: 8px 16px;
       text-align: left;
+      vertical-align: middle;
       font-weight: 500;
       font-size: 1.2rem;
       color: rgba(0, 0, 0, 0.87);
       border-bottom: 1px solid #e0e0e0;
+      overflow: visible;
 
       &:first-child {
         width: 200px;
@@ -304,10 +350,12 @@
       }
 
       td {
-        padding: 8px 16px;
+        padding: 3px 16px;
         font-size: 16px;
         color: rgba(0, 0, 0, 0.87);
         border-bottom: 1px solid #e0e0e0;
+        overflow: visible;
+       
 
         &:first-child {
           width: 200px;
@@ -327,16 +375,24 @@
 }
 
 .numCol {
-  width: 60px;
-  min-width: 60px;
-  max-width: 60px;
-  text-align: center;
+
+  width: 50px;
+  min-width: 50px;
+  text-align: center !important;
+  vertical-align: middle;
   font-size: 1.15rem;
-  padding: 4px;
-  border-left: 1px solid #e0e0e0;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+  // padding: 4px;
+  border-left: 1px solid #1565C0;
   border-right: 1px solid #e0e0e0;
-  color: #1976d2;
+  color: #545556;
   font-weight: 600;
+
+  &:hover {
+    z-index: 5;
+  }
 
   &.deleteMode {
     cursor: pointer;
@@ -353,7 +409,7 @@
 // Поле ввода
 .numInput {
   width: 100%;
-  padding: 4px;
+  padding: 4px 2px;
   border: none;
   background: transparent;
   text-align: center;
@@ -361,9 +417,149 @@
   outline: none;
   box-shadow: none !important;
   appearance: auto !important;
+  overflow: visible !important;
+  white-space: nowrap;
+  clip-path: none !important;
+  position: relative;
+  z-index: 2;
 
   &:focus {
     background-color: rgba(25, 118, 210, 0.08);
     box-shadow: none !important;
+    width: 130%;
+    text-align: center !important;
+    transform: translateX(-15%);
+    position: relative;
+    z-index: 20;
+    overflow: visible !important;
+    clip-path: none !important;
+  }
+}
+
+// Адаптивность для экранов до 1420px
+@media (max-width: 1420px) {
+  .buttonPanel {
+    gap: 40px;
+    margin: 15px 20px;
+  }
+
+  .leftButtons,
+  .rightButtons {
+    gap: 30px;
+  }
+
+  .button {
+    width: 160px;
+    font-size: 13px;
+    padding: 7px 14px;
+  }
+
+  .categoriesGrid {
+    gap: 15px;
+    padding: 0 15px;
+  }
+
+  .categoryHeader h2 {
+    font-size: 1.3rem;
+  }
+
+  .exerciseTable {
+    thead th {
+      font-size: 1.1rem;
+      padding: 6px 12px;
+
+      &:first-child {
+        width: 180px;
+        min-width: 180px;
+        max-width: 180px;
+      }
+    }
+
+    tbody td {
+      font-size: 15px;
+      padding: 3px 12px;
+
+      &:first-child {
+        width: 180px;
+        min-width: 180px;
+        max-width: 180px;
+      }
+    }
+  }
+
+  .numCol {
+    width: 48px;
+    min-width: 48px;
+    font-size: 1.05rem;
+  }
+
+  .numInput {
+    font-size: 1rem;
+   
+  }
+}
+
+@media (max-width: 1280px) {
+  .buttonPanel {
+    gap: 30px;
+    margin: 15px 15px;
+  }
+
+  .leftButtons,
+  .rightButtons {
+    gap: 20px;
+  }
+
+  .button {
+    width: 140px;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .categoriesGrid {
+    gap: 12px;
+    padding: 0 12px;
+  }
+
+  .categoryHeader h2 {
+    font-size: 1.2rem;
+  }
+
+  .exerciseTable {
+    thead th {
+      font-size: 1rem;
+      padding: 5px 10px;
+
+      &:first-child {
+        width: 160px;
+        min-width: 160px;
+        max-width: 160px;
+      }
+    }
+
+    tbody td {
+      font-size: 14px;
+      padding: 3px 10px;
+
+      &:first-child {
+        width: 160px;
+        min-width: 160px;
+        max-width: 160px;
+      }
+    }
+  }
+
+  .numCol {
+    width: 45px;
+    min-width: 45px;
+    font-size: 1rem;
+  }
+
+  .numInput {
+    font-size: 0.95rem;
+  }
+
+  .editSidebar {
+    width: 280px;
   }
 }

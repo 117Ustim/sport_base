@@ -87,6 +87,27 @@
   }
 }
 
+.cardWarning {
+  .cardIcon {
+    background: #fff3cd;
+  }
+  
+  .cardTitle {
+    color: #856404;
+  }
+}
+
+.migrationStatus {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 12px 20px;
+  border-radius: 50px;
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
 .cardIcon {
   width: 48px;
   height: 48px;

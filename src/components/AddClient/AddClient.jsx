@@ -11,6 +11,25 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
       .catch((error) => console.error('Помилка завантаження залів:', error));
   }, []);
 
+  // Обработчик изменения с поддержкой gymId
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Если меняется зал, также обновляем gymId
+    if (name === 'gym') {
+      const selectedGym = gyms.find(g => g.name === value);
+      onChange({
+        target: {
+          name: 'gym',
+          value: value,
+          gymId: selectedGym?.id || ''
+        }
+      });
+    } else {
+      onChange(e);
+    }
+  };
+
   return (
     <div className={styles.addClient}>
       <div className={styles.form}>
@@ -21,29 +40,29 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
           <input
             placeholder='Прізвище'
             value={contacts.surname}
-            onChange={onChange}
+            onChange={handleChange}
             name='surname'
           />
           <input
             placeholder="Iм'я"
             value={contacts.name}
             name='name'
-            onChange={onChange}
+            onChange={handleChange}
           />
           <input
             placeholder='Телефон'
             value={+contacts.phone || ''}
             name='phone'
-            onChange={onChange}
+            onChange={handleChange}
           />
 
-          <select value={contacts.sex || ''} name='sex' onChange={onChange}>
+          <select value={contacts.sex || ''} name='sex' onChange={handleChange}>
             <option value=''>Стать</option>
             <option value='Чоловiча'>Чоловiча</option>
             <option value='Жiноча'>Жiноча</option>
           </select>
 
-          <select value={contacts.gym || ''} name='gym' onChange={onChange}>
+          <select value={contacts.gym || ''} name='gym' onChange={handleChange}>
             <option value=''>Зал</option>
             {gyms.map((gym) => (
               <option key={gym.id} value={gym.name}>

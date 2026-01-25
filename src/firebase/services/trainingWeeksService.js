@@ -16,12 +16,24 @@ class TrainingWeeksService extends BaseService {
     }
   }
 
+  // Получить недели по clientId
+  async getByClientId(clientId) {
+    try {
+      return await this.query([where('clientId', '==', clientId)]);
+    } catch (error) {
+      console.error('Error getting training weeks by clientId:', error);
+      throw error;
+    }
+  }
+
   // Переопределяем create для специфичной логики
   async create(weekData) {
     try {
       const id = await super.create({
         name: weekData.name,
-        trainingId: weekData.clientId // в оригинале clientId это trainingId
+        clientId: weekData.clientId,
+        trainingId: weekData.trainingId,
+        exercises: weekData.exercises || []
       });
       return { 
         id, 

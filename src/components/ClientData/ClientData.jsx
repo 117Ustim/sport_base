@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { clientsService } from '../../firebase/services';
+import { clientsService, gymsService } from '../../firebase/services';
 import { SnackbarProvider, enqueueSnackbar } from 'notistack';
 import { EMPTY_CLIENT } from '../../constants';
 import styles from './ClientData.module.scss';
@@ -8,18 +8,35 @@ import styles from './ClientData.module.scss';
 export default function ClientData({ contactId }) {
   const params = useParams();
   const [dataUpdateClient, setDataUpdateClient] = useState(EMPTY_CLIENT);
+  const [gyms, setGyms] = useState([]);
 
   useEffect(() => {
+    // Загружаем залы
+    gymsService.getAll()
+      .then(setGyms)
+      .catch((error) => console.error('Помилка завантаження залів:', error));
+      
+    // Загружаем данные клиента
     clientsService.getById(contactId).then((resp) => {
-      console.log(resp?.data);
       setDataUpdateClient(resp?.data || EMPTY_CLIENT);
     });
   }, [contactId]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
-    const val = value !== '' ? value[0].toUpperCase() + value.slice(1) : '';
-    setDataUpdateClient({ ...dataUpdateClient, [name]: val });
+    
+    // Если меняется зал, также обновляем gymId
+    if (name === 'gym') {
+      const selectedGym = gyms.find(g => g.name === value);
+      setDataUpdateClient({ 
+        ...dataUpdateClient, 
+        gym: value,
+        gymId: selectedGym?.id || ''
+      });
+    } else {
+      const val = value !== '' && typeof value === 'string' ? value[0].toUpperCase() + value.slice(1) : value;
+      setDataUpdateClient({ ...dataUpdateClient, [name]: val });
+    }
   };
 
   const onAddContactClick = () => {
@@ -85,9 +102,18 @@ export default function ClientData({ contactId }) {
 
         <select value={dataUpdateClient?.gym} name='gym' onChange={onChange}>
           <option value=''>Зал</option>
-          <option value='Аватар'>Аватар</option>
-          <option value='Галактика'>Галактiка</option>
+          {gyms.map((gym) => (
+            <option key={gym.id} value={gym.name}>
+              {gym.name}
+            </option>
+          ))}
         </select>
+        
+        {dataUpdateClient?.email && (
+          <div style={{ padding: '10px', backgroundColor: '#e8f5e9', borderRadius: '4px', marginTop: '10px' }}>
+            <strong>Email аккаунта:</strong> {dataUpdateClient.email}
+          </div>
+        )}
 
         <SnackbarProvider />
         <div className={styles.button}>

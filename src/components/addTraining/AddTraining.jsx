@@ -6,7 +6,7 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
-import { clientBaseService, categoriesService } from "../../firebase/services";
+import { clientBaseService, categoriesService, trainingWeeksService } from "../../firebase/services";
 import styles from "./AddTraining.module.scss";
 
 export default function AddTraining() {
@@ -75,7 +75,7 @@ export default function AddTraining() {
       return;
     }
 
-    console.log("Сохранение тренировки:", {
+    trainingWeeksService.create({
       name: trainingName,
       clientId: params.id,
       exercises: trainingExercises,

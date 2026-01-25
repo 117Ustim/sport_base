@@ -37,6 +37,7 @@ export default function ClientBase() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [clientName, setClientName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingBase, setIsCreatingBase] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [hasCategoryOrderChanges, setHasCategoryOrderChanges] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
@@ -145,38 +146,44 @@ export default function ClientBase() {
     navigate(`/edit_client_exercises/${params.id}`);
   };
 
-  const createBase = () => {
+  const createBase = async () => {
     // Проверка: если база уже создана (есть упражнения), показываем предупреждение
     if (exercisesArray.length > 0) {
       showNotification('База вже створена! Використовуйте "Редагувати вправи" для змін.', 'error');
       return;
     }
 
-    clientBaseService.createBase(params.id).then(() => {
-      categoriesService.getAll().then(setCategories);
+    setIsCreatingBase(true);
+    
+    try {
+      await clientBaseService.createBase(params.id);
+      await categoriesService.getAll().then(setCategories);
       
-      Promise.all([
+      const [exercises, metadata] = await Promise.all([
         clientBaseService.getByClientId(params.id),
         clientBaseService.getMetadata(params.id)
-      ]).then(([exercises, metadata]) => {
-        setExercisesArray(exercises);
-        
-        if (metadata.columns && Array.isArray(metadata.columns)) {
-          setColumns(metadata.columns);
-        } else {
-          const columnCount = metadata.columnCount || NUMBER_TIMES;
-          const defaultColumns = Array.from({ length: columnCount }, (_, i) => ({
-            id: i,
-            name: String(i + 1)
-          }));
-          setColumns(defaultColumns);
-        }
-        showNotification('База успішно створена!', 'success');
-      });
-    }).catch((error) => {
+      ]);
+      
+      setExercisesArray(exercises);
+      
+      if (metadata.columns && Array.isArray(metadata.columns)) {
+        setColumns(metadata.columns);
+      } else {
+        const columnCount = metadata.columnCount || NUMBER_TIMES;
+        const defaultColumns = Array.from({ length: columnCount }, (_, i) => ({
+          id: i,
+          name: String(i + 1)
+        }));
+        setColumns(defaultColumns);
+      }
+      
+      showNotification('База успішно створена!', 'success');
+    } catch (error) {
       console.error('Error creating base:', error);
       showNotification('Помилка створення бази', 'error');
-    });
+    } finally {
+      setIsCreatingBase(false);
+    }
   };
 
   const saveBase = async () => {
@@ -426,12 +433,24 @@ export default function ClientBase() {
             onClick={saveBase}
             disabled={isSaving}
           >
+            {isSaving && (
+              <span className={styles.spinner}></span>
+            )}
             {isSaving ? 'Збереження...' : 'Сохранить'}
             {hasUnsavedChanges && !isSaving && ' *'}
           </button>
         </div>
         <div className={styles.rightButtons}>
-          <button className={styles.button} onClick={createBase}>Создать базу</button>
+          <button 
+            className={styles.button} 
+            onClick={createBase}
+            disabled={isCreatingBase}
+          >
+            {isCreatingBase && (
+              <span className={styles.spinner}></span>
+            )}
+            {isCreatingBase ? 'Створення...' : 'Создать базу'}
+          </button>
           <button className={styles.button} onClick={openEditModal}>Редагування</button>
         </div>
       </div>
@@ -492,51 +511,57 @@ export default function ClientBase() {
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
       >
-        <div className={styles.categoriesGrid}>
-          <div className={styles.categoryColumn} data-column="0">
-            <SortableContext
-              items={categories.filter(c => c.column === 0).map(c => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {categories
-                .filter(c => c.column === 0)
-                .sort((a, b) => a.order - b.order)
-                .map((category) => (
-                  <SortableCategory
-                    key={category.id}
-                    category={category}
-                    exercisesArray={exercisesArray}
-                    onChangeBase={onChangeBase}
-                    columns={columns}
-                    deleteMode={deleteMode}
-                    deleteColumn={deleteColumn}
-                  />
-                ))}
-            </SortableContext>
+        {exercisesArray.length > 0 ? (
+          <div className={styles.categoriesGrid}>
+            <div className={styles.categoryColumn} data-column="0">
+              <SortableContext
+                items={categories.filter(c => c.column === 0).map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {categories
+                  .filter(c => c.column === 0)
+                  .sort((a, b) => a.order - b.order)
+                  .map((category) => (
+                    <SortableCategory
+                      key={category.id}
+                      category={category}
+                      exercisesArray={exercisesArray}
+                      onChangeBase={onChangeBase}
+                      columns={columns}
+                      deleteMode={deleteMode}
+                      deleteColumn={deleteColumn}
+                    />
+                  ))}
+              </SortableContext>
+            </div>
+            
+            <div className={styles.categoryColumn} data-column="1">
+              <SortableContext
+                items={categories.filter(c => c.column === 1).map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {categories
+                  .filter(c => c.column === 1)
+                  .sort((a, b) => a.order - b.order)
+                  .map((category) => (
+                    <SortableCategory
+                      key={category.id}
+                      category={category}
+                      exercisesArray={exercisesArray}
+                      onChangeBase={onChangeBase}
+                      columns={columns}
+                      deleteMode={deleteMode}
+                      deleteColumn={deleteColumn}
+                    />
+                  ))}
+              </SortableContext>
+            </div>
           </div>
-          
-          <div className={styles.categoryColumn} data-column="1">
-            <SortableContext
-              items={categories.filter(c => c.column === 1).map(c => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {categories
-                .filter(c => c.column === 1)
-                .sort((a, b) => a.order - b.order)
-                .map((category) => (
-                  <SortableCategory
-                    key={category.id}
-                    category={category}
-                    exercisesArray={exercisesArray}
-                    onChangeBase={onChangeBase}
-                    columns={columns}
-                    deleteMode={deleteMode}
-                    deleteColumn={deleteColumn}
-                  />
-                ))}
-            </SortableContext>
+        ) : (
+          <div className={styles.emptyState}>
+            <p>Натисніть "Создать базу" щоб почати</p>
           </div>
-        </div>
+        )}
       </DndContext>
     </>
   );
@@ -560,8 +585,6 @@ function SortableCategory({ category, exercisesArray, onChangeBase, columns, del
   const categoryExercises = exercisesArray.filter(
     (exercise) => exercise.category_id === category.id
   );
-
-  if (categoryExercises.length === 0) return null;
 
   return (
     <div 

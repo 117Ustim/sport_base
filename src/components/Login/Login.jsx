@@ -8,6 +8,7 @@ const ERROR_MESSAGES = {
   'auth/wrong-password': 'Невірний пароль',
   'auth/email-already-in-use': 'Email вже використовується',
   'auth/weak-password': 'Пароль занадто слабкий (мін. 6 символів)',
+  'auth/invalid-credential': 'Невірні дані для входу',
   default: 'Помилка авторизації'
 };
 
@@ -36,7 +37,12 @@ export default function Login({ onLoginSuccess }) {
       }
       onLoginSuccess();
     } catch (err) {
-      setError(ERROR_MESSAGES[err.code] || ERROR_MESSAGES.default);
+      // Специальная обработка для удаленных пользователей
+      if (err.message && err.message.includes('Доступ заборонено')) {
+        setError('Доступ заборонено. Ваш акаунт було видалено.');
+      } else {
+        setError(ERROR_MESSAGES[err.code] || ERROR_MESSAGES.default);
+      }
     } finally {
       setLoading(false);
     }

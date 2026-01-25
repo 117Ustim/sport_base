@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { clientsService, authService } from '../../firebase/services';
+import { migrateClients } from '../../firebase/migrateClients';
 import { EMPTY_CLIENT } from '../../constants';
 import TemporaryDrawer from '../Drawer';
 import ManageGyms from './ManageGyms';
@@ -12,6 +13,7 @@ export default function Settings() {
   const [openDrawer, setOpenDrawer] = useState({ right: false });
   const [drawerContent, setDrawerContent] = useState('gyms');
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
+  const [migrationStatus, setMigrationStatus] = useState('');
 
   const onBackClick = () => {
     navigate('/');
@@ -49,11 +51,26 @@ export default function Settings() {
   const onManageClientsClick = () => {
     navigate('/manage-clients');
   };
+  
+  const onMigrateClientsClick = async () => {
+    if (window.confirm('Вы уверены, что хотите обновить структуру данных клиентов? Это безопасная операция, но рекомендуется сделать резервную копию.')) {
+      setMigrationStatus('Выполняется миграция...');
+      const result = await migrateClients();
+      setMigrationStatus(result.message);
+      setTimeout(() => setMigrationStatus(''), 5000);
+    }
+  };
 
   const onChange = (event) => {
-    const { name, value } = event.target;
-    const val = value !== '' ? value[0].toUpperCase() + value.slice(1) : '';
-    setContacts({ ...contacts, [name]: val });
+    const { name, value, gymId } = event.target;
+    
+    // Если это изменение зала с gymId
+    if (name === 'gym' && gymId !== undefined) {
+      setContacts({ ...contacts, gym: value, gymId: gymId });
+    } else {
+      const val = value !== '' && typeof value === 'string' ? value[0].toUpperCase() + value.slice(1) : value;
+      setContacts({ ...contacts, [name]: val });
+    }
   };
 
   const onAddContactClick = () => {
@@ -89,6 +106,13 @@ export default function Settings() {
       onClick: onAddExerciseClick
     },
     {
+      icon: '🔄',
+      title: 'Оновити структуру даних',
+      description: 'Синхронізація з мобільною версією',
+      onClick: onMigrateClientsClick,
+      warning: true
+    },
+    {
       icon: '🚪',
       title: 'Вихід',
       description: 'Вийти з облікового запису',
@@ -107,10 +131,16 @@ export default function Settings() {
       </div>
 
       <div className={styles.content}>
+        {migrationStatus && (
+          <div className={styles.migrationStatus}>
+            {migrationStatus}
+          </div>
+        )}
+        
         {menuItems.map((item, index) => (
           <div 
             key={index}
-            className={`${styles.card} ${item.danger ? styles.cardDanger : ''}`}
+            className={`${styles.card} ${item.danger ? styles.cardDanger : ''} ${item.warning ? styles.cardWarning : ''}`}
             onClick={item.onClick}
           >
             <div className={styles.cardIcon}>{item.icon}</div>

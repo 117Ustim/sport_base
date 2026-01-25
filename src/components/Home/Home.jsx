@@ -23,9 +23,15 @@ export default function Home() {
   }, []);
 
   const onChange = (event) => {
-    const { name, value } = event.target;
-    const val = value !== '' ? value[0].toUpperCase() + value.slice(1) : '';
-    setContacts({ ...contacts, [name]: val });
+    const { name, value, gymId } = event.target;
+    
+    // Если это изменение зала с gymId
+    if (name === 'gym' && gymId !== undefined) {
+      setContacts({ ...contacts, gym: value, gymId: gymId });
+    } else {
+      const val = value !== '' && typeof value === 'string' ? value[0].toUpperCase() + value.slice(1) : value;
+      setContacts({ ...contacts, [name]: val });
+    }
   };
 
   const onAddContactClick = () => {

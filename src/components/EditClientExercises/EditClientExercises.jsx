@@ -99,13 +99,8 @@ export default function EditClientExercises() {
       const currentIds = clientExercises.map(ex => ex.exercise_id);
       const deletedIds = originalIds.filter(id => !currentIds.includes(id) && !id.toString().startsWith('temp_'));
       
-      console.log('Original IDs:', originalIds);
-      console.log('Current IDs:', currentIds);
-      console.log('Deleted IDs:', deletedIds);
-      
       // Удаляем упражнения с сервера
       for (const exerciseId of deletedIds) {
-        console.log('Deleting exercise:', exerciseId);
         await clientBaseService.deleteExercise(params.id, exerciseId);
       }
       

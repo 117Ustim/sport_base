@@ -143,8 +143,6 @@ export default function WorkoutDetails() {
         await workoutHistoryService.saveWorkoutSession(session);
       }
       
-      console.log('Все сессии сохранены на сервер:', pendingSessions);
-      
       // Очищаем список ожидающих
       setPendingSessions([]);
       setHasUnsavedChanges(false);

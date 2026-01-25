@@ -10,6 +10,76 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config';
 
+// Вспомогательная функция для очистки exerciseData от пустых значений
+const cleanExerciseData = (exerciseData) => {
+  if (!exerciseData || typeof exerciseData !== 'object') {
+    return {};
+  }
+  
+  const cleaned = {};
+  for (const [key, value] of Object.entries(exerciseData)) {
+    if (value !== '' && value !== null && value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+  
+  return cleaned;
+};
+
+// Очистить упражнение от пустых данных
+const cleanExercise = (exercise) => {
+  if (exercise.exerciseData) {
+    return {
+      ...exercise,
+      exerciseData: cleanExerciseData(exercise.exerciseData)
+    };
+  }
+  return exercise;
+};
+
+// Очистить все упражнения в тренировке
+const cleanWorkoutExercises = (workout) => {
+  if (!workout.weeks || !Array.isArray(workout.weeks)) {
+    return workout;
+  }
+  
+  const cleanedWeeks = workout.weeks.map(week => {
+    if (!week.days) return week;
+    
+    const cleanedDays = {};
+    for (const [dayKey, dayData] of Object.entries(week.days)) {
+      if (dayData.exercises && Array.isArray(dayData.exercises)) {
+        cleanedDays[dayKey] = {
+          ...dayData,
+          exercises: dayData.exercises.map(ex => {
+            if (ex.type === 'group' && ex.exercises) {
+              // Группа упражнений
+              return {
+                ...ex,
+                exercises: ex.exercises.map(cleanExercise)
+              };
+            }
+            // Одиночное упражнение
+            return cleanExercise(ex);
+          })
+        };
+      } else {
+        cleanedDays[dayKey] = dayData;
+      }
+    }
+    
+    return {
+      ...week,
+      days: cleanedDays
+    };
+  });
+  
+  return {
+    ...workout,
+    weeks: cleanedWeeks
+  };
+};
+
 export const workoutsService = {
   // Получить все тренировки клиента
   async getByClientId(clientId) {
@@ -29,8 +99,6 @@ export const workoutsService = {
         };
       });
       
-      console.log('workoutsService.getByClientId - loaded workouts:', workouts);
-      
       // Сортируем на клиенте
       workouts.sort((a, b) => {
         const dateA = new Date(a.createdAt);
@@ -48,22 +116,17 @@ export const workoutsService = {
   // Получить одну тренировку по ID
   async getById(workoutId) {
     try {
-      console.log('workoutsService.getById - searching for:', workoutId);
       const workoutRef = doc(db, 'workouts', workoutId);
       const snapshot = await getDoc(workoutRef);
-      
-      console.log('workoutsService.getById - snapshot exists:', snapshot.exists());
       
       if (snapshot.exists()) {
         const data = {
           id: snapshot.id,
           ...snapshot.data()
         };
-        console.log('workoutsService.getById - found workout:', data);
         return data;
       }
       
-      console.log('workoutsService.getById - workout not found');
       return null;
     } catch (error) {
       console.error('Error getting workout:', error);
@@ -74,12 +137,15 @@ export const workoutsService = {
   // Создать новую тренировку
   async create(workoutData) {
     try {
+      // Очищаем exerciseData от пустых значений
+      const cleanedWorkout = cleanWorkoutExercises(workoutData);
+      
       // Используем ID из workoutData если он есть, иначе создаем новый
-      const workoutId = workoutData.id ? String(workoutData.id) : `workout_${Date.now()}`;
+      const workoutId = cleanedWorkout.id ? String(cleanedWorkout.id) : `workout_${Date.now()}`;
       const workoutRef = doc(db, 'workouts', workoutId);
       
       // Создаем объект данных БЕЗ поля id (id будет в самом документе)
-      const { id, ...dataWithoutId } = workoutData;
+      const { id, ...dataWithoutId } = cleanedWorkout;
       
       const data = {
         name: dataWithoutId.name,
@@ -88,9 +154,6 @@ export const workoutsService = {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
-      console.log('workoutsService.create - saving workout with ID:', workoutId);
-      console.log('workoutsService.create - data:', data);
       
       await setDoc(workoutRef, data);
       
@@ -107,11 +170,14 @@ export const workoutsService = {
   // Обновить тренировку
   async update(workoutId, workoutData) {
     try {
+      // Очищаем exerciseData от пустых значений
+      const cleanedWorkout = cleanWorkoutExercises(workoutData);
+      
       const idString = String(workoutId);
       const workoutRef = doc(db, 'workouts', idString);
       
       // Создаем объект данных БЕЗ поля id
-      const { id, ...dataWithoutId } = workoutData;
+      const { id, ...dataWithoutId } = cleanedWorkout;
       
       const data = {
         name: dataWithoutId.name,
@@ -119,8 +185,6 @@ export const workoutsService = {
         weeks: dataWithoutId.weeks || [],
         updatedAt: new Date().toISOString()
       };
-      
-      console.log('workoutsService.update - updating workout:', idString, data);
       
       await setDoc(workoutRef, data, { merge: true });
       
@@ -139,15 +203,18 @@ export const workoutsService = {
     try {
       // Преобразуем в строку, так как ID в Firebase всегда строки
       const idString = String(workoutId);
-      console.log('workoutsService.delete - deleting workout:', idString);
+      
+      console.log('Deleting workout with ID:', idString);
       
       const workoutRef = doc(db, 'workouts', idString);
       await deleteDoc(workoutRef);
       
-      console.log('workoutsService.delete - workout deleted successfully');
+      console.log('Workout deleted successfully:', idString);
+      
       return true;
     } catch (error) {
       console.error('Error deleting workout:', error);
+      console.error('Workout ID that failed to delete:', workoutId);
       throw error;
     }
   },

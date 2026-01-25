@@ -15,15 +15,11 @@ export const gymsService = {
   // Получить все залы
   async getAll() {
     try {
-      console.log('gymsService.getAll() called');
       const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
       const docSnap = await getDoc(docRef);
       
-      console.log('docSnap.exists():', docSnap.exists());
-      
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log('Raw data from Firebase:', data);
         // Массив залов находится в поле Gyms
         return data.Gyms || [];
       }

@@ -7,9 +7,15 @@ export const EMPTY_CLIENT = {
   phone:"",
   sex:"",
   gym: "",
+  gymId: "",
   address: "",
   growth: "",
   weight: "",
+  price: 250,
+  capacity: 0,
+  attented: 0,
+  userId: "",
+  email: ""
 };
 
 export const EMPTY_EXERCISES = {

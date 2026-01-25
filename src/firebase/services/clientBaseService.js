@@ -9,11 +9,21 @@ import {
 import { db } from '../config';
 import { exercisesService } from './exercisesService';
 
-// Пустые данные для упражнения (15 полей)
-const EMPTY_EXERCISE_DATA = {
-  0: "", 1: "", 2: "", 3: "", 4: "",
-  5: "", 6: "", 7: "", 8: "", 9: "",
-  10: "", 11: "", 12: "", 13: "", 14: ""
+// Вспомогательная функция для очистки данных от пустых значений
+const cleanExerciseData = (data) => {
+  if (!data || typeof data !== 'object') {
+    return {};
+  }
+  
+  const cleaned = {};
+  for (const [key, value] of Object.entries(data)) {
+    // Сохраняем только непустые значения
+    if (value !== '' && value !== null && value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+  
+  return cleaned;
 };
 
 export const clientBaseService = {
@@ -82,8 +92,8 @@ export const clientBaseService = {
         await setDoc(exerciseRef, {
           name: exercise.name,
           categoryId: exercise.categoryId,
-          data: EMPTY_EXERCISE_DATA,
-          order: exercise.order !== undefined ? exercise.order : 999999 // Копируем порядок из базы упражнений
+          data: {}, // Пустой объект вместо заполненного пустыми строками
+          order: exercise.order !== undefined ? exercise.order : 999999
         });
       }
       
@@ -103,10 +113,14 @@ export const clientBaseService = {
       // Сохраняем упражнения
       for (const exercise of exercises) {
         const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exercise.exercise_id);
+        
+        // Очищаем данные от пустых значений
+        const cleanedData = cleanExerciseData(exercise.data);
+        
         await setDoc(exerciseRef, {
           name: exercise.name,
           categoryId: exercise.category_id,
-          data: exercise.data
+          data: cleanedData
         }, { merge: true });
       }
       
@@ -125,11 +139,8 @@ export const clientBaseService = {
   // Удалить упражнение из базы клиента
   async deleteExercise(clientId, exerciseId) {
     try {
-      console.log('clientBaseService.deleteExercise - clientId:', clientId, 'exerciseId:', exerciseId);
       const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exerciseId);
-      console.log('Deleting document at path:', `clientBases/${clientId}/exercises/${exerciseId}`);
       await deleteDoc(exerciseRef);
-      console.log('Document deleted successfully');
       return true;
     } catch (error) {
       console.error('Error deleting exercise:', error);
@@ -142,20 +153,10 @@ export const clientBaseService = {
     try {
       const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exercise.id);
       
-      // Получаем метаданные для определения количества колонок
-      const metadata = await this.getMetadata(clientId);
-      const columnCount = metadata.columnCount || 15;
-      
-      // Создаем пустые данные для всех колонок
-      const emptyData = {};
-      for (let i = 0; i < columnCount; i++) {
-        emptyData[i] = '';
-      }
-      
       await setDoc(exerciseRef, {
         name: exercise.name,
         categoryId: exercise.categoryId,
-        data: emptyData
+        data: {} // Пустой объект вместо заполненного пустыми строками
       });
       
       return true;
@@ -168,16 +169,18 @@ export const clientBaseService = {
   // Обновить порядок упражнений (сохранить новый порядок после перетаскивания)
   async updateExercisesOrder(clientId, exercises) {
     try {
-      // Просто пересохраняем все упражнения с их текущими данными
-      // Firebase Firestore не имеет встроенного порядка, но мы можем добавить поле order
       for (let i = 0; i < exercises.length; i++) {
         const exercise = exercises[i];
         const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exercise.exercise_id);
+        
+        // Очищаем данные от пустых значений
+        const cleanedData = cleanExerciseData(exercise.data);
+        
         await setDoc(exerciseRef, {
           name: exercise.name,
           categoryId: exercise.category_id,
-          data: exercise.data,
-          order: i // Добавляем порядковый номер
+          data: cleanedData,
+          order: i
         }, { merge: true });
       }
       

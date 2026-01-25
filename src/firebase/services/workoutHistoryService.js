@@ -11,11 +11,48 @@ import {
 import { db } from '../config';
 
 export const workoutHistoryService = {
+  // Вспомогательная функция для очистки exerciseData от пустых значений
+  _cleanExerciseData(exerciseData) {
+    if (!exerciseData || typeof exerciseData !== 'object') {
+      return exerciseData;
+    }
+    
+    const cleaned = {};
+    for (const [key, value] of Object.entries(exerciseData)) {
+      // Сохраняем только непустые значения
+      if (value !== '' && value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+    
+    return Object.keys(cleaned).length > 0 ? cleaned : {};
+  },
+
+  // Очистить массив упражнений от пустых данных
+  _cleanExercises(exercises) {
+    if (!Array.isArray(exercises)) {
+      return exercises;
+    }
+    
+    return exercises.map(exercise => {
+      if (exercise.exerciseData) {
+        return {
+          ...exercise,
+          exerciseData: this._cleanExerciseData(exercise.exerciseData)
+        };
+      }
+      return exercise;
+    });
+  },
+
   // Сохранить запись о выполненной тренировке
   async saveWorkoutSession(sessionData) {
     try {
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const sessionRef = doc(db, 'workoutHistory', sessionId);
+      
+      // Очищаем exercises от пустых значений в exerciseData
+      const cleanedExercises = this._cleanExercises(sessionData.exercises);
       
       const data = {
         workoutId: sessionData.workoutId,
@@ -23,11 +60,9 @@ export const workoutHistoryService = {
         weekNumber: sessionData.weekNumber,
         dayKey: sessionData.dayKey, // monday, tuesday, etc.
         date: sessionData.date, // DD.MM.YYYY
-        exercises: sessionData.exercises, // Полный массив упражнений с данными
+        exercises: cleanedExercises, // Очищенный массив упражнений
         createdAt: new Date().toISOString()
       };
-      
-      console.log('workoutHistoryService.saveWorkoutSession - saving:', data);
       
       await setDoc(sessionRef, data);
       
@@ -56,8 +91,6 @@ export const workoutHistoryService = {
         id: doc.id,
         ...doc.data()
       }));
-      
-      console.log('workoutHistoryService.getByWorkoutId - loaded sessions:', sessions);
       
       return sessions;
     } catch (error) {

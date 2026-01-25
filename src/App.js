@@ -21,14 +21,35 @@ export default function App() {
 
   useEffect(() => {
     // Подписка на изменение состояния авторизации
-    const unsubscribe = authService.onAuthChange((currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-      
-      // Инициализируем категории после входа
+    const unsubscribe = authService.onAuthChange(async (currentUser) => {
       if (currentUser) {
-        initCategories();
+        // Главный админ всегда имеет доступ
+        if (currentUser.email === 'ustimweb72@gmail.com') {
+          await authService.ensureAdminExists(currentUser.uid, currentUser.email);
+          setUser(currentUser);
+          initCategories();
+          setLoading(false);
+          return;
+        }
+
+        // Проверяем существует ли пользователь в базе данных
+        const userExists = await authService.checkUserExists(currentUser.uid);
+        
+        if (userExists) {
+          // Пользователь существует - разрешаем доступ
+          setUser(currentUser);
+          initCategories();
+        } else {
+          // Пользователь удален из базы - НЕ делаем logout здесь
+          // Это будет обработано в Login компоненте
+          console.log('User not found in database, waiting for login to handle');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
+      
+      setLoading(false);
     });
 
     return () => unsubscribe();
