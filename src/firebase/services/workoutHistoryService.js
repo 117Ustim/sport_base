@@ -61,7 +61,14 @@ export const workoutHistoryService = {
         dayKey: sessionData.dayKey, // monday, tuesday, etc.
         date: sessionData.date, // DD.MM.YYYY
         exercises: cleanedExercises, // Очищенный массив упражнений
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toLocaleDateString('ru-RU', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }).replace(/\//g, '.')
       };
       
       await setDoc(sessionRef, data);

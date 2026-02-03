@@ -10,7 +10,6 @@ import CreateWorkout from "./components/CreateWorkout";
 import WorkoutDetails from "./components/WorkoutDetails";
 import Settings from "./components/Settings";
 import ManageClients from "./components/Settings/ManageClients";
-import TrainingWeeks from './components/PlanClient/TrainingWeeks';
 import Login from "./components/Login";
 import { authService } from "./firebase/services";
 import { initCategories } from "./firebase/initData";
@@ -42,7 +41,9 @@ export default function App() {
         } else {
           // Пользователь удален из базы - НЕ делаем logout здесь
           // Это будет обработано в Login компоненте
-          console.log('User not found in database, waiting for login to handle');
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('User not found in database, waiting for login to handle');
+          }
           setUser(null);
         }
       } else {
@@ -102,9 +103,7 @@ export default function App() {
         <Route 
           path="/plan_client/:id/:name" 
           element={user ? <PlanClient /> : <Navigate to="/login" replace />}
-        >
-          <Route path=":trainingId" element={<TrainingWeeks />} />
-        </Route>
+        />
         <Route
           path='/client_base/:id'
           element={user ? <ClientBase /> : <Navigate to="/login" replace />}

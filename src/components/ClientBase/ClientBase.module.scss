@@ -13,26 +13,32 @@
 }
 
 .button {
-  padding: 8px 16px;
-  font-size: 14px;
-  border: none;
-  border-radius: 50px;
-  background-color: #1976d2;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 200px;
+  width: 120px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.3);
+  backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   
   &:hover {
-    background-color: #1565c0;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(49, 130, 206, 0.4);
+    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
   }
 
   &:active {
-    background-color: #0d47a1;
+    transform: translateY(0);
   }
 
   &:disabled {
@@ -58,14 +64,18 @@
 
 .saveBtn {
   composes: button;
-  background-color: #d32f2f;
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  box-shadow: 0 8px 32px rgba(244, 67, 54, 0.3);
 
   &:hover:not(:disabled) {
-    background-color: #c62828;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(244, 67, 54, 0.4);
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
   }
 
   &:active:not(:disabled) {
-    background-color: #b71c1c;
+    transform: translateY(0);
+    box-shadow: 0 6px 24px rgba(244, 67, 54, 0.3);
   }
   
   .spinner {
@@ -76,159 +86,250 @@
 
 .deleteModeActive {
   composes: button;
-  background-color: #ff9800;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  box-shadow: 0 8px 32px rgba(255, 152, 0, 0.3);
 
   &:hover {
-    background-color: #f57c00;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(255, 152, 0, 0.4);
+    background: linear-gradient(135deg, #fb8c00 0%, #e65100 100%);
   }
 
   &:active {
-    background-color: #e65100;
+    transform: translateY(0);
+  }
+}
+
+// Плавающая кнопка сохранения порядка категорий
+.floatingButtonContainer {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 2000;
+}
+
+.floatingButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(244, 67, 54, 0.5);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  animation: pulse 1.5s ease-in-out infinite;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(244, 67, 54, 0.6);
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    animation: none;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 32px rgba(244, 67, 54, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 12px 48px rgba(244, 67, 54, 0.8);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 8px 32px rgba(244, 67, 54, 0.5);
+    transform: scale(1);
   }
 }
 
 // Боковая панель редактирования
 .editSidebar {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
-  background: white;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 1000;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%) translateX(calc(100% + 30px));
+  padding: 24px;
+  height: auto;
+  max-height: calc(100vh - 48px);
+  width: 380px;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  border-radius: 25px;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  box-sizing: border-box;
 
   &.open {
-    transform: translateX(0);
+    transform: translateY(-50%) translateX(0);
   }
 }
 
 .sidebarHeader {
-  padding: 20px;
-  background-color: #464da9;
-  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 30px;
 
   h3 {
+    font-size: 24px;
+    color: #000000;
     margin: 0;
-    font-size: 1.25rem;
+    font-weight: 500;
   }
 }
 
 .closeBtn {
-  background: #d12812;
-  border: none;
-  color: white;
-  font-size: 24px;
-  border-radius: 50%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 20px;
+  color: #495057;
   cursor: pointer;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    color: #000000;
   }
 }
 
 .sidebarContent {
-  padding: 20px;
-  flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .addColumnSection {
-  margin-bottom: 20px;
+  margin-top: 15px; // Дополнительное расстояние к базовому gap, создаёт двойное расстояние
 }
+
 
 .columnNameInput {
   width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 50px;
-  margin: 30px 0;
+  padding: 16px 20px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 25px;
+  margin-bottom: 20px;
   box-sizing: border-box;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
   
   &:focus {
     outline: none;
-    border-color: #1976d2;
-    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    border-color: rgba(0, 0, 0, 0.2);
   }
   
   &::placeholder {
-    color: #757575;
+    color: #6c757d;
   }
 }
 
 .sidebarButtons {
   display: flex;
   flex-direction: column;
-  gap: 35px;
+  gap: 15px;
 
   button {
-    padding: 12px 20px;
+    padding: 12px 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
     font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    background-color: #1976d2;
-    color: white;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
+    color: #ffffff;
 
     &:hover:not(:disabled) {
-      background-color: #1565c0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4);
+      background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
     }
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
   }
 }
 
 .saveCategoryBtn {
-  background-color: #d32f2f !important;
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
 
   &:hover:not(:disabled) {
-    background-color: #c62828 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4) !important;
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
   }
 
   &:active:not(:disabled) {
-    background-color: #b71c1c !important;
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3) !important;
   }
 }
 
 .sidebarHint {
   margin-top: 20px;
-  padding: 15px;
-  background-color: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 4px;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 15px;
   color: #856404;
   font-size: 14px;
   line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
 }
 
 // Подсказка режима удаления
 .deleteModeHint {
-  padding: 10px 20px;
-  margin-bottom: 20px;
-  background-color: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 4px;
+  padding: 15px 20px;
+  margin: 0 20px 20px 20px;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 15px;
   color: #856404;
   font-size: 14px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
 }
 
 // Сетка категорий (две колонки)
@@ -307,7 +408,8 @@
 // Контейнер таблицы
 .tableContainer {
   width: 100%;
-  overflow: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background-color: white;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
               0px 1px 1px 0px rgba(0,0,0,0.14),
@@ -375,20 +477,19 @@
 }
 
 .numCol {
-
-  width: 50px;
-  min-width: 50px;
+  min-width: 52px;
   text-align: center !important;
   vertical-align: middle;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   overflow: visible;
   position: relative;
   z-index: 1;
-  // padding: 4px;
+  box-sizing: border-box;
+  padding: 4px 0;
   border-left: 1px solid #1565C0;
   border-right: 1px solid #e0e0e0;
   color: #545556;
-  font-weight: 600;
+  font-weight: 500;
 
   &:hover {
     z-index: 5;
@@ -408,12 +509,13 @@
 
 // Поле ввода
 .numInput {
-  width: 100%;
-  padding: 4px 2px;
+
+  width: 140%;
+  padding: 4px 0;
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   outline: none;
   box-shadow: none !important;
   appearance: auto !important;
@@ -422,17 +524,36 @@
   clip-path: none !important;
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
 
   &:focus {
     background-color: rgba(25, 118, 210, 0.08);
     box-shadow: none !important;
-    width: 130%;
+    width: 150%;
     text-align: center !important;
-    transform: translateX(-15%);
+    transform: translateX(-17%);
     position: relative;
     z-index: 20;
     overflow: visible !important;
     clip-path: none !important;
+  }
+}
+
+// Адаптивность для экранов до 1750px - переключаем в одну колонку
+@media (max-width: 1750px) {
+  .categoriesGrid {
+    grid-template-columns: 1fr;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .numCol {
+    font-size: 1.1rem;
+    padding: 6px 2px;
+  }
+  
+  .numInput {
+    font-size: 1.1rem;
   }
 }
 
@@ -488,14 +609,14 @@
   }
 
   .numCol {
-    width: 48px;
-    min-width: 48px;
-    font-size: 1.05rem;
+    min-width: 52px;
+    font-size: 1rem;
+    padding: 4px 1px;
   }
 
   .numInput {
     font-size: 1rem;
-   
+    padding: 4px 1px;
   }
 }
 
@@ -550,16 +671,147 @@
   }
 
   .numCol {
-    width: 45px;
-    min-width: 45px;
-    font-size: 1rem;
+    min-width: 52px;
+    font-size: 0.95rem;
+    padding: 4px 1px;
   }
 
   .numInput {
     font-size: 0.95rem;
+    padding: 4px 1px;
   }
 
   .editSidebar {
     width: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .buttonPanel {
+    gap: 20px;
+    margin: 12px 10px;
+    flex-wrap: wrap;
+  }
+
+  .leftButtons,
+  .rightButtons {
+    gap: 15px;
+  }
+
+  .button {
+    width: 110px;
+    height: 38px;
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .categoriesGrid {
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  .categoryWrapper {
+    padding: 3px;
+  }
+
+  .categoryHeader {
+    padding: 8px;
+
+    h2 {
+      font-size: 1.1rem;
+      margin: 0 0 8px 8px;
+    }
+  }
+
+  .exerciseTable {
+    thead th {
+      font-size: 0.9rem;
+      padding: 4px 8px;
+
+      &:first-child {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+      }
+    }
+
+    tbody td {
+      font-size: 13px;
+      padding: 2px 8px;
+
+      &:first-child {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+      }
+    }
+  }
+
+  .numCol {
+    min-width: 52px;
+    font-size: 0.9rem;
+    padding: 4px 0px;
+  }
+
+  .numInput {
+    font-size: 0.9rem;
+    padding: 4px 1px;
+
+    &:focus {
+      width: 160%;
+      transform: translateX(-19%);
+    }
+  }
+
+  .editSidebar {
+    width: 300px;
+    right: 15px;
+    padding: 20px;
+    max-height: calc(100vh - 24px);
+  }
+
+  .sidebarHeader {
+    margin-bottom: 20px;
+
+    h3 {
+      font-size: 20px;
+    }
+  }
+
+  .closeBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .columnNameInput {
+    padding: 14px 18px;
+    font-size: 15px;
+    margin-bottom: 15px;
+  }
+
+  .sidebarButtons {
+    gap: 12px;
+
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+    }
+  }
+
+  .floatingButton {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .deleteModeHint {
+    padding: 12px 16px;
+    margin: 0 15px 15px 15px;
+    font-size: 13px;
+  }
+
+  .sidebarHint {
+    padding: 12px 16px;
+    font-size: 13px;
   }
 }

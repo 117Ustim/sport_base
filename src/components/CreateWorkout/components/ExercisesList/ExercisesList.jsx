@@ -11,6 +11,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { useTranslation } from 'react-i18next';
 import SortableExerciseItem from '../SortableExerciseItem';
 import { DAYS_OF_WEEK } from '../../constants';
 import styles from './ExercisesList.module.scss';
@@ -25,8 +26,10 @@ export default function ExercisesList({
   onUpdateExercise, 
   onRemoveExercise,
   onConfirmGroup,
-  getWeightForReps 
+  getWeightForReps,
+  onBulkChangeReps
 }) {
+  const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -40,21 +43,40 @@ export default function ExercisesList({
   return (
     <div className={styles.selectedDayExercises}>
       <h3 className={styles.sectionTitle}>
-        Неделя {workout.weeks[selectedWeek]?.weekNumber || selectedWeek + 1} - Все тренировки
+        {t('createWorkout.week')} {workout.weeks[selectedWeek]?.weekNumber || selectedWeek + 1} - {t('createWorkout.allTrainings')}
       </h3>
-      <p className={styles.infoMessageSmall}>
-        Выбран день: <strong>{DAYS_OF_WEEK.find(d => d.key === selectedDay)?.label}</strong> (новые упражнения добавятся сюда)
-      </p>
+      <div className={styles.infoMessageSmall}>
+        <span>
+          {t('createWorkout.selectedDay')}: <strong>{t(`days.${selectedDay}`)}</strong> ({t('createWorkout.newExercisesHere')})
+        </span>
+        <div className={styles.bulkRepsButtons}>
+          <span className={styles.bulkRepsLabel}>{t('createWorkout.times')}:</span>
+          <button 
+            className={styles.bulkRepsButton} 
+            onClick={() => onBulkChangeReps(8)}
+            title={t('createWorkout.setRepsTitle', { reps: 8 })}
+          >
+            8
+          </button>
+          <button 
+            className={styles.bulkRepsButton} 
+            onClick={() => onBulkChangeReps(12)}
+            title={t('createWorkout.setRepsTitle', { reps: 12 })}
+          >
+            12
+          </button>
+        </div>
+      </div>
       
       {/* Черновик группы */}
       {addMode === 'group' && groupDraft.length > 0 && (
         <div className={styles.groupDraftSection}>
           <div className={styles.groupDraftHeader}>
-            <h4 className={styles.groupDraftTitle}>Создается группа ({groupDraft.length} упр.)</h4>
+            <h4 className={styles.groupDraftTitle}>{t('createWorkout.creatingGroup')} ({groupDraft.length} {t('createWorkout.exercises')})</h4>
             <button
               className={styles.confirmGroupButton}
               onClick={onConfirmGroup}
-              title="Завершить группу"
+              title={t('createWorkout.finishGroupTitle')}
             >
               ✓
             </button>
@@ -95,7 +117,7 @@ export default function ExercisesList({
         
         return (
           <div key={day.key} className={styles.dayExercisesSection}>
-            <h4 className={styles.daySectionTitle}>{day.label}</h4>
+            <h4 className={styles.daySectionTitle}>{t(`days.${day.key}`)}</h4>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -126,7 +148,7 @@ export default function ExercisesList({
       })}
       
       {!hasAnyExercises && groupDraft.length === 0 && (
-        <p className={styles.infoMessage}>Нет упражнений. Кликните на упражнение справа для добавления</p>
+        <p className={styles.infoMessage}>{t('createWorkout.noExercisesHint')}</p>
       )}
     </div>
   );

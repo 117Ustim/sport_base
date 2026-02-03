@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { clientsService, authService } from '../../firebase/services';
-import { migrateClients } from '../../firebase/migrateClients';
 import { EMPTY_CLIENT } from '../../constants';
+// import { useLanguage } from '../../contexts/LanguageContext'; // Удаляем старый контекст
+import { useTranslation } from 'react-i18next'; // Добавляем новый хук
 import TemporaryDrawer from '../Drawer';
 import ManageGyms from './ManageGyms';
+import LanguageSelector from './LanguageSelector';
 import AddClient from '../AddClient';
+import BackButton from '../BackButton';
 import styles from './Settings.module.scss';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { t } = useTranslation(); // Используем хук useTranslation
   const [openDrawer, setOpenDrawer] = useState({ right: false });
   const [drawerContent, setDrawerContent] = useState('gyms');
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
-  const [migrationStatus, setMigrationStatus] = useState('');
 
   const onBackClick = () => {
     navigate('/');
@@ -38,6 +41,11 @@ export default function Settings() {
     setOpenDrawer({ right: true });
   };
 
+  const onLanguageClick = () => {
+    setDrawerContent('language');
+    setOpenDrawer({ right: true });
+  };
+
   const onAddClientClick = () => {
     setContacts(EMPTY_CLIENT);
     setDrawerContent('client');
@@ -50,15 +58,6 @@ export default function Settings() {
 
   const onManageClientsClick = () => {
     navigate('/manage-clients');
-  };
-  
-  const onMigrateClientsClick = async () => {
-    if (window.confirm('Вы уверены, что хотите обновить структуру данных клиентов? Это безопасная операция, но рекомендуется сделать резервную копию.')) {
-      setMigrationStatus('Выполняется миграция...');
-      const result = await migrateClients();
-      setMigrationStatus(result.message);
-      setTimeout(() => setMigrationStatus(''), 5000);
-    }
   };
 
   const onChange = (event) => {
@@ -83,39 +82,32 @@ export default function Settings() {
   const menuItems = [
     {
       icon: '🏢',
-      title: 'Управління залами',
-      description: 'Додавайте та редагуйте зали',
+      title: t('settings.manageGyms'),
+      description: t('settings.manageGymsDesc'),
       onClick: onManageGymsClick
     },
     {
       icon: '👥',
-      title: 'Управління клієнтами',
-      description: 'Перегляд та редагування клієнтів',
+      title: t('settings.manageClients'),
+      description: t('settings.manageClientsDesc'),
       onClick: onManageClientsClick
     },
     {
-      icon: '➕',
-      title: 'Додати клієнта',
-      description: 'Створити нового клієнта',
-      onClick: onAddClientClick
-    },
-    {
       icon: '💪',
-      title: 'Додати вправу',
-      description: 'Створити нову вправу',
+      title: t('settings.addExercise'),
+      description: t('settings.addExerciseDesc'),
       onClick: onAddExerciseClick
     },
     {
-      icon: '🔄',
-      title: 'Оновити структуру даних',
-      description: 'Синхронізація з мобільною версією',
-      onClick: onMigrateClientsClick,
-      warning: true
+      icon: '🌐',
+      title: t('settings.language'),
+      description: t('settings.languageDesc'),
+      onClick: onLanguageClick
     },
     {
       icon: '🚪',
-      title: 'Вихід',
-      description: 'Вийти з облікового запису',
+      title: t('settings.logout'),
+      description: t('settings.logoutDesc'),
       onClick: onLogoutClick,
       danger: true
     }
@@ -124,23 +116,15 @@ export default function Settings() {
   return (
     <div className={styles.settings}>
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBackClick}>
-          <span className={styles.backIcon}>←</span>
-        </button>
-        <h1 className={styles.title}>Главная</h1>
+        <BackButton onClick={onBackClick} />
+        <h1 className={styles.pageTitle}>{t('settings.title')}</h1>
       </div>
 
       <div className={styles.content}>
-        {migrationStatus && (
-          <div className={styles.migrationStatus}>
-            {migrationStatus}
-          </div>
-        )}
-        
         {menuItems.map((item, index) => (
           <div 
             key={index}
-            className={`${styles.card} ${item.danger ? styles.cardDanger : ''} ${item.warning ? styles.cardWarning : ''}`}
+            className={`${styles.card} ${item.danger ? styles.cardDanger : ''}`}
             onClick={item.onClick}
           >
             <div className={styles.cardIcon}>{item.icon}</div>
@@ -156,6 +140,8 @@ export default function Settings() {
       <TemporaryDrawer openDrawer={openDrawer} toggleDrawer={toggleDrawer}>
         {drawerContent === 'gyms' ? (
           <ManageGyms onClose={toggleDrawer('right', false)} />
+        ) : drawerContent === 'language' ? (
+          <LanguageSelector onClose={toggleDrawer('right', false)} />
         ) : (
           <AddClient
             onChange={onChange}

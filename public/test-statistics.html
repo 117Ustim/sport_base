@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест статистики</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #666;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #1976D2;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .stat-card {
+      background: #f0f7ff;
+      padding: 15px;
+      border-radius: 4px;
+      border-left: 4px solid #2196F3;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+    }
+    select, input {
+      padding: 8px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Тест статистики</h1>
+    
+    <div>
+      <label>Выберите зал:</label>
+      <select id="gymSelect">
+        <option value="">Загрузка...</option>
+      </select>
+      
+      <label>Дата:</label>
+      <input type="date" id="dateInput" />
+    </div>
+
+    <h2>Тесты:</h2>
+    <button onclick="testDailyStats()">Статистика за день</button>
+    <button onclick="testCurrentMonth()">Текущий месяц</button>
+    <button onclick="testRecentStats()">Последние 30 дней</button>
+    <button onclick="testAggregated()">Агрегированная статистика</button>
+    <button onclick="testAllGyms()">Все залы за день</button>
+    <button onclick="testTopClients()">Топ клиентов</button>
+
+    <div id="result" class="result" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, getDocs, doc, getDoc, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwS75y3d4T5xPtNYSkh0L2KPKlq-N4Wf4",
+      authDomain: "calendar-new-599f8.firebaseapp.com",
+      projectId: "calendar-new-599f8",
+      storageBucket: "calendar-new-599f8.firebasestorage.app",
+      messagingSenderId: "810978067130",
+      appId: "1:810978067130:web:195217eefa0c9f269eb883",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Загрузка залов
+    async function loadGyms() {
+      try {
+        const gymsRef = collection(db, 'gyms');
+        const snapshot = await getDocs(gymsRef);
+        
+        const select = document.getElementById('gymSelect');
+        select.innerHTML = '';
+        
+        snapshot.docs.forEach(doc => {
+          const option = document.createElement('option');
+          option.value = doc.id;
+          option.textContent = doc.data().name;
+          select.appendChild(option);
+        });
+        
+        if (snapshot.docs.length > 0) {
+          select.selectedIndex = 0;
+        }
+      } catch (error) {
+        console.error('Error loading gyms:', error);
+      }
+    }
+
+    // Установка текущей даты
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateInput').value = today;
+
+    // Авторизация и загрузка залов
+    async function init() {
+      try {
+        if (!auth.currentUser) {
+          const email = prompt('Введите email админа:');
+          const password = prompt('Введите пароль:');
+          
+          if (email && password) {
+            await signInWithEmailAndPassword(auth, email, password);
+          }
+        }
+        
+        await loadGyms();
+      } catch (error) {
+        showError('Ошибка инициализации: ' + error.message);
+      }
+    }
+
+    function showResult(data) {
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function showError(message) {
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function getGymId() {
+      return document.getElementById('gymSelect').value;
+    }
+
+    function getDate() {
+      return document.getElementById('dateInput').value;
+    }
+
+    // Тест 1: Статистика за день
+    window.testDailyStats = async function() {
+      try {
+        const gymId = getGymId();
+        const date = getDate();
+        
+        const statsRef = doc(db, 'statistics', gymId, 'daily', date);
+        const snapshot = await getDoc(statsRef);
+        
+        if (snapshot.exists()) {
+          showResult({
+            test: 'Статистика за день',
+            gymId,
+            date,
+            data: snapshot.data()
+          });
+        } else {
+          showResult({
+            test: 'Статистика за день',
+            gymId,
+            date,
+            message: 'Нет данных за этот день'
+          });
+        }
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // Тест 2: Текущий месяц
+    window.testCurrentMonth = async function() {
+      try {
+        const gymId = getGymId();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        
+        const startDate = `${year}-${month}-01`;
+        const endDate = `${year}-${month}-31`;
+        
+        const dailyRef = collection(db, 'statistics', gymId, 'daily');
+        const q = query(
+          dailyRef,
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'asc')
+        );
+        
+        const snapshot = await getDocs(q);
+        const stats = snapshot.docs.map(doc => doc.data());
+        
+        showResult({
+          test: 'Текущий месяц',
+          gymId,
+          period: `${startDate} - ${endDate}`,
+          count: stats.length,
+          data: stats
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // Тест 3: Последние 30 дней
+    window.testRecentStats = async function() {
+      try {
+        const gymId = getGymId();
+        
+        const dailyRef = collection(db, 'statistics', gymId, 'daily');
+        const q = query(
+          dailyRef,
+          orderBy('date', 'desc'),
+          limit(30)
+        );
+        
+        const snapshot = await getDocs(q);
+        const stats = snapshot.docs.map(doc => doc.data()).reverse();
+        
+        showResult({
+          test: 'Последние 30 дней',
+          gymId,
+          count: stats.length,
+          data: stats
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // Тест 4: Агрегированная статистика
+    window.testAggregated = async function() {
+      try {
+        const gymId = getGymId();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        
+        const startDate = `${year}-${month}-01`;
+        const endDate = `${year}-${month}-31`;
+        
+        const dailyRef = collection(db, 'statistics', gymId, 'daily');
+        const q = query(
+          dailyRef,
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'asc')
+        );
+        
+        const snapshot = await getDocs(q);
+        const stats = snapshot.docs.map(doc => doc.data());
+        
+        const aggregated = stats.reduce((acc, day) => {
+          acc.totalClients += day.trainedTotal || 0;
+          acc.totalRevenue += day.trainedTotalCost || 0;
+          acc.totalPersonal += day.trainedPersonal || 0;
+          acc.totalOther += day.trainedOther || 0;
+          return acc;
+        }, {
+          totalDays: stats.length,
+          totalClients: 0,
+          totalRevenue: 0,
+          totalPersonal: 0,
+          totalOther: 0
+        });
+        
+        aggregated.averageClientsPerDay = Math.round(aggregated.totalClients / aggregated.totalDays);
+        aggregated.averageRevenuePerDay = Math.round(aggregated.totalRevenue / aggregated.totalDays);
+        
+        showResult({
+          test: 'Агрегированная статистика',
+          gymId,
+          period: `${startDate} - ${endDate}`,
+          data: aggregated
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // Тест 5: Все залы за день
+    window.testAllGyms = async function() {
+      try {
+        const date = getDate();
+        
+        const gymsRef = collection(db, 'gyms');
+        const gymsSnapshot = await getDocs(gymsRef);
+        
+        const allStats = [];
+        
+        for (const gymDoc of gymsSnapshot.docs) {
+          const gymId = gymDoc.id;
+          const statsRef = doc(db, 'statistics', gymId, 'daily', date);
+          const statsSnap = await getDoc(statsRef);
+          
+          if (statsSnap.exists()) {
+            allStats.push(statsSnap.data());
+          } else {
+            allStats.push({
+              gymId,
+              gymName: gymDoc.data().name,
+              date,
+              trainedTotal: 0,
+              trainedTotalCost: 0,
+              message: 'Нет данных'
+            });
+          }
+        }
+        
+        showResult({
+          test: 'Все залы за день',
+          date,
+          data: allStats
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    // Тест 6: Топ клиентов
+    window.testTopClients = async function() {
+      try {
+        const gymId = getGymId();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        
+        const startDate = `${year}-${month}-01`;
+        const endDate = `${year}-${month}-31`;
+        
+        const dailyRef = collection(db, 'statistics', gymId, 'daily');
+        const q = query(
+          dailyRef,
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'asc')
+        );
+        
+        const snapshot = await getDocs(q);
+        const stats = snapshot.docs.map(doc => doc.data());
+        
+        const clientsMap = new Map();
+        
+        stats.forEach(day => {
+          if (day.clients && Array.isArray(day.clients)) {
+            day.clients.forEach(client => {
+              const existing = clientsMap.get(client.clientId) || {
+                clientId: client.clientId,
+                name: client.name,
+                visits: 0,
+                totalCost: 0
+              };
+              
+              existing.visits += 1;
+              existing.totalCost += client.cost || 0;
+              
+              clientsMap.set(client.clientId, existing);
+            });
+          }
+        });
+        
+        const topClients = Array.from(clientsMap.values())
+          .sort((a, b) => b.visits - a.visits)
+          .slice(0, 10);
+        
+        showResult({
+          test: 'Топ 10 клиентов',
+          gymId,
+          period: `${startDate} - ${endDate}`,
+          data: topClients
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+
+    init();
+  </script>
+</body>
+</html>

@@ -204,12 +204,17 @@ export const workoutsService = {
       // Преобразуем в строку, так как ID в Firebase всегда строки
       const idString = String(workoutId);
       
-      console.log('Deleting workout with ID:', idString);
+      // ✅ Заменено на console.warn для отладки в production
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Deleting workout with ID:', idString);
+      }
       
       const workoutRef = doc(db, 'workouts', idString);
       await deleteDoc(workoutRef);
       
-      console.log('Workout deleted successfully:', idString);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Workout deleted successfully:', idString);
+      }
       
       return true;
     } catch (error) {

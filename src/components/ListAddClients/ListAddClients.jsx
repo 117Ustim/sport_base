@@ -2,11 +2,13 @@ import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
+import { useTranslation } from 'react-i18next';
 import { clientsService } from '../../firebase/services';
 import styles from './ListAddClients.module.scss';
 
 export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [serverContacts, setServerContacts] = useState([]);
   const [page, setPage] = useState(1);
@@ -29,9 +31,13 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
     if (sex) {
       searchParams.sex = sex;
     }
+
+    console.log('Search params being sent to clientsService:', searchParams);
+    console.log('Original search object:', search);
  
     if (!openDrawer.right) {
       clientsService.getAll(searchParams).then((response) => {
+        console.log('Response from clientsService:', response);
         setServerContacts(response.data);
         setPageQty(Math.ceil(response.total / limit));
       });
@@ -62,7 +68,7 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
                     </div>
 
                     <div className={styles.gym}>
-                      <span>{contact.data?.gym || 'Не вказано'}</span>
+                      <span>{contact.data?.gym || t('common.notSpecified')}</span>
                     </div>
                     
                     <button
@@ -74,7 +80,7 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
                           contact.data?.name || ''
                         )
                       }>
-                      План
+                      {t('common.plan')}
                     </button>
                   </div>
                 </div>

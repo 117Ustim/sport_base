@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { gymsService } from '../../firebase/services';
 import styles from './ManageGyms.module.scss';
 
 export default function ManageGyms({ onClose }) {
+  const { t } = useTranslation();
   const [gyms, setGyms] = useState([]);
   const [gymName, setGymName] = useState('');
   const [editingGym, setEditingGym] = useState(null);
@@ -17,7 +19,7 @@ export default function ManageGyms({ onClose }) {
         setGyms(data);
       })
       .catch((error) => {
-        console.error('Помилка завантаження залів:', error);
+        console.error('Error loading gyms:', error);
       });
   };
 
@@ -32,7 +34,7 @@ export default function ManageGyms({ onClose }) {
           setEditingGym(null);
         })
         .catch((error) => {
-          console.error('Помилка редагування залу:', error);
+          console.error('Error editing gym:', error);
         });
     } else {
       gymsService.create(gymName)
@@ -41,7 +43,7 @@ export default function ManageGyms({ onClose }) {
           setGymName('');
         })
         .catch((error) => {
-          console.error('Помилка додавання залу:', error);
+          console.error('Error adding gym:', error);
         });
     }
   };
@@ -52,13 +54,13 @@ export default function ManageGyms({ onClose }) {
   };
 
   const onDeleteGym = (id) => {
-    if (window.confirm('Ви впевнені, що хочете видалити цей зал?')) {
+    if (window.confirm(t('dialogs.confirmDeleteGym'))) {
       gymsService.delete(id)
         .then(() => {
           loadGyms();
         })
         .catch((error) => {
-          console.error('Помилка видалення залу:', error);
+          console.error('Error deleting gym:', error);
         });
     }
   };
@@ -71,14 +73,14 @@ export default function ManageGyms({ onClose }) {
   return (
     <div className={styles.manageGyms}>
       <div className={styles.header}>
-        <h2>Управління залами</h2>
+        <h2>{t('manageGyms.title')}</h2>
         <button className={styles.close} onClick={onClose}>✕</button>
       </div>
 
       <div className={styles.form}>
         <input
           type='text'
-          placeholder='Назва залу'
+          placeholder={t('manageGyms.gymName')}
           value={gymName}
           onChange={(e) => setGymName(e.target.value)}
           className={styles.input}
@@ -88,23 +90,23 @@ export default function ManageGyms({ onClose }) {
             className={`${styles.btn} ${styles.btnAdd}`} 
             onClick={onAddGym}
           >
-            {editingGym ? 'Зберегти' : 'Додати'}
+            {editingGym ? t('common.save') : t('common.add')}
           </button>
           {editingGym && (
             <button 
               className={`${styles.btn} ${styles.btnCancel}`} 
               onClick={onCancelEdit}
             >
-              Скасувати
+              {t('common.cancel')}
             </button>
           )}
         </div>
       </div>
 
       <div className={styles.list}>
-        <h3>Список залів</h3>
+        <h3>{t('manageGyms.gymList')}</h3>
         {gyms.length === 0 ? (
-          <p className={styles.empty}>Немає залів</p>
+          <p className={styles.empty}>{t('manageGyms.noGyms')}</p>
         ) : (
           gyms.map((gym) => (
             <div key={gym.id} className={styles.item}>
@@ -114,13 +116,13 @@ export default function ManageGyms({ onClose }) {
                   className={`${styles.btn} ${styles.btnEdit}`}
                   onClick={() => onEditGym(gym)}
                 >
-                  Редагувати
+                  {t('common.edit')}
                 </button>
                 <button 
                   className={`${styles.btn} ${styles.btnDelete}`}
                   onClick={() => onDeleteGym(gym.id)}
                 >
-                  Видалити
+                  {t('common.delete')}
                 </button>
               </div>
             </div>

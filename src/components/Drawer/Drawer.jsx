@@ -1,7 +1,6 @@
 import { Fragment } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
 
 export default function TemporaryDrawer({ openDrawer, toggleDrawer, children }) {
   return (
@@ -12,13 +11,23 @@ export default function TemporaryDrawer({ openDrawer, toggleDrawer, children }) 
             anchor={anchor}
             open={openDrawer[anchor]}
             onClose={toggleDrawer(anchor, false)}
+            PaperProps={{
+              sx: {
+                backgroundColor: 'transparent',
+                boxShadow: 'none',
+                overflow: 'visible'
+              }
+            }}
           >
             <Box
-              sx={{ width: 'auto' }}
+              sx={{ 
+                width: 'auto',
+                backgroundColor: 'transparent',
+                padding: '20px'
+              }}
               role='presentation'
             >
               {children}
-              <Divider />
             </Box>
           </Drawer>
         </Fragment>

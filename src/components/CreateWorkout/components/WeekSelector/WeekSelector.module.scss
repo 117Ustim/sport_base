@@ -4,9 +4,11 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 15px;
+    gap: 8px;
 
     .sidebarTitle {
       margin: 0;
+      flex: 1;
     }
   }
 }
@@ -15,6 +17,33 @@
   margin: 0 0 15px 0;
   color: #1976d2;
   font-size: 16px;
+}
+
+.deleteWeekIconButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: #d32f2f;
+  color: white;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+ text-shadow: none;
+  &:hover {
+    background-color: #b71c1c;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .addWeekIconButton {
@@ -33,6 +62,7 @@
   justify-content: center;
   transition: all 0.2s;
   line-height: 1;
+   text-shadow: none;
 
   &:hover {
     background-color: #e65100;
@@ -58,7 +88,9 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  text-shadow: none;
+ 
 
   &:hover {
     background-color: #e0e0e0;
@@ -67,6 +99,6 @@
   &.activeWeek {
     background-color: #f57c00;
     color: white;
-    font-weight: 400;
+    font-weight: 500;
   }
 }

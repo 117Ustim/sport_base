@@ -11,33 +11,45 @@
 }
 
 .button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
+  width: 120px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s;
-  background-color: #1976d2;
-  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.3);
+  backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 
   &:hover {
-    background-color: #1565c0;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(49, 130, 206, 0.4);
+    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
   }
 }
 
 .buttonBase {
   composes: button;
-  width: 10%;
 }
 
 .buttonAddExercises {
   composes: button;
-  width: 15%;
+  width: 200px; // Шире для длинного текста
 }
 
 .buttonBack {
   composes: button;
-  width: 15%;
+  width: auto;
+  min-width: 120px;
+  padding: 0 20px;
 }
 
 .workoutsGrid {
@@ -57,12 +69,14 @@
 }
 
 .workoutCard {
-  background-color: #f5f5f5;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border-radius: 20px;
   padding: 20px;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   min-height: 120px;
   display: flex;
@@ -70,9 +84,9 @@
   justify-content: center;
 
   &:hover {
-    background-color: #e8e8e8;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #34ce57 0%, #17a2b8 100%);
   }
 }
 
@@ -84,27 +98,33 @@
   height: 24px;
   padding: 0;
   border: none;
-  background-color: transparent;
-  color: #d32f2f;
-  font-size: 20px;
+  background-color: #ffffff;
+  color: #dc3545;
+  font-size: 16px;
+  font-weight: bold;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none;
 
   &:hover {
-    background-color: rgba(211, 47, 47, 0.1);
+    background-color: #f8f9fa;
+    color: #c82333;
+    transform: scale(1.1);
+    box-shadow: none;
   }
 }
 
 .workoutCardTitle {
   margin: 0;
   font-size: 24px;
-  color: #1976d2;
+  color: #ffffff;
   font-weight: 600;
   text-align: center;
   padding: 0 30px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }

@@ -107,7 +107,10 @@ export const authService = {
         };
         
         await setDoc(doc(db, USERS_COLLECTION, userId), userData);
-        console.log('Main admin record created');
+        // ✅ Заменено на console.warn
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Main admin record created');
+        }
       }
     } catch (error) {
       console.error('Error ensuring admin exists:', error);

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { categoriesService, clientBaseService } from '../../firebase/services';
 import { useConfirmDialog, useNotification, useSaveManager } from '../../hooks';
 import ConfirmDialog from '../ConfirmDialog';
 import Notification from '../Notification';
+import CustomSelect from '../CustomSelect';
+import BackButton from '../BackButton';
 import styles from './EditClientExercises.module.scss';
 import {
   DndContext,
@@ -24,6 +27,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Компонент для перетаскиваемого упражнения
 function SortableExerciseItem({ exercise, deleteExercise }) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -70,7 +74,7 @@ function SortableExerciseItem({ exercise, deleteExercise }) {
                 type="button"
                 style={{ pointerEvents: 'auto', zIndex: 10, position: 'relative' }}
               >
-                <span>Del</span>
+                <span>{t('common.delete')}</span>
               </button>
             </h5>
           </li>
@@ -83,6 +87,7 @@ function SortableExerciseItem({ exercise, deleteExercise }) {
 export default function EditClientExercises() {
   const params = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState([]);
   const [clientExercises, setClientExercises] = useState([]);
@@ -176,7 +181,7 @@ export default function EditClientExercises() {
 
   const addExerciseToClient = () => {
     if (!exercise.categoryId || !exercise.name) {
-      showNotification('Будь ласка, заповніть всі поля: Категорія та Вправа', 'error');
+      showNotification(t('editExercises.fillAllFields'), 'error');
       return;
     }
 
@@ -185,7 +190,7 @@ export default function EditClientExercises() {
     );
 
     if (alreadyExists) {
-      showNotification('Ця вправа вже додана', 'error');
+      showNotification(t('editExercises.alreadyExists'), 'error');
       return;
     }
 
@@ -200,12 +205,12 @@ export default function EditClientExercises() {
     setClientExercises([...clientExercises, newExercise]);
     saveManager.addNewItem(newExercise);
     setExercise({ categoryId: '', name: '' });
-    showNotification('Вправу додано. Натисніть "Зберегти" для збереження', 'info');
+    showNotification(t('editExercises.addedHint'), 'info');
   };
 
   const deleteExercise = (exerciseId, exerciseName) => {
     showConfirm(
-      `Ви впевнені, що хочете видалити вправу "${exerciseName}"?`,
+      t('editExercises.confirmDelete', { name: exerciseName }),
       async () => {
         try {
           // Проверяем, это новое упражнение (еще не сохранено на сервере)?
@@ -224,7 +229,7 @@ export default function EditClientExercises() {
           }
         } catch (error) {
           console.error('Error deleting exercise:', error);
-          showNotification('Помилка видалення вправи: ' + error.message, 'error');
+          showNotification(t('editExercises.deleteError', { error: error.message }), 'error');
         }
       }
     );
@@ -261,51 +266,46 @@ export default function EditClientExercises() {
       />
       
       <div className={styles.buttonBack}>
-        <button className='red' type='button' onClick={onButtonBack}>
-          <i className='icon ion-md-lock'></i>Назад
-        </button>
+        <BackButton onClick={onButtonBack} />
         
-        <button
-          className={`red ${styles.saveButton} ${!saveManager.hasUnsavedChanges ? styles.saveButtonDisabled : ''}`}
-          type='button'
-          onClick={saveManager.saveChanges}
-          disabled={!saveManager.hasUnsavedChanges || saveManager.isSaving}>
-          <i className='icon ion-md-checkmark'></i>
-          {saveManager.isSaving ? 'Збереження...' : 'Зберегти'}
-        </button>
+        <div className={styles.rightButtons}>
+          <button
+            className={`${styles.saveButton} ${!saveManager.hasUnsavedChanges ? styles.saveButtonDisabled : styles.saveButtonActive}`}
+            type='button'
+            onClick={saveManager.saveChanges}
+            disabled={!saveManager.hasUnsavedChanges || saveManager.isSaving}>
+            {saveManager.isSaving ? t('editExercises.saving') : t('common.save')}
+          </button>
+        </div>
       </div>
 
       <div className='_container'>
         <div className={styles.blockCategory}>
           <div className={styles.category}>
-            <select
-              name='categoryId'
+            <CustomSelect
+              name="categoryId"
+              options={categories.map(c => ({ value: c.id, label: c.name }))}
               value={exercise?.categoryId || ''}
               onChange={onChange}
-            >
-              <option className='select'>Категорiя</option>
-              {categories.map((c) => {
-                return (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                );
-              })}
-            </select>
+              placeholder={t('editExercises.categoryPlaceholder')}
+            />
           </div>
 
           <div className={styles.exercise}>
             <input
               name='name'
-              placeholder='Вправа'
+              placeholder={t('editExercises.exercisePlaceholder')}
               value={exercise?.name || ''}
               onChange={onChange}
             />
           </div>
 
           <div className={styles.button}>
-            <button className='red' type='button' onClick={addExerciseToClient}>
-              <i className='icon ion-md-lock'></i>Додати
+            <button
+              className='red'
+              type='button'
+              onClick={addExerciseToClient}>
+              <i className='icon ion-md-lock'></i>{t('common.add')}
             </button>
           </div>
         </div>
@@ -321,7 +321,7 @@ export default function EditClientExercises() {
 
               return (
                 <div key={category.id} className={styles.textCategory}>
-                  <h4>Категория {category.name}</h4>
+                  <h4>{t('editExercises.categoryTitle', { name: category.name })}</h4>
                   <div className={styles.blockTextExercises}>
                     <DndContext
                       sensors={sensors}

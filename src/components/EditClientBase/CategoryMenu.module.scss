@@ -10,101 +10,159 @@
 
 .menu {
   position: fixed;
-  top: 60px;
-  right: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  padding: 24px;
+  height: auto;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  border-radius: 25px;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  min-width: 300px;
-  max-width: 400px;
+  width: 450px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .menuHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 30px;
 
   h3 {
+    font-size: 24px;
+    color: #000000;
     margin: 0;
-    font-size: 16px;
-    color: #333;
+    font-weight: 500;
   }
 }
 
 .closeButton {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #999;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 20px;
+  color: #495057;
   cursor: pointer;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s;
-
+  border-radius: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  
   &:hover {
-    color: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    color: #000000;
   }
 }
 
 .menuContent {
-  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .menuSection {
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
 
   &:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 }
 
 .menuButton {
   width: 100%;
+  padding: 12px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
-  transition: background 0.2s;
-  text-align: left;
+  margin-bottom: 15px;
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
+  flex-shrink: 0;
 
   &:hover {
-    background: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4);
+    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+  }
+
+  &.deleteMenuButton {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+      background: linear-gradient(135deg, #e85563 0%, #d42c3c 100%);
+    }
   }
 
   .icon {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
-    color: #1976d2;
+    color: #ffffff;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 }
 
 .addForm {
-  padding: 15px 20px;
-  background: #f9f9f9;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
 
   input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-bottom: 10px;
-
+    padding: 16px 20px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 25px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    display: block;
+    
     &:focus {
       outline: none;
-      border-color: #1976d2;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    &::placeholder {
+      color: #6c757d;
     }
   }
 }
@@ -116,88 +174,218 @@
 
 .saveButton,
 .cancelButton {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 12px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .saveButton {
-  background: #1976d2;
-  color: white;
-
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: #ffffff;
+  
   &:hover:not(:disabled) {
-    background: #1565c0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    background: linear-gradient(135deg, #43a047 0%, #388e3c 100%);
   }
 
   &:disabled {
-    background: #ccc;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
 .cancelButton {
-  background: #f5f5f5;
-  color: #666;
-
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: #ffffff;
+  
   &:hover {
-    background: #e0e0e0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    background: linear-gradient(135deg, #7c8690 0%, #5a6268 100%);
   }
 }
 
 .deleteList {
-  padding: 10px 20px;
-  background: #f9f9f9;
-  max-height: 300px;
   overflow-y: auto;
+  max-height: 400px;
+  
+  h4 {
+    font-size: 18px;
+    color: #000000;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-shadow: none;
+  }
+}
+
+.editList {
+  overflow-y: auto;
+  max-height: 400px;
+  
+  h4 {
+    font-size: 18px;
+    color: #000000;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-shadow: none;
+  }
 }
 
 .categoryItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  margin-bottom: 8px;
-
-  &:last-child {
-    margin-bottom: 0;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  
+  &:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    border-color: rgba(0, 0, 0, 0.2);
   }
 
   span {
-    font-size: 14px;
-    color: #333;
+    font-size: 14px !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    flex: 1;
+    text-shadow: none !important;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+    min-width: 0;
   }
 }
 
 .deleteButton {
-  background: #f44336;
-  color: white;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: #ffffff;
   border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   cursor: pointer;
-  font-size: 18px;
-  transition: background 0.2s;
-
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+  width: auto;
+  min-width: auto;
+  max-width: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+  
   &:hover {
-    background: #d32f2f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    background: linear-gradient(135deg, #e85563 0%, #d42c3c 100%);
   }
+}
+
+.editButton {
+  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(49, 130, 206, 0.3);
+  width: auto;
+  min-width: auto;
+  max-width: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
+    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+  }
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+}
+
+.editInput {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  &::placeholder {
+    color: #6c757d;
+  }
+}
+
+.editButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .emptyMessage {
   text-align: center;
-  color: #999;
+  color: #6c757d;
   font-size: 14px;
-  padding: 20px 0;
+  font-style: italic;
+  padding: 30px 20px;
   margin: 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15px;
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+
+  p {
+    margin: 5px 0;
+    
+    &:first-child {
+      font-weight: 500;
+      color: #495057;
+    }
+  }
 }

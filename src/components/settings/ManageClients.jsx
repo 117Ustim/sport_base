@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { clientsService, gymsService } from '../../firebase/services';
 import { useConfirmDialog } from '../../hooks';
+import { EMPTY_CLIENT } from '../../constants';
 import ConfirmDialog from '../ConfirmDialog';
+import BackButton from '../BackButton';
 import styles from './ManageClients.module.scss';
 
 export default function ManageClients() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [gyms, setGyms] = useState([]);
   const [searchName, setSearchName] = useState('');
   const [editingClient, setEditingClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
@@ -31,7 +36,7 @@ export default function ManageClients() {
         setClients(clientsData);
       })
       .catch((error) => {
-        console.error('Помилка завантаження клієнтів:', error);
+        console.error('Error loading clients:', error);
         setClients([]);
       });
   };
@@ -42,7 +47,7 @@ export default function ManageClients() {
         setGyms(data);
       })
       .catch((error) => {
-        console.error('Помилка завантаження залів:', error);
+        console.error('Error loading gyms:', error);
       });
   };
 
@@ -56,11 +61,10 @@ export default function ManageClients() {
       });
     }
 
-    // Сортируем по фамилии в алфавитном порядке
     filtered.sort((a, b) => {
       const surnameA = (a.data?.surname || '').toLowerCase();
       const surnameB = (b.data?.surname || '').toLowerCase();
-      return surnameA.localeCompare(surnameB, 'uk'); // 'uk' для украинского алфавита
+      return surnameA.localeCompare(surnameB, 'uk');
     });
 
     setFilteredClients(filtered);
@@ -71,6 +75,16 @@ export default function ManageClients() {
       client.data = {};
     }
     setEditingClient({ ...client });
+    setIsAddingNew(false);
+    setShowModal(true);
+  };
+
+  const onAddNewClient = () => {
+    setEditingClient({ 
+      id: null, 
+      data: { ...EMPTY_CLIENT } 
+    });
+    setIsAddingNew(true);
     setShowModal(true);
   };
 
@@ -78,16 +92,16 @@ export default function ManageClients() {
     const clientToDelete = clients.find(c => c.id === id);
     const clientName = clientToDelete?.data 
       ? `${clientToDelete.data.surname || ''} ${clientToDelete.data.name || ''}`.trim()
-      : 'цього клієнта';
+      : 'client';
     
     showConfirm(
-      `Ви впевнені, що хочете видалити ${clientName}?`,
+      t('dialogs.confirmDeleteClient', { name: clientName }),
       async () => {
         try {
           await clientsService.delete(id);
           loadClients();
         } catch (error) {
-          console.error('Помилка видалення клієнта:', error);
+          console.error('Error deleting client:', error);
         }
       }
     );
@@ -96,15 +110,28 @@ export default function ManageClients() {
   const onSaveClient = () => {
     if (!editingClient) return;
 
-    clientsService.update(editingClient.id, editingClient.data)
-      .then(() => {
-        loadClients();
-        setShowModal(false);
-        setEditingClient(null);
-      })
-      .catch((error) => {
-        console.error('Помилка оновлення клієнта:', error);
-      });
+    if (isAddingNew) {
+      clientsService.create(editingClient.data)
+        .then(() => {
+          loadClients();
+          setShowModal(false);
+          setEditingClient(null);
+          setIsAddingNew(false);
+        })
+        .catch((error) => {
+          console.error('Error creating client:', error);
+        });
+    } else {
+      clientsService.update(editingClient.id, editingClient.data)
+        .then(() => {
+          loadClients();
+          setShowModal(false);
+          setEditingClient(null);
+        })
+        .catch((error) => {
+          console.error('Error updating client:', error);
+        });
+    }
   };
 
   const onModalChange = (field, value) => {
@@ -131,16 +158,19 @@ export default function ManageClients() {
       />
       
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBackClick}>
-          <span className={styles.backIcon}>←</span>
+        <div className={styles.headerLeft}>
+          <BackButton onClick={onBackClick} />
+          <h1 className={styles.pageTitle}>{t('manageClients.title')}</h1>
+        </div>
+        <button className={styles.addBtn} onClick={onAddNewClient} title={t('manageClients.addClient')}>
+          <span className={styles.addIcon}>+</span>
         </button>
-        <h1 className={styles.title}>Клієнти</h1>
       </div>
 
       <div className={styles.searchContainer}>
         <input
           type='text'
-          placeholder='Пошук по імені'
+          placeholder={t('manageClients.searchPlaceholder')}
           value={searchName}
           onChange={(e) => setSearchName(e.target.value)}
           className={styles.search}
@@ -149,7 +179,7 @@ export default function ManageClients() {
 
       <div className={styles.list}>
         {filteredClients.length === 0 ? (
-          <p className={styles.empty}>Клієнтів не знайдено</p>
+          <p className={styles.empty}>{t('manageClients.noClients')}</p>
         ) : (
           filteredClients.map((client) => (
             <div 
@@ -162,7 +192,7 @@ export default function ManageClients() {
                   {client.data?.surname || ''} {client.data?.name || ''}
                 </div>
                 <div className={styles.itemGym}>
-                  {client.data?.gym || 'Не вказано'}
+                  {client.data?.gym || t('manageClients.notSpecified')}
                 </div>
               </div>
             </div>
@@ -174,7 +204,7 @@ export default function ManageClients() {
         <div className={styles.modal} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2>Редагувати клієнта</h2>
+              <h2>{isAddingNew ? t('manageClients.addClient') : t('manageClients.editClient')}</h2>
               <button className={styles.close} onClick={() => setShowModal(false)}>
                 ✕
               </button>
@@ -182,21 +212,21 @@ export default function ManageClients() {
             <div className={styles.form}>
               <input
                 type='text'
-                placeholder='Прізвище'
+                placeholder={t('manageClients.surname')}
                 value={editingClient.data.surname || ''}
                 onChange={(e) => onModalChange('surname', e.target.value)}
                 className={styles.formInput}
               />
               <input
                 type='text'
-                placeholder="Ім'я"
+                placeholder={t('manageClients.name')}
                 value={editingClient.data.name || ''}
                 onChange={(e) => onModalChange('name', e.target.value)}
                 className={styles.formInput}
               />
               <input
                 type='text'
-                placeholder='Телефон'
+                placeholder={t('manageClients.phone')}
                 value={editingClient.data.phone || ''}
                 onChange={(e) => onModalChange('phone', e.target.value)}
                 className={styles.formInput}
@@ -206,16 +236,16 @@ export default function ManageClients() {
                 onChange={(e) => onModalChange('sex', e.target.value)}
                 className={styles.formInput}
               >
-                <option value=''>Стать</option>
-                <option value='Чоловiча'>Чоловіча</option>
-                <option value='Жiноча'>Жіноча</option>
+                <option value=''>{t('home.sex')}</option>
+                <option value='Чоловiча'>{t('home.male')}</option>
+                <option value='Жiноча'>{t('home.female')}</option>
               </select>
               <select
                 value={editingClient.data.gym || ''}
                 onChange={(e) => onModalChange('gym', e.target.value)}
                 className={styles.formInput}
               >
-                <option value=''>Зал</option>
+                <option value=''>{t('home.gym')}</option>
                 {gyms.map((gym) => (
                   <option key={gym.id} value={gym.name}>
                     {gym.name}
@@ -227,7 +257,7 @@ export default function ManageClients() {
                   className={`${styles.formBtn} ${styles.formBtnSave}`}
                   onClick={onSaveClient}
                 >
-                  Зберегти
+                  {t('common.save')}
                 </button>
                 <button
                   className={`${styles.formBtn} ${styles.formBtnDelete}`}
@@ -236,13 +266,13 @@ export default function ManageClients() {
                     onDeleteClient(editingClient.id);
                   }}
                 >
-                  Видалити
+                  {t('common.delete')}
                 </button>
                 <button
                   className={`${styles.formBtn} ${styles.formBtnCancel}`}
                   onClick={() => setShowModal(false)}
                 >
-                  Скасувати
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>

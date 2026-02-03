@@ -64,12 +64,17 @@ export function useSaveManager({ onSave, showNotification }) {
    * Сохранить все изменения
    */
   const saveChanges = async () => {
+    console.log('saveChanges called, hasUnsavedChanges:', hasUnsavedChanges);
+    console.log('newItems:', newItems);
+    
     if (!hasUnsavedChanges) {
+      console.log('No unsaved changes, returning early');
       return;
     }
 
     setIsSaving(true);
     try {
+      console.log('Calling onSave with newItems:', newItems);
       // Вызываем функцию сохранения из компонента
       await onSave(newItems);
       
@@ -80,6 +85,7 @@ export function useSaveManager({ onSave, showNotification }) {
       if (showNotification) {
         showNotification('Зміни успішно збережено', 'success');
       }
+      console.log('Save completed successfully');
     } catch (error) {
       console.error('Помилка збереження:', error);
       if (showNotification) {

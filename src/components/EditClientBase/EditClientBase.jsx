@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { categoriesService, exercisesService } from '../../firebase/services';
 import { useConfirmDialog, useNotification, useSaveManager } from '../../hooks';
 import ConfirmDialog from '../ConfirmDialog';
 import Notification from '../Notification';
 import CategoryMenu from './CategoryMenu';
+import CustomSelect from '../CustomSelect';
+import BackButton from '../BackButton';
 import styles from './EditClientBase.module.scss';
 import {
   DndContext,
@@ -25,6 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Компонент для перетаскиваемого упражнения
 function SortableExerciseItem({ exercise, deleteExercise }) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -71,7 +75,7 @@ function SortableExerciseItem({ exercise, deleteExercise }) {
                 type="button"
                 style={{ pointerEvents: 'auto', zIndex: 10, position: 'relative' }}
               >
-                <span>Del</span>
+                <span>{t('common.delete')}</span>
               </button>
             </h5>
           </li>
@@ -82,6 +86,7 @@ function SortableExerciseItem({ exercise, deleteExercise }) {
 }
 
 export default function EditClientBase() {
+  const { t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
@@ -95,25 +100,31 @@ export default function EditClientBase() {
   // Используем общий хук для управления сохранением
   const saveManager = useSaveManager({
     onSave: async (newItems) => {
-      // Сохраняем новые упражнения на сервер с порядком
-      for (let i = 0; i < newItems.length; i++) {
-        const exerciseData = newItems[i];
-        const { id, ...dataToSave } = exerciseData;
+      try {
+        // Сохраняем новые упражнения на сервер с порядком
+        for (let i = 0; i < newItems.length; i++) {
+          const exerciseData = newItems[i];
+          const { id, ...dataToSave } = exerciseData;
+          
+          // Находим индекс этого упражнения в общем списке
+          const indexInExercises = exercises.findIndex(ex => ex.id === exerciseData.id);
+          dataToSave.order = indexInExercises;
+          
+          await exercisesService.create(dataToSave);
+        }
         
-        // Находим индекс этого упражнения в общем списке
-        const indexInExercises = exercises.findIndex(ex => ex.id === exerciseData.id);
-        dataToSave.order = indexInExercises;
+        // Обновляем порядок ВСЕХ упражнений (включая старые)
+        await exercisesService.updateOrder(exercises);
         
-        await exercisesService.create(dataToSave);
+        // Обновляем список упражнений с сервера
+        const updatedExercises = await exercisesService.getAll();
+        setExercises(updatedExercises);
+        saveManager.setOriginalData(updatedExercises);
+        
+      } catch (error) {
+        console.error('Error in save process:', error);
+        throw error;
       }
-      
-      // Обновляем порядок ВСЕХ упражнений (включая старые)
-      await exercisesService.updateOrder(exercises);
-      
-      // Обновляем список упражнений с сервера
-      const updatedExercises = await exercisesService.getAll();
-      setExercises(updatedExercises);
-      saveManager.setOriginalData(updatedExercises);
     },
     showNotification
   });
@@ -150,16 +161,16 @@ export default function EditClientBase() {
 
   const buttonAddExercises = () => {
     if (!exercise.categoryId || !exercise.name || exercise.name.trim() === '') {
-      showNotification('Будь ласка, заповніть всі поля: Категорія та Вправа', 'error');
+      showNotification(t('editExercises.fillAllFields'), 'error');
       return;
     }
 
     const alreadyExists = exercises.some(
-      ex => ex.name.trim().toLowerCase() === exercise.name.trim().toLowerCase() && ex.categoryId === exercise.categoryId
+      ex => ex.name && ex.name.trim().toLowerCase() === exercise.name.trim().toLowerCase() && ex.categoryId === exercise.categoryId
     );
 
     if (alreadyExists) {
-      showNotification('Вправа з такою назвою вже існує в цій категорії', 'error');
+      showNotification(t('editBase.exerciseExists'), 'error');
       return;
     }
 
@@ -177,7 +188,7 @@ export default function EditClientBase() {
     setExercises([...exercises, exerciseData]);
     saveManager.addNewItem(exerciseData);
     setExercise({});
-    showNotification('Вправу додано. Натисніть "Зберегти" для збереження', 'info');
+    showNotification(t('editExercises.addedHint'), 'info');
   };
   
   const onChange = (event) => {
@@ -193,7 +204,7 @@ export default function EditClientBase() {
 
   const deleteExercise = (id, exerciseName) => {
     showConfirm(
-      `Ви впевнені, що хочете видалити вправу "${exerciseName}"?`,
+      t('editExercises.confirmDelete', { name: exerciseName }),
       async () => {
         try {
           // Проверяем, это новое упражнение (еще не сохранено на сервере)?
@@ -203,14 +214,21 @@ export default function EditClientBase() {
             // Удаляем локально
             setExercises(exercises.filter((exercise) => exercise.id !== id));
             saveManager.removeNewItem(id);
+            showNotification(t('editBase.exerciseDeleted'), 'success');
           } else {
             // Удаляем с сервера
             await exercisesService.delete(id);
-            setExercises(exercises.filter((exercise) => exercise.id !== id));
+            const updatedExercises = exercises.filter((exercise) => exercise.id !== id);
+            setExercises(updatedExercises);
+            
+            // Обновляем порядок оставшихся упражнений на сервере
+            await exercisesService.updateOrder(updatedExercises);
+            
+            showNotification(t('editBase.exerciseDeletedServer'), 'success');
           }
         } catch (error) {
           console.error('Error deleting exercise:', error);
-          showNotification('Помилка видалення вправи: ' + error.message, 'error');
+          showNotification(t('editExercises.deleteError', { error: error.message }), 'error');
         }
       }
     );
@@ -241,10 +259,10 @@ export default function EditClientBase() {
       await categoriesService.createCategory(categoryName);
       const updatedCategories = await categoriesService.getAll();
       setCategories(updatedCategories);
-      showNotification(`Категорію "${categoryName}" успішно додано`, 'success');
+      showNotification(t('editBase.categoryAdded', { name: categoryName }), 'success');
     } catch (error) {
       console.error('Error adding category:', error);
-      showNotification('Помилка додавання категорії', 'error');
+      showNotification(t('editBase.addCategoryError'), 'error');
     }
   };
 
@@ -254,17 +272,29 @@ export default function EditClientBase() {
       const categoryExercises = exercises.filter(ex => ex.categoryId === categoryId);
       
       if (categoryExercises.length > 0) {
-        showNotification('Неможливо видалити категорію з вправами. Спочатку видаліть всі вправи.', 'error');
+        showNotification(t('editBase.categoryNotEmpty'), 'error');
         return;
       }
 
       await categoriesService.deleteCategory(categoryId);
       const updatedCategories = await categoriesService.getAll();
       setCategories(updatedCategories);
-      showNotification('Категорію успішно видалено', 'success');
+      showNotification(t('editBase.categoryDeleted'), 'success');
     } catch (error) {
       console.error('Error deleting category:', error);
-      showNotification('Помилка видалення категорії', 'error');
+      showNotification(t('editBase.deleteCategoryError'), 'error');
+    }
+  };
+
+  const handleUpdateCategory = async (categoryId, newName) => {
+    try {
+      await categoriesService.updateCategory(categoryId, newName);
+      const updatedCategories = await categoriesService.getAll();
+      setCategories(updatedCategories);
+      showNotification(t('editBase.categoryUpdated', { name: newName }), 'success');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      showNotification(t('editBase.updateCategoryError'), 'error');
     }
   };
 
@@ -282,59 +312,50 @@ export default function EditClientBase() {
         categories={categories}
         onAddCategory={handleAddCategory}
         onDeleteCategory={handleDeleteCategory}
+        onUpdateCategory={handleUpdateCategory}
         isOpen={isCategoryMenuOpen}
         onClose={() => setIsCategoryMenuOpen(false)}
       />
       
       <div className={styles.buttonBack}>
-        <button
-          className='red'
-          type='button'
-          onClick={onButtonBackClient}>
-          <i className='icon ion-md-lock'></i>Назад
-        </button>
+        <BackButton onClick={onButtonBackClient} />
         
-        <button
-          className={`red ${styles.saveButton} ${!saveManager.hasUnsavedChanges ? styles.saveButtonDisabled : ''}`}
-          type='button'
-          onClick={saveManager.saveChanges}
-          disabled={!saveManager.hasUnsavedChanges || saveManager.isSaving}>
-          <i className='icon ion-md-checkmark'></i>
-          {saveManager.isSaving ? 'Збереження...' : 'Зберегти'}
-        </button>
+        <div className={styles.rightButtons}>
+          <button
+            className={`${styles.saveButton} ${!saveManager.hasUnsavedChanges ? styles.saveButtonDisabled : styles.saveButtonActive}`}
+            type='button'
+            onClick={saveManager.saveChanges}
+            disabled={!saveManager.hasUnsavedChanges || saveManager.isSaving}>
+            {saveManager.isSaving ? t('editExercises.saving') : t('common.save')}
+          </button>
 
-        <button
-          className={styles.categoryMenuButton}
-          type='button'
-          onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
-          title="Керування категоріями"
-        >
-          ⚙️
-        </button>
+          <button
+            className={styles.categoryMenuButton}
+            type='button'
+            onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
+            title={t('editBase.manageCategories')}
+          >
+            {t('editBase.categoriesBtn')}
+          </button>
+        </div>
       </div>
 
       <div className='_container'>
         <div className={styles.blockCategory}>
           <div className={styles.category}>
-            <select
-              name='categoryId'
+            <CustomSelect
+              name="categoryId"
+              options={categories.map(c => ({ value: c.id, label: c.name }))}
               value={exercise?.categoryId || ''}
-              onChange={onChange}>
-              <option className='select'>Категорiя</option>
-              {categories.map((c) => {
-                return (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                );
-              })}
-            </select>
+              onChange={onChange}
+              placeholder={t('editExercises.categoryPlaceholder')}
+            />
           </div>
 
           <div className={styles.exercise}>
             <input
               name='name'
-              placeholder='Вправа'
+              placeholder={t('editExercises.exercisePlaceholder')}
               value={exercise?.name || ''}
               onChange={onChange}
             />
@@ -345,7 +366,7 @@ export default function EditClientBase() {
               className='red'
               type='button'
               onClick={buttonAddExercises}>
-              <i className='icon ion-md-lock'></i>Додати
+              <i className='icon ion-md-lock'></i>{t('common.add')}
             </button>
           </div>
         </div>
@@ -357,7 +378,7 @@ export default function EditClientBase() {
               
               return (
                 <div className={styles.textCategory} key={category.id}>
-                  <h4>Категория {category.name}</h4>
+                  <h4>{t('editExercises.categoryTitle', { name: category.name })}</h4>
                   <div className={styles.blockTextExercises}>
                     <DndContext
                       sensors={sensors}

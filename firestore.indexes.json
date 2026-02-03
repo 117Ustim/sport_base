@@ -1,6 +1,94 @@
 {
   "indexes": [
     {
+      "collectionGroup": "clients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "profile.gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "profile.surname",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "clients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "profile.gymName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "profile.surname",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "clients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "profile.sex",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "profile.surname",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "clients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "profile.gymName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "profile.sex",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "profile.surname",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "workouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clientId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignedWorkouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assignedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "workoutHistory",
       "queryScope": "COLLECTION",
       "fields": [

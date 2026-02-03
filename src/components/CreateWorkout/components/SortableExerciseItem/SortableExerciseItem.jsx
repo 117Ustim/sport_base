@@ -1,10 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useTranslation } from 'react-i18next';
 import CustomSelect from '../CustomSelect';
 import { TIME_OPTIONS, SETS_OPTIONS, REPS_OPTIONS } from '../../constants';
 import styles from './SortableExerciseItem.module.scss';
 
 export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate, onRemove, onConfirm, getWeightForReps, isInDraft }) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -31,7 +33,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
         className={`${styles.exerciseRow} ${styles.groupRow} ${isDragging ? styles.dragging : ''}`}
       >
         <div className={styles.exerciseContent}>
-          <span className={styles.dragHandle} {...attributes} {...listeners} title="Перетащите для изменения порядка">
+          <span className={styles.dragHandle} {...attributes} {...listeners} title={t('createWorkout.dragToReorder')}>
             ⋮⋮
           </span>
           <span className={styles.exerciseIndex}>{index + 1}.</span>
@@ -46,7 +48,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
                   
                   {isAerobic ? (
                     <span className={styles.exerciseParams}>
-                      {ex.duration || 30} хв
+                      {ex.duration || 30} {t('createWorkout.minutes')}
                     </span>
                   ) : (
                     <span className={styles.exerciseParams}>
@@ -65,7 +67,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
           <button
             className={styles.deleteExerciseButton}
             onClick={() => onRemove(exercise.id, dayKey)}
-            title="Удалить группу"
+            title={t('createWorkout.deleteGroup')}
           >
             ×
           </button>
@@ -84,7 +86,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
       className={`${styles.exerciseRow} ${isDragging ? styles.dragging : ''}`}
     >
       <div className={styles.exerciseContent}>
-        <span className={styles.dragHandle} {...attributes} {...listeners} title="Перетащите для изменения порядка">
+        <span className={styles.dragHandle} {...attributes} {...listeners} title={t('createWorkout.dragToReorder')}>
           ⋮⋮
         </span>
         <span className={styles.exerciseIndex}>{index + 1}.</span>
@@ -92,13 +94,13 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
         
         {isAerobic ? (
           <>
-            <span className={styles.timeLabel}>Время:</span>
+            <span className={styles.timeLabel}>{t('createWorkout.timeLabel')}:</span>
             <CustomSelect
               value={exercise.duration || 30}
               options={TIME_OPTIONS}
               onChange={(val) => onUpdate(exercise.id, dayKey, 'duration', val)}
               className="timeSelector"
-              suffix=" хв"
+              suffix={` ${t('createWorkout.minutes')}`}
             />
           </>
         ) : (
@@ -128,7 +130,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
         <button
           className={styles.deleteExerciseButton}
           onClick={() => onRemove(exercise.id, dayKey)}
-          title="Удалить упражнение"
+          title={t('createWorkout.deleteExercise')}
         >
           ×
         </button>

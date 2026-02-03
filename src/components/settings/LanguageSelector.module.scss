@@ -1,0 +1,113 @@
+.languageSelector {
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  border-radius: 25px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+  
+  h2 {
+    font-size: 18px;
+    color: #000000;
+    margin: 0;
+    font-weight: 500;
+    flex: 1;
+  }
+}
+
+.close {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 20px;
+  color: #495057;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    color: #000000;
+  }
+}
+
+.languageList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.languageCard {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  min-height: 50px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+  }
+
+  &.active {
+    border-color: #3182CE;
+    background: linear-gradient(135deg, #E6F2FF 0%, #D9E6F6 100%);
+    box-shadow: 0 6px 24px rgba(49, 130, 206, 0.3);
+  }
+}
+
+.flag {
+  font-size: 24px;
+  margin-right: 16px;
+  min-width: 32px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.languageName {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.checkmark {
+  font-size: 20px;
+  color: #3182CE;
+  font-weight: bold;
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}

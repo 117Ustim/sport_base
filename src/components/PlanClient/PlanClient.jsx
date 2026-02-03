@@ -4,13 +4,16 @@ import { useParams } from "react-router-dom";
 import { clientsService, workoutsService } from "../../firebase/services";
 import { useNotification } from '../../hooks/useNotification';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useTranslation } from 'react-i18next';
 import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog';
 import styles from './PlanClient.module.scss';
+import React from 'react';
 
 export default function PlanClient() {
   const navigate = useNavigate();
   const params = useParams();
+  const { t } = useTranslation();
   
   const [clientName, setClientName] = useState('');
   const [workouts, setWorkouts] = useState([]);
@@ -43,7 +46,7 @@ export default function PlanClient() {
       
       setWorkouts(migratedWorkouts);
     }).catch((error) => {
-      showNotification('Помилка завантаження тренувань', 'error');
+      showNotification(t('notifications.workoutLoadError'), 'error');
     });
   }, [params.id, showNotification]);
 
@@ -66,20 +69,26 @@ export default function PlanClient() {
   const onDeleteWorkout = async (e, workoutId, workoutName) => {
     e.stopPropagation();
     
-    console.log('Attempting to delete workout:', { workoutId, workoutName });
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Attempting to delete workout:', { workoutId, workoutName });
+    }
     
     showConfirm(
-      `Ви впевнені, що хочете видалити тренування "${workoutName}"?`,
+      t('dialogs.confirmDeleteWorkout', { name: workoutName }),
       async () => {
         try {
-          console.log('User confirmed deletion, calling workoutsService.delete...');
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('User confirmed deletion, calling workoutsService.delete...');
+          }
           await workoutsService.delete(workoutId);
-          console.log('Delete successful, updating local state...');
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Delete successful, updating local state...');
+          }
           setWorkouts(workouts.filter(w => w.id !== workoutId));
-          showNotification('Тренування видалено', 'success');
+          showNotification(t('notifications.workoutDeleted'), 'success');
         } catch (error) {
           console.error('Delete failed:', error);
-          showNotification('Помилка при видаленні тренування', 'error');
+          showNotification(t('notifications.deleteWorkoutError'), 'error');
         }
       }
     );
@@ -96,28 +105,28 @@ export default function PlanClient() {
       />
       <div className={styles.blockButton}>
         <button className={styles.buttonBack} onClick={onButtonBack}>
-          {clientName || params.name || 'Клиент'}
+          {clientName || params.name || t('common.client')}
         </button>
 
         <button
           className={styles.buttonAddExercises}
           onClick={onButtonAddTraining}
         >
-          Создать тренировку
+          {t('common.createWorkout')}
         </button>
 
         <button
           className={styles.buttonBase}        
           onClick={onButtonBase}
         >
-          База
+          {t('common.base')}
         </button>
       </div>
 
       <div className={styles.workoutsGrid}>
         {workouts.length === 0 ? (
           <p className={styles.noWorkoutsMessage}>
-            Нет созданных тренировок. Нажмите "Создать тренировку" для добавления.
+            {t('planClient.noWorkouts')}
           </p>
         ) : (
           workouts.map((workout) => (
@@ -129,7 +138,7 @@ export default function PlanClient() {
               <button 
                 className={styles.deleteWorkoutButton}
                 onClick={(e) => onDeleteWorkout(e, workout.id, workout.name)}
-                title="Удалить тренировку"
+                title={t('common.delete')}
               >
                 ×
               </button>

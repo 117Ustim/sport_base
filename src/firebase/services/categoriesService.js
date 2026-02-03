@@ -116,6 +116,17 @@ class CategoriesService extends BaseService {
     }
   }
 
+  // Обновить категорию
+  async updateCategory(id, name) {
+    try {
+      await super.update(id, { name });
+      return { id, name };
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  }
+
   // Удалить категорию (наследуется от BaseService, но можно переопределить)
   async deleteCategory(id) {
     try {

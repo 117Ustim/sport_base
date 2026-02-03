@@ -1,28 +1,24 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authService } from '../../firebase/services';
 import styles from './Login.module.scss';
 
-const ERROR_MESSAGES = {
-  'auth/invalid-email': 'Невірний формат email',
-  'auth/user-not-found': 'Користувача не знайдено',
-  'auth/wrong-password': 'Невірний пароль',
-  'auth/email-already-in-use': 'Email вже використовується',
-  'auth/weak-password': 'Пароль занадто слабкий (мін. 6 символів)',
-  'auth/invalid-credential': 'Невірні дані для входу',
-  default: 'Помилка авторизації'
-};
-
-const DEFAULT_CREDENTIALS = {
-  email: 'ustimweb72@gmail.com',
-  password: 'UstikMaxus140572'
-};
-
 export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState(DEFAULT_CREDENTIALS.email);
-  const [password, setPassword] = useState(DEFAULT_CREDENTIALS.password);
-  const [isRegister, setIsRegister] = useState(false);
+  const { t } = useTranslation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const getErrorMessage = (code) => {
+    switch (code) {
+      case 'auth/invalid-email': return t('auth.errors.invalidEmail');
+      case 'auth/user-not-found': return t('auth.errors.userNotFound');
+      case 'auth/wrong-password': return t('auth.errors.wrongPassword');
+      case 'auth/invalid-credential': return t('auth.errors.invalidCredential');
+      default: return t('auth.errors.default');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,34 +26,16 @@ export default function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      if (isRegister) {
-        await authService.register(email, password);
-      } else {
-        await authService.login(email, password);
-      }
+      await authService.login(email, password);
       onLoginSuccess();
     } catch (err) {
-      // Специальная обработка для удаленных пользователей
       if (err.message && err.message.includes('Доступ заборонено')) {
-        setError('Доступ заборонено. Ваш акаунт було видалено.');
+        setError(t('auth.errors.accessDenied'));
       } else {
-        setError(ERROR_MESSAGES[err.code] || ERROR_MESSAGES.default);
+        setError(getErrorMessage(err.code));
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSwitchMode = () => {
-    setIsRegister(!isRegister);
-    setError('');
-    
-    if (!isRegister) {
-      setEmail('');
-      setPassword('');
-    } else {
-      setEmail(DEFAULT_CREDENTIALS.email);
-      setPassword(DEFAULT_CREDENTIALS.password);
     }
   };
 
@@ -65,13 +43,13 @@ export default function Login({ onLoginSuccess }) {
     <div className={styles.login}>
       <div className={styles.container}>
         <h1 className={styles.title}>
-          {isRegister ? 'Реєстрація' : 'Вхід'}
+          {t('auth.login')}
         </h1>
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={styles.input}
@@ -80,7 +58,7 @@ export default function Login({ onLoginSuccess }) {
           
           <input
             type="password"
-            placeholder="Пароль"
+            placeholder={t('auth.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={styles.input}
@@ -95,20 +73,9 @@ export default function Login({ onLoginSuccess }) {
             className={styles.button}
             disabled={loading}
           >
-            {loading ? 'Завантаження...' : (isRegister ? 'Зареєструватися' : 'Увійти')}
+            {loading ? t('auth.loading') : t('auth.signIn')}
           </button>
         </form>
-        
-        <p className={styles.switch}>
-          {isRegister ? 'Вже є акаунт?' : 'Немає акаунту?'}
-          <button 
-            type="button"
-            onClick={handleSwitchMode}
-            className={styles.switchBtn}
-          >
-            {isRegister ? 'Увійти' : 'Зареєструватися'}
-          </button>
-        </p>
       </div>
     </div>
   );

@@ -1,15 +1,17 @@
+import { useTranslation } from 'react-i18next';
 import styles from './TopBar.module.scss';
+import BackButton from '../../../BackButton';
 
 export default function TopBar({ workout, isEditMode, onBack, onOpenModal, onSave }) {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.topButtonsPanel}>
-      <button className={styles.backButton} onClick={onBack}>
-        Назад
-      </button>
+      <BackButton onClick={onBack} />
 
       {!workout && (
         <button className={styles.newTrainingButton} onClick={onOpenModal}>
-          Новая тренировка
+          {t('createWorkout.newButton')}
         </button>
       )}
 
@@ -17,7 +19,7 @@ export default function TopBar({ workout, isEditMode, onBack, onOpenModal, onSav
         <>
           <h2 className={styles.workoutNameHeader}>{workout.name}</h2>
           <button className={styles.saveAllButton} onClick={onSave}>
-            {isEditMode ? 'Сохранить изменения' : 'Сохранить'}
+            {isEditMode ? t('common.saveChanges') : t('common.save')}
           </button>
         </>
       )}

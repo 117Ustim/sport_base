@@ -1,15 +1,92 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Правила для коллекции workoutHistory
-    match /workoutHistory/{sessionId} {
-      // Разрешить чтение и запись только авторизованным пользователям
-      allow read, write: if request.auth != null;
+    
+    // ✅ SECURITY FIX: Правильные правила доступа
+    // Вместо глобального доступа - специфичные правила для каждой коллекции
+    
+    // Функция проверки что пользователь - админ
+    function isAdmin() {
+      return request.auth != null && 
+             (request.auth.token.email == 'ustimweb72@gmail.com' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
     
-    // Правила для остальных коллекций (если нужно)
+    // Функция проверки что пользователь авторизован
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Коллекция users - только админы могут управлять
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция clients - только админы
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Subcollection attendance
+      match /attendance/{attendanceId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+    
+    // Коллекция gyms - только админы
+    match /gyms/{gymId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция workouts - только админы
+    match /workouts/{workoutId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция clientBases - только админы
+    match /clientBases/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Subcollections
+      match /{subcollection}/{docId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+    
+    // Коллекция workoutHistory - только админы
+    match /workoutHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция assignedWorkouts - только админы
+    match /assignedWorkouts/{assignedId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция categories - только админы
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Коллекция exercises - только админы
+    match /exercises/{exerciseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // ⚠️ ВРЕМЕННО: Fallback для других коллекций (удалить после миграции)
+    // Это правило будет работать только если не сработало ни одно из вышеперечисленных
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }

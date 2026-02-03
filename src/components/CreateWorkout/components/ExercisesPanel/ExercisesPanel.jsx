@@ -1,9 +1,20 @@
+import { useTranslation } from 'react-i18next';
 import styles from './ExercisesPanel.module.scss';
 
-export default function ExercisesPanel({ categories, exercises, onSelectExercise, addMode, onAddModeChange, groupDraft, onCancelGroup }) {
+export default function ExercisesPanel({ 
+  categories, 
+  exercises, 
+  onSelectExercise, 
+  addMode, 
+  onAddModeChange, 
+  groupDraft, 
+  onCancelGroup
+}) {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.exercisesSelectorPanel}>
-      <h3 className={styles.panelTitle}>Выберите упражнения</h3>
+      <h3 className={styles.panelTitle}>{t('createWorkout.exercisesPanelTitle')}</h3>
       
       <div className={styles.addModeSelector}>
         <label className={styles.radioLabel}>
@@ -14,7 +25,7 @@ export default function ExercisesPanel({ categories, exercises, onSelectExercise
             checked={addMode === 'single'}
             onChange={(e) => onAddModeChange(e.target.value)}
           />
-          <span>Обычная</span>
+          <span>{t('createWorkout.normal')}</span>
         </label>
         <label className={styles.radioLabel}>
           <input
@@ -24,20 +35,20 @@ export default function ExercisesPanel({ categories, exercises, onSelectExercise
             checked={addMode === 'group'}
             onChange={(e) => onAddModeChange(e.target.value)}
           />
-          <span>Групповая</span>
+          <span>{t('createWorkout.group')}</span>
         </label>
         
         {addMode === 'group' && groupDraft.length > 0 && (
           <div className={styles.groupDraftInfo}>
-            <span>В группе: {groupDraft.length} упр.</span>
+            <span>{t('createWorkout.inGroupInfo', { count: groupDraft.length })}</span>
             <button className={styles.cancelGroupButton} onClick={onCancelGroup}>
-              Отмена
+              {t('common.cancel')}
             </button>
           </div>
         )}
       </div>
       
-      <p className={styles.instructionHint}>Кликните на упражнение для добавления</p>
+      <p className={styles.instructionHint}>{t('createWorkout.clickToAddHint')}</p>
       
       <div className={styles.categoriesGrid}>
         {categories?.map((category) => (

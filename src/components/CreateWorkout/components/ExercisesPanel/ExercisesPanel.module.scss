@@ -31,7 +31,7 @@
 }
 
 .categoryName {
-  font-size: 14px;
+  font-size: 16px;
   color: #1976d2;
   margin: 0 0 10px 0;
   font-weight: 600;
@@ -41,7 +41,7 @@
   .exerciseNameItem {
     font-size: 14px;
     cursor: pointer;
-    color: #666;
+    color: #323232;
     padding: 5px;
     margin: 5px 0;
     border-radius: 4px;
@@ -71,7 +71,7 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   
   input[type="radio"] {
@@ -89,7 +89,7 @@
     position: relative;
     
     &:checked {
-      background-color: #9b9b9b;
+      background-color: #00c721;
       border-color: #666;
     }
     

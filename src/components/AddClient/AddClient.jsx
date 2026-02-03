@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { gymsService } from '../../firebase/services';
 import styles from './AddClient.module.scss';
 
 export default function AddClient({ contacts, onChange, onAddContactClick }) {
+  const { t } = useTranslation();
   const [gyms, setGyms] = useState([]);
 
   useEffect(() => {
     gymsService.getAll()
       .then(setGyms)
-      .catch((error) => console.error('Помилка завантаження залів:', error));
+      .catch((error) => console.error('Error loading gyms:', error));
   }, []);
 
   // Обработчик изменения с поддержкой gymId
@@ -35,35 +37,35 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
       <div className={styles.form}>
         <div className={styles.inputs}>
           <div className={styles.segment}>
-            <h1>Додати клiента</h1>
+            <h1>{t('manageClients.addClient')}</h1>
           </div>
           <input
-            placeholder='Прізвище'
+            placeholder={t('manageClients.surname')}
             value={contacts.surname}
             onChange={handleChange}
             name='surname'
           />
           <input
-            placeholder="Iм'я"
+            placeholder={t('manageClients.name')}
             value={contacts.name}
             name='name'
             onChange={handleChange}
           />
           <input
-            placeholder='Телефон'
+            placeholder={t('manageClients.phone')}
             value={+contacts.phone || ''}
             name='phone'
             onChange={handleChange}
           />
 
           <select value={contacts.sex || ''} name='sex' onChange={handleChange}>
-            <option value=''>Стать</option>
-            <option value='Чоловiча'>Чоловiча</option>
-            <option value='Жiноча'>Жiноча</option>
+            <option value=''>{t('home.sex')}</option>
+            <option value='Чоловiча'>{t('home.male')}</option>
+            <option value='Жiноча'>{t('home.female')}</option>
           </select>
 
           <select value={contacts.gym || ''} name='gym' onChange={handleChange}>
-            <option value=''>Зал</option>
+            <option value=''>{t('home.gym')}</option>
             {gyms.map((gym) => (
               <option key={gym.id} value={gym.name}>
                 {gym.name}
@@ -73,7 +75,7 @@ export default function AddClient({ contacts, onChange, onAddContactClick }) {
         </div>
         <div className={styles.button}>
           <button onClick={onAddContactClick} className='red' type='button'>
-            <i className='icon ion-md-lock'></i>Додати
+            <i className='icon ion-md-lock'></i>{t('common.add')}
           </button>
         </div>
       </div>

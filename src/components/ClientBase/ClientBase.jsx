@@ -1,4 +1,5 @@
 import { clientBaseService, categoriesService, clientsService } from "../../firebase/services";
+import BackButton from "../BackButton";
 import BaseExercisesOut from "./BaseExercisesOut";
 import { NUMBER_TIMES } from '../../constants';
 import { useState, useEffect, useRef } from "react";
@@ -24,8 +25,10 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog';
 import styles from './ClientBase.module.scss';
+import { useTranslation } from 'react-i18next';
 
 export default function ClientBase() {
+  const { t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
 
@@ -149,7 +152,7 @@ export default function ClientBase() {
   const createBase = async () => {
     // Проверка: если база уже создана (есть упражнения), показываем предупреждение
     if (exercisesArray.length > 0) {
-      showNotification('База вже створена! Використовуйте "Редагувати вправи" для змін.', 'error');
+      showNotification(t('clientBase.baseAlreadyCreated'), 'error');
       return;
     }
 
@@ -177,10 +180,10 @@ export default function ClientBase() {
         setColumns(defaultColumns);
       }
       
-      showNotification('База успішно створена!', 'success');
+      showNotification(t('notifications.baseCreatedSuccess'), 'success');
     } catch (error) {
       console.error('Error creating base:', error);
-      showNotification('Помилка створення бази', 'error');
+      showNotification(t('notifications.baseCreatedError'), 'error');
     } finally {
       setIsCreatingBase(false);
     }
@@ -193,10 +196,10 @@ export default function ClientBase() {
     try {
       await clientBaseService.updateBase(params.id, exercisesArray, columns);
       setHasUnsavedChanges(false);
-      showNotification('Збережено успішно!', 'success');
+      showNotification(t('notifications.savedSuccess'), 'success');
     } catch (error) {
       console.error('Error saving base:', error);
-      showNotification('Помилка збереження. Спробуйте ще раз.', 'error');
+      showNotification(t('notifications.saveError'), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -224,7 +227,7 @@ export default function ClientBase() {
     setExercisesArray(updatedExercises);
     setNewColumnName('');
     setHasUnsavedChanges(true);
-    showNotification(`Колонка "${columnName}" додана`, 'success');
+    showNotification(t('clientBase.columnAdded', { name: columnName }), 'success');
   };
 
   const toggleDeleteMode = () => {
@@ -235,14 +238,14 @@ export default function ClientBase() {
     if (!deleteMode) return;
     
     if (columns.length <= 1) {
-      showNotification('Нельзя удалить последнюю колонку', 'error');
+      showNotification(t('notifications.lastColumnError'), 'error');
       return;
     }
 
     const columnToDelete = columns.find(c => c.id === columnId);
     
     showConfirm(
-      `Ви впевнені, що хочете видалити колонку "${columnToDelete.name}"?`,
+      t('dialogs.confirmDeleteColumn', { name: columnToDelete.name }),
       () => {
         const updatedColumns = columns.filter(c => c.id !== columnId);
         setColumns(updatedColumns);
@@ -260,7 +263,7 @@ export default function ClientBase() {
         setExercisesArray(updatedExercises);
         setDeleteMode(false);
         setHasUnsavedChanges(true);
-        showNotification(`Колонка "${columnToDelete.name}" видалена`, 'success');
+        showNotification(t('notifications.columnDeleted'), 'success');
       }
     );
   };
@@ -405,12 +408,16 @@ export default function ClientBase() {
 
     setIsSavingOrder(true);
     try {
-      await categoriesService.updateOrder(categories);
+      const dbCategories = categories.map((cat, index) => ({
+        id: cat.id,
+        order: index
+      }));
+      await categoriesService.updateOrder(dbCategories);
       setHasCategoryOrderChanges(false);
-      showNotification('Порядок категорій успішно збережено', 'success');
+      showNotification(t('notifications.orderSaved'), 'success');
     } catch (error) {
-      console.error('Помилка збереження порядку категорій:', error);
-      showNotification('Помилка збереження порядку категорій', 'error');
+      console.error('Error saving category order:', error);
+      showNotification(t('notifications.saveOrderError'), 'error');
     } finally {
       setIsSavingOrder(false);
     }
@@ -425,9 +432,31 @@ export default function ClientBase() {
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
+      
+      {/* Плавающая кнопка сохранения порядка категорий */}
+      {hasCategoryOrderChanges && (
+        <div className={styles.floatingButtonContainer}>
+          <button 
+            className={styles.floatingButton}
+            onClick={saveCategoryOrder}
+            disabled={isSavingOrder}
+          >
+            {isSavingOrder ? (
+              <>
+                <span className={styles.spinner}></span>
+                {t('common.save')}...
+              </>
+            ) : (
+              <>
+                {t('common.savePosition')}
+              </>
+            )}
+          </button>
+        </div>
+      )}
       <div className={styles.buttonPanel}>
         <div className={styles.leftButtons}>
-          <button className={styles.button} onClick={backPlanClient}>Назад</button>
+          <BackButton onClick={backPlanClient} />
           <button 
             className={styles.saveBtn} 
             onClick={saveBase}
@@ -436,7 +465,7 @@ export default function ClientBase() {
             {isSaving && (
               <span className={styles.spinner}></span>
             )}
-            {isSaving ? 'Збереження...' : 'Сохранить'}
+            {isSaving ? t('editExercises.saving') : t('common.save')}
             {hasUnsavedChanges && !isSaving && ' *'}
           </button>
         </div>
@@ -449,57 +478,49 @@ export default function ClientBase() {
             {isCreatingBase && (
               <span className={styles.spinner}></span>
             )}
-            {isCreatingBase ? 'Створення...' : 'Создать базу'}
+            {isCreatingBase ? t('clientBase.creating') : t('clientBase.createBase')}
           </button>
-          <button className={styles.button} onClick={openEditModal}>Редагування</button>
+          <button className={styles.button} onClick={openEditModal}>{t('common.editMode')}</button>
         </div>
       </div>
 
       {deleteMode && (
         <div className={styles.deleteModeHint}>
-          Кликните на номер колонки, которую хотите удалить
+          {t('clientBase.clickToDeleteColumn')}
         </div>
       )}
 
       <div className={`${styles.editSidebar} ${showEditModal ? styles.open : ''}`}>
         <div className={styles.sidebarHeader}>
-          <h3>Редагування</h3>
+          <h3>{t('common.editMode')}</h3>
           <button className={styles.closeBtn} onClick={closeEditModal}>×</button>
         </div>
         <div className={styles.sidebarContent}>
           <div className={styles.sidebarButtons}>
+            <button onClick={editExercises}>
+              {t('common.editExercises')}
+            </button>
             <div className={styles.addColumnSection}>
               <input
                 type="text"
                 className={styles.columnNameInput}
-                placeholder="Назва колонки (необов'язково)"
+                placeholder={`${t('common.addColumn')}...`}
                 value={newColumnName}
                 onChange={(e) => setNewColumnName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addColumn()}
               />
-              <button onClick={addColumn}>+ Добавить колонку</button>
+              <button onClick={addColumn}>+ {t('common.addColumn')}</button>
             </div>
             <button 
               className={deleteMode ? styles.deleteModeActive : ''} 
               onClick={toggleDeleteMode}
             >
-              {deleteMode ? 'Отменить удаление' : '- Удалить колонку'}
-            </button>
-            <button onClick={editExercises}>
-              Редагувати вправи
-            </button>
-            <button 
-              className={hasCategoryOrderChanges ? styles.saveCategoryBtn : ''}
-              onClick={saveCategoryOrder}
-              disabled={!hasCategoryOrderChanges || isSavingOrder}
-            >
-              {isSavingOrder ? 'Збереження...' : 'Зберегти позицію'}
-              {hasCategoryOrderChanges && !isSavingOrder && ' *'}
+              {deleteMode ? t('common.cancelDelete') : t('common.deleteColumn')}
             </button>
           </div>
           {deleteMode && (
             <div className={styles.sidebarHint}>
-              Кликните на название колонки в таблице, которую хотите удалить
+              {t('clientBase.deleteModeHint')}
             </div>
           )}
         </div>
@@ -530,6 +551,7 @@ export default function ClientBase() {
                       columns={columns}
                       deleteMode={deleteMode}
                       deleteColumn={deleteColumn}
+                      t={t}
                     />
                   ))}
               </SortableContext>
@@ -552,6 +574,7 @@ export default function ClientBase() {
                       columns={columns}
                       deleteMode={deleteMode}
                       deleteColumn={deleteColumn}
+                      t={t}
                     />
                   ))}
               </SortableContext>
@@ -559,7 +582,7 @@ export default function ClientBase() {
           </div>
         ) : (
           <div className={styles.emptyState}>
-            <p>Натисніть "Создать базу" щоб почати</p>
+            <p>{t('clientBase.emptyState')}</p>
           </div>
         )}
       </DndContext>
@@ -567,7 +590,7 @@ export default function ClientBase() {
   );
 }
 
-function SortableCategory({ category, exercisesArray, onChangeBase, columns, deleteMode, deleteColumn }) {
+function SortableCategory({ category, exercisesArray, onChangeBase, columns, deleteMode, deleteColumn, t }) {
   const {
     attributes,
     listeners,
@@ -603,13 +626,13 @@ function SortableCategory({ category, exercisesArray, onChangeBase, columns, del
         <table className={styles.exerciseTable}>
           <thead>
             <tr>
-              <th>Упражнение</th>
+              <th>{t('clientBase.exerciseColumn')}</th>
               {columns.map((column) => (
                 <th 
                   className={`${styles.numCol} ${deleteMode ? styles.deleteMode : ''}`}
                   key={column.id}
                   onClick={() => deleteMode && deleteColumn(column.id)}
-                  title={deleteMode ? `Удалить колонку "${column.name}"` : column.name}
+                  title={deleteMode ? t('clientBase.deleteColumnTitle', { name: column.name }) : column.name}
                 >
                   {column.name}
                 </th>

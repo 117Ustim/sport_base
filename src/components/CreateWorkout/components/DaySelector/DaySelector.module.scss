@@ -45,7 +45,8 @@
 }
 
 .dayLabel {
-  font-size: 16px;
+  font-size: 14px;
+  
 }
 
 .dayExercisesCount {
@@ -58,6 +59,8 @@
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  text-shadow: none;
+  font-weight: normal;
 
   .activeDay & {
     background-color: white;

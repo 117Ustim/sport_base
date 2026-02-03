@@ -6,13 +6,16 @@ import {
   getDocs,
   deleteDoc,
   query,
-  where
+  where,
+  orderBy,
+  limit,
+  startAfter
 } from 'firebase/firestore';
 import { db } from '../config';
+import { validateClientData, sanitizeClientData } from './validators';
 
-// Структура: коллекция Ustim -> документ People -> массив People
-const COLLECTION_NAME = 'Ustim';
-const DOC_NAME = 'People';
+// НОВАЯ СТРУКТУРА: коллекция clients (каждый клиент = отдельный документ)
+const COLLECTION_NAME = 'clients';
 
 // Вспомогательная функция для очистки данных клиента от пустых значений
 const cleanClientData = (clientData) => {
@@ -29,71 +32,68 @@ const cleanClientData = (clientData) => {
 };
 
 export const clientsService = {
-  // Получить всех клиентов с фильтрацией и пагинацией
+  // Получить всех клиентов с фильтрацией и пагинацией (НОВАЯ СТРУКТУРА)
   async getAll(filters = {}) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
-      const docSnap = await getDoc(docRef);
+      console.log('clientsService.getAll called with filters:', filters);
       
-      if (!docSnap.exists()) {
-        return { total: 0, data: [] };
-      }
-
-      const rawData = docSnap.data();
+      const clientsRef = collection(db, COLLECTION_NAME);
       
-      // Клиенты хранятся как объект с ID в качестве ключей
-      let clients = Object.entries(rawData).map(([id, clientData]) => ({
-        id,
-        ...clientData
-      }));
-
+      // Строим запрос с фильтрами
+      let constraints = [orderBy('profile.surname', 'asc')];
+      
       // Фильтр по залу
       if (filters.gym) {
-        clients = clients.filter(c => c.gymName === filters.gym);
+        console.log('Adding gym filter:', filters.gym);
+        constraints.unshift(where('profile.gymName', '==', filters.gym));
       }
-
+      
       // Фильтр по полу
       if (filters.sex) {
-        clients = clients.filter(c => c.sex === filters.sex);
+        console.log('Adding sex filter:', filters.sex);
+        constraints.unshift(where('profile.sex', '==', filters.sex));
       }
-
-      // Преобразуем в формат который ожидает приложение
-      const formattedClients = clients.map(client => ({
-        id: client.id,
-        data: {
-          name: client.name || '',
-          surname: client.surname || '',
-          phone: client.phone || '',
-          gym: client.gymName || '',
-          gymId: client.gymId || '',
-          sex: client.sex || '',
-          address: client.address || '',
-          growth: client.growth || '',
-          weight: client.weight || '',
-          price: client.price || 250,
-          capacity: client.capacity || 0,
-          attented: client.attented || 0,
-          userId: client.userId || '',
-          email: client.email || ''
-        }
-      }));
-
-      // Сортируем по фамилии в алфавитном порядке
-      formattedClients.sort((a, b) => {
-        const surnameA = (a.data?.surname || '').toLowerCase();
-        const surnameB = (b.data?.surname || '').toLowerCase();
-        return surnameA.localeCompare(surnameB, 'uk'); // 'uk' для украинского алфавита
-      });
-
+      
       // Пагинация
-      const page = filters.page || 0;
-      const pageLimit = filters.limit || 10;
-      const start = page * pageLimit;
-      const paginatedClients = formattedClients.slice(start, start + pageLimit);
+      const pageLimit = filters.limit || 50; // Увеличили лимит
+      constraints.push(limit(pageLimit));
+      
+      console.log('Final query constraints:', constraints);
+      
+      const q = query(clientsRef, ...constraints);
+      const snapshot = await getDocs(q);
+      
+      console.log('Query result count:', snapshot.docs.length);
+      
+      // Преобразуем в формат который ожидает приложение
+      const formattedClients = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const profile = data.profile || {};
+        
+        return {
+          id: doc.id,
+          data: {
+            name: profile.name || '',
+            surname: profile.surname || '',
+            phone: profile.phone || '',
+            gym: profile.gymName || '',
+            gymId: profile.gymId || '',
+            sex: profile.sex || '',
+            address: profile.address || '',
+            growth: profile.growth || '',
+            weight: profile.weight || '',
+            price: profile.price || 250,
+            capacity: profile.capacity || 0,
+            attented: profile.attented || 0,
+            userId: profile.userId || '',
+            email: profile.email || ''
+          }
+        };
+      });
 
       return {
         total: formattedClients.length,
-        data: paginatedClients
+        data: formattedClients
       };
     } catch (error) {
       console.error('Error getting clients:', error);
@@ -101,37 +101,35 @@ export const clientsService = {
     }
   },
 
-  // Получить клиента по ID
+  // Получить клиента по ID (НОВАЯ СТРУКТУРА)
   async getById(id) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
+      const docRef = doc(db, COLLECTION_NAME, id);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        const rawData = docSnap.data();
-        const client = rawData[id];
+        const data = docSnap.data();
+        const profile = data.profile || {};
         
-        if (client) {
-          return {
-            id: id,
-            data: {
-              name: client.name || '',
-              surname: client.surname || '',
-              phone: client.phone || '',
-              gym: client.gymName || '',
-              gymId: client.gymId || '',
-              sex: client.sex || '',
-              address: client.address || '',
-              growth: client.growth || '',
-              weight: client.weight || '',
-              price: client.price || 250,
-              capacity: client.capacity || 0,
-              attented: client.attented || 0,
-              userId: client.userId || '',
-              email: client.email || ''
-            }
-          };
-        }
+        return {
+          id: id,
+          data: {
+            name: profile.name || '',
+            surname: profile.surname || '',
+            phone: profile.phone || '',
+            gym: profile.gymName || '',
+            gymId: profile.gymId || '',
+            sex: profile.sex || '',
+            address: profile.address || '',
+            growth: profile.growth || '',
+            weight: profile.weight || '',
+            price: profile.price || 250,
+            capacity: profile.capacity || 0,
+            attented: profile.attented || 0,
+            userId: profile.userId || '',
+            email: profile.email || ''
+          }
+        };
       }
       return null;
     } catch (error) {
@@ -140,48 +138,46 @@ export const clientsService = {
     }
   },
 
-  // Создать нового клиента
+  // Создать нового клиента (НОВАЯ СТРУКТУРА)
   async create(clientData) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
+      // ✅ SECURITY FIX: Валидация данных перед сохранением
+      const validation = validateClientData(clientData);
+      if (!validation.isValid) {
+        throw new Error(`Помилка валідації: ${validation.errors.join(', ')}`);
+      }
+
+      // ✅ SECURITY FIX: Санитизация данных
+      const sanitizedData = sanitizeClientData(clientData);
+
       const newId = Date.now().toString();
+      const docRef = doc(db, COLLECTION_NAME, newId);
       
-      const clientToSave = {
-        id: newId, // Добавляем ID внутрь объекта для совместимости с мобильной версией
-        name: clientData.name || '',
-        surname: clientData.surname || '',
-        phone: clientData.phone || '',
-        gymName: clientData.gym || '',
-        gymId: clientData.gymId || '',
-        sex: clientData.sex || '',
-        address: clientData.address || '',
-        growth: clientData.growth || '',
-        weight: clientData.weight || '',
-        isActive: true,
-        // Добавляем поля для совместимости с мобильной версией
-        price: 250,
-        capacity: 0,
-        attented: 0,
-        attendance: [],
-        attendanceTime: [],
-        special: false,
-        excludeFromCount: false
+      const newClientData = {
+        profile: {
+          id: newId,
+          name: sanitizedData.name,
+          surname: sanitizedData.surname,
+          phone: sanitizedData.phone,
+          email: sanitizedData.email,
+          gymName: sanitizedData.gym,
+          gymId: sanitizedData.gymId,
+          sex: sanitizedData.sex,
+          address: sanitizedData.address,
+          growth: sanitizedData.growth,
+          weight: sanitizedData.weight,
+          price: sanitizedData.price,
+          capacity: 0,
+          attented: 0,
+          userId: sanitizedData.userId,
+          isActive: true,
+          special: false,
+          excludeFromCount: false,
+          createdAt: new Date().toISOString()
+        }
       };
       
-      // Очищаем от пустых значений
-      const cleanedClient = cleanClientData(clientToSave);
-      // Обязательные поля
-      cleanedClient.id = newId;
-      cleanedClient.isActive = true;
-      cleanedClient.price = 250;
-      cleanedClient.capacity = 0;
-      cleanedClient.attented = 0;
-      cleanedClient.attendance = [];
-      cleanedClient.attendanceTime = [];
-      cleanedClient.special = false;
-      cleanedClient.excludeFromCount = false;
-      
-      await setDoc(docRef, { [newId]: cleanedClient }, { merge: true });
+      await setDoc(docRef, newClientData);
       
       return { id: newId };
     } catch (error) {
@@ -190,76 +186,45 @@ export const clientsService = {
     }
   },
 
-  // Обновить клиента
+  // Обновить клиента (НОВАЯ СТРУКТУРА)
   async update(id, clientData) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
+      // ✅ SECURITY FIX: Валидация данных перед обновлением
+      const validation = validateClientData(clientData);
+      if (!validation.isValid) {
+        throw new Error(`Помилка валідації: ${validation.errors.join(', ')}`);
+      }
+
+      // ✅ SECURITY FIX: Санитизация данных
+      const sanitizedData = sanitizeClientData(clientData);
+
+      const docRef = doc(db, COLLECTION_NAME, id);
       
-      // Сначала получаем текущие данные клиента
+      // Получаем текущие данные
       const docSnap = await getDoc(docRef);
-      let existingData = {};
+      let existingProfile = {};
       
       if (docSnap.exists()) {
-        const rawData = docSnap.data();
-        existingData = rawData[id] || {};
+        const data = docSnap.data();
+        existingProfile = data.profile || {};
       }
       
-      const clientToSave = {
-        id: id, // Сохраняем ID внутри объекта
-        name: clientData.name || '',
-        surname: clientData.surname || '',
-        phone: clientData.phone || '',
-        gymName: clientData.gym || '',
-        gymId: clientData.gymId || existingData.gymId || '',
-        sex: clientData.sex || '',
-        address: clientData.address || '',
-        growth: clientData.growth || '',
-        weight: clientData.weight || '',
-        // Сохраняем все существующие данные из мобильной версии
-        price: existingData.price !== undefined ? existingData.price : 250,
-        capacity: existingData.capacity !== undefined ? existingData.capacity : 0,
-        attented: existingData.attented !== undefined ? existingData.attented : 0,
-        userId: existingData.userId,
-        email: existingData.email,
-        attendance: existingData.attendance || [],
-        attendanceTime: existingData.attendanceTime || [],
-        isActive: existingData.isActive !== undefined ? existingData.isActive : true,
-        special: existingData.special || false,
-        excludeFromCount: existingData.excludeFromCount || false
+      const updatedProfile = {
+        ...existingProfile,
+        name: sanitizedData.name,
+        surname: sanitizedData.surname,
+        phone: sanitizedData.phone,
+        email: sanitizedData.email,
+        gymName: sanitizedData.gym,
+        gymId: sanitizedData.gymId,
+        sex: sanitizedData.sex,
+        address: sanitizedData.address,
+        growth: sanitizedData.growth,
+        weight: sanitizedData.weight,
+        updatedAt: new Date().toISOString()
       };
       
-      // Очищаем от пустых значений только базовые поля
-      const cleanedClient = {
-        id: id, // ID всегда должен быть
-        name: clientToSave.name,
-        surname: clientToSave.surname,
-        phone: clientToSave.phone,
-        gymName: clientToSave.gymName,
-        sex: clientToSave.sex,
-        address: clientToSave.address,
-        growth: clientToSave.growth,
-        weight: clientToSave.weight
-      };
-      
-      // Удаляем пустые строки
-      Object.keys(cleanedClient).forEach(key => {
-        if (cleanedClient[key] === '' && key !== 'id') delete cleanedClient[key];
-      });
-      
-      // Добавляем обратно все поля из мобильной версии
-      if (clientToSave.gymId) cleanedClient.gymId = clientToSave.gymId;
-      cleanedClient.price = clientToSave.price;
-      cleanedClient.capacity = clientToSave.capacity;
-      cleanedClient.attented = clientToSave.attented;
-      if (clientToSave.userId) cleanedClient.userId = clientToSave.userId;
-      if (clientToSave.email) cleanedClient.email = clientToSave.email;
-      cleanedClient.attendance = clientToSave.attendance;
-      cleanedClient.attendanceTime = clientToSave.attendanceTime;
-      cleanedClient.isActive = clientToSave.isActive;
-      cleanedClient.special = clientToSave.special;
-      cleanedClient.excludeFromCount = clientToSave.excludeFromCount;
-      
-      await setDoc(docRef, { [id]: cleanedClient }, { merge: true });
+      await setDoc(docRef, { profile: updatedProfile }, { merge: true });
       return { id, data: clientData };
     } catch (error) {
       console.error('Error updating client:', error);
@@ -267,78 +232,156 @@ export const clientsService = {
     }
   },
 
-  // Удалить клиента
+  // Удалить клиента (НОВАЯ СТРУКТУРА) - ПОЛНОЕ УДАЛЕНИЕ ВСЕХ СВЯЗАННЫХ ДАННЫХ
   async delete(id) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
+      console.log(`🗑️  Начинаем полное удаление клиента: ${id}`);
+      
+      // 1. Получаем информацию о клиенте (для userId)
+      const docRef = doc(db, COLLECTION_NAME, id);
       const docSnap = await getDoc(docRef);
       
-      if (!docSnap.exists()) return false;
+      let userId = null;
+      if (docSnap.exists()) {
+        const profile = docSnap.data().profile || {};
+        userId = profile.userId;
+      }
       
-      // 1. Удаляем клиента из основной коллекции
-      const rawData = docSnap.data();
-      delete rawData[id];
-      await setDoc(docRef, rawData);
+      // 2. СНАЧАЛА удаляем ВСЕ SUBCOLLECTIONS клиента
+      // Это важно делать ДО удаления основного документа!
       
-      // 2. Удаляем базу упражнений клиента (clientBases)
+      // 2.1. Удаляем attendance (subcollection в clients)
       try {
-        const clientBaseRef = doc(db, 'clientBases', id);
-        const clientBaseSnap = await getDoc(clientBaseRef);
+        const attendanceRef = collection(db, 'clients', id, 'attendance');
+        const attendanceSnap = await getDocs(attendanceRef);
         
-        if (clientBaseSnap.exists()) {
-          // Удаляем все упражнения
-          const exercisesRef = collection(db, 'clientBases', id, 'exercises');
-          const exercisesSnap = await getDocs(exercisesRef);
-          const deleteExercisesPromises = exercisesSnap.docs.map(doc => deleteDoc(doc.ref));
-          await Promise.all(deleteExercisesPromises);
-          
-          // Удаляем метаданные
-          const metadataRef = doc(db, 'clientBases', id, 'metadata', 'settings');
-          const metadataSnap = await getDoc(metadataRef);
-          if (metadataSnap.exists()) {
-            await deleteDoc(metadataRef);
+        if (attendanceSnap.size > 0) {
+          const deleteAttendancePromises = attendanceSnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteAttendancePromises);
+          console.log(`   ✅ Удалена посещаемость (${attendanceSnap.size} записей)`);
+        }
+      } catch (error) {
+        console.error('   ⚠️  Error deleting attendance:', error);
+      }
+      
+      // 2.2. Удаляем любые другие возможные subcollections в clients/{id}/
+      // (на случай если в будущем добавятся новые)
+      try {
+        // Список известных subcollections
+        const knownSubcollections = ['attendance', 'history', 'notes', 'files'];
+        
+        for (const subcollectionName of knownSubcollections) {
+          try {
+            const subcollectionRef = collection(db, 'clients', id, subcollectionName);
+            const subcollectionSnap = await getDocs(subcollectionRef);
+            
+            if (subcollectionSnap.size > 0) {
+              const deletePromises = subcollectionSnap.docs.map(doc => deleteDoc(doc.ref));
+              await Promise.all(deletePromises);
+              console.log(`   ✅ Удалена subcollection '${subcollectionName}' (${subcollectionSnap.size} записей)`);
+            }
+          } catch (error) {
+            // Subcollection не существует - это нормально
           }
         }
       } catch (error) {
-        console.error('Error deleting client base:', error);
+        console.error('   ⚠️  Error checking subcollections:', error);
       }
       
-      // 3. Удаляем все тренировки клиента (workouts)
+      // 3. ТЕПЕРЬ удаляем основной документ клиента
+      await deleteDoc(docRef);
+      console.log('   ✅ Клиент удален из clients');
+      
+      // 4. Удаляем базу упражнений клиента (clientBases)
+      try {
+        // Удаляем все упражнения
+        const exercisesRef = collection(db, 'clientBases', id, 'exercises');
+        const exercisesSnap = await getDocs(exercisesRef);
+        
+        if (exercisesSnap.size > 0) {
+          const deleteExercisesPromises = exercisesSnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteExercisesPromises);
+        }
+        
+        // Удаляем метаданные
+        const metadataRef = doc(db, 'clientBases', id, 'metadata', 'settings');
+        const metadataSnap = await getDoc(metadataRef);
+        if (metadataSnap.exists()) {
+          await deleteDoc(metadataRef);
+        }
+        
+        if (exercisesSnap.size > 0) {
+          console.log(`   ✅ Удалена база упражнений (${exercisesSnap.size} упражнений)`);
+        }
+      } catch (error) {
+        console.error('   ⚠️  Error deleting client base:', error);
+      }
+      
+      // 5. Удаляем все тренировки клиента (workouts)
       try {
         const workoutsRef = collection(db, 'workouts');
         const workoutsQuery = query(workoutsRef, where('clientId', '==', id));
         const workoutsSnap = await getDocs(workoutsQuery);
-        const deleteWorkoutsPromises = workoutsSnap.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deleteWorkoutsPromises);
+        
+        if (workoutsSnap.size > 0) {
+          const deleteWorkoutsPromises = workoutsSnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteWorkoutsPromises);
+          console.log(`   ✅ Удалены тренировки (${workoutsSnap.size} шт)`);
+        }
       } catch (error) {
-        console.error('Error deleting workouts:', error);
+        console.error('   ⚠️  Error deleting workouts:', error);
       }
       
-      // 4. Удаляем историю тренировок (workoutHistory)
+      // 6. Удаляем историю тренировок (workoutHistory)
       try {
         const historyRef = collection(db, 'workoutHistory');
         const historyQuery = query(historyRef, where('clientId', '==', id));
         const historySnap = await getDocs(historyQuery);
-        const deleteHistoryPromises = historySnap.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deleteHistoryPromises);
+        
+        if (historySnap.size > 0) {
+          const deleteHistoryPromises = historySnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteHistoryPromises);
+          console.log(`   ✅ Удалена история тренировок (${historySnap.size} записей)`);
+        }
       } catch (error) {
-        console.error('Error deleting workout history:', error);
+        console.error('   ⚠️  Error deleting workout history:', error);
       }
       
-      // 5. Удаляем trainings если есть
+      // 7. Удаляем назначенные тренировки (assignedWorkouts)
       try {
-        const trainingsRef = collection(db, 'trainings');
-        const trainingsQuery = query(trainingsRef, where('clientId', '==', id));
-        const trainingsSnap = await getDocs(trainingsQuery);
-        const deleteTrainingsPromises = trainingsSnap.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deleteTrainingsPromises);
+        const assignedRef = collection(db, 'assignedWorkouts');
+        const assignedQuery = query(assignedRef, where('clientId', '==', id));
+        const assignedSnap = await getDocs(assignedQuery);
+        
+        if (assignedSnap.size > 0) {
+          const deleteAssignedPromises = assignedSnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteAssignedPromises);
+          console.log(`   ✅ Удалены назначенные тренировки (${assignedSnap.size} шт)`);
+        }
       } catch (error) {
-        console.error('Error deleting trainings:', error);
+        console.error('   ⚠️  Error deleting assigned workouts:', error);
       }
+      
+      // 8. Удаляем аккаунт пользователя (users) если есть userId
+      if (userId) {
+        try {
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            await deleteDoc(userRef);
+            console.log('   ✅ Удален аккаунт пользователя');
+          }
+        } catch (error) {
+          console.error('   ⚠️  Error deleting user account:', error);
+        }
+      }
+      
+      console.log('✅ Клиент и все связанные данные удалены полностью');
+      console.log('   (включая все subcollections из clients/{id}/)');
       
       return true;
     } catch (error) {
-      console.error('Error deleting client:', error);
+      console.error('❌ Error deleting client:', error);
       throw error;
     }
   }

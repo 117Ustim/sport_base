@@ -1,26 +1,20 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { workoutsService, workoutHistoryService } from "../../firebase/services";
+import { useTranslation } from "react-i18next";
+import { workoutsService, workoutHistoryService, assignedWorkoutsService, clientsService } from "../../firebase/services";
 import CustomDatePicker from "../CustomDatePicker";
 import Notification from "../Notification";
 import { useNotification } from "../../hooks/useNotification";
 import styles from './WorkoutDetails.module.scss';
-
-const DAY_LABELS = {
-  monday: 'ПОНЕДЕЛЬНИК',
-  tuesday: 'ВТОРНИК',
-  wednesday: 'СРЕДА',
-  thursday: 'ЧЕТВЕРГ',
-  friday: 'ПЯТНИЦА',
-  saturday: 'СУББОТА',
-  sunday: 'ВОСКРЕСЕНЬЕ'
-};
+import BackButton from "../BackButton";
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export default function WorkoutDetails() {
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
+  const { t } = useTranslation();
   const { notification, showNotification } = useNotification();
   
   const [workout, setWorkout] = useState(null);
@@ -31,61 +25,102 @@ export default function WorkoutDetails() {
   const [latestDates, setLatestDates] = useState({});
   const [pendingSessions, setPendingSessions] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [clientData, setClientData] = useState(null);
+  const [isSendingWorkout, setIsSendingWorkout] = useState(false);
+  const [lastAssignedWeek, setLastAssignedWeek] = useState(null);
 
   useEffect(() => {
+    console.log('🚀 useEffect запущен - перезагрузка данных');
+    console.log('📍 Параметры:', { 
+      workoutId: params.workoutId, 
+      clientId: params.clientId, 
+      locationKey: location.key 
+    });
+    
     const loadData = async () => {
       try {
-        const data = await workoutsService.getById(params.workoutId);
-        if (data) {
-          if (data.days && !data.weeks) {
-            data.weeks = [
-              {
-                weekNumber: 1,
-                days: data.days
-              }
-            ];
-            delete data.days;
+        setLoading(true);
+        
+        // Загружаем данные клиента
+        console.log('📥 Начинаем загрузку clientData');
+        const clientStartTime = Date.now();
+        const client = await clientsService.getById(params.clientId);
+        console.log('✅ clientData загружен за:', Date.now() - clientStartTime, 'мс');
+        console.log('👤 Клиент:', client?.data?.name, client?.data?.surname);
+        setClientData(client);
+        
+// Загружаем шаблон тренировки
+        console.log('📥 Начинаем загрузку workout template');
+        const workoutStartTime = Date.now();
+        const workoutData = await workoutsService.getById(params.workoutId);
+        console.log('✅ workoutData загружен за:', Date.now() - workoutStartTime, 'мс');
+        
+        if (workoutData) {
+          // Нормализация структуры недель
+          if (workoutData.days && !workoutData.weeks) {
+            workoutData.weeks = [{ weekNumber: 1, days: workoutData.days }];
+            delete workoutData.days;
           }
-          
-          if (!data.weeks || data.weeks.length === 0) {
-            data.weeks = [];
+          if (!workoutData.weeks) {
+            workoutData.weeks = [];
           }
         }
-        
-        setWorkout(data);
 
-        // Загружаем последние даты для каждого дня
-        if (data && data.weeks) {
-          const dates = {};
-          for (let weekIndex = 0; weekIndex < data.weeks.length; weekIndex++) {
-            const week = data.weeks[weekIndex];
-            const dayKeys = Object.keys(week.days || {});
-            
-            for (const dayKey of dayKeys) {
-              const latestDate = await workoutHistoryService.getLatestDateForDay(
-                params.workoutId,
-                week.weekNumber,
-                dayKey
-              );
-              
-              if (latestDate) {
-                const key = `week${weekIndex}_${dayKey}`;
-                dates[key] = latestDate;
-              }
-            }
-          }
-          setLatestDates(dates);
-        }
+        // Загружаем ПОСЛЕДНЮЮ отправленную тренировку из assignedWorkouts для получения дат
+        console.log('📥 Начинаем загрузку assignedWorkouts');
+        const assignedStartTime = Date.now();
+        const assignments = await assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId);
+        console.log('✅ assignedWorkouts загружены за:', Date.now() - assignedStartTime, 'мс');
         
+        // Инициализируем объект для дат
+        const dates = {};
+        let initialWeekIndex = 0;
+        let lastAssignedWeekNum = null;
+
+        if (assignments.length > 0) {
+          // Берем последнюю отправленную тренировку
+          const latestAssignment = assignments[0];
+          lastAssignedWeekNum = latestAssignment.weekNumber;
+          console.log('📋 Последняя назначенная неделя:', lastAssignedWeekNum);
+          
+          if (latestAssignment.weekData && latestAssignment.weekData.dates) {
+             Object.keys(latestAssignment.weekData.dates).forEach(dayKey => {
+               // Важно: мы сохраняем даты с привязкой к номеру недели из назначения!
+               // Так как мы загружаем ПОЛНЫЙ список недель из шаблона, нам нужно знать
+               // к какой именно неделе (по индексу) привязать эти даты.
+               // Находим индекс недели в шаблоне, у которой weekNumber совпадает с назначенным
+               
+               const weekIndex = workoutData.weeks.findIndex(w => w.weekNumber === latestAssignment.weekNumber);
+               
+               if (weekIndex !== -1) {
+                  const dateKey = `week${weekIndex}_${dayKey}`;
+                  dates[dateKey] = latestAssignment.weekData.dates[dayKey];
+                  initialWeekIndex = weekIndex; // Открываем эту неделю
+               }
+            });
+            console.log('📅 Восстановлены даты из назначения:', dates);
+          }
+        }
+
+        setLatestDates(dates);
+        setWorkout(workoutData); // Всегда устанавливаем полный шаблон
+        setSelectedWeekIndex(initialWeekIndex);
+        setLastAssignedWeek(lastAssignedWeekNum);
+        
+        console.log('🎯 setWorkout выполнен (шаблон + даты из назначения)');
+
+
+        console.log('🏁 setLoading(false) - страница должна отобразиться');
         setLoading(false);
+        
       } catch (error) {
-        console.error('Error loading workout data:', error);
+        console.error('❌ Критическая ошибка загрузки:', error);
         setLoading(false);
       }
     };
 
     loadData();
-  }, [params.workoutId]);
+  }, [params.workoutId, params.clientId, location.key]);
 
   const onButtonBack = () => {
     navigate(`/plan_client/${params.clientId}/client`);
@@ -136,28 +171,109 @@ export default function WorkoutDetails() {
     setSelectedDay(null);
   };
 
-  const handleSaveToServer = async () => {
+  const handleSendWorkoutToClient = async () => {
+    console.log('🚀 Начало отправки тренировки');
+    const startTime = Date.now();
+    
+    // Проверяем есть ли userId у клиента
+    if (!clientData || !clientData.data.userId) {
+      showNotification(t('workoutDetails.clientNoAccount'), 'error');
+      return;
+    }
+
+    // Проверяем есть ли выбранная неделя
+    if (!workout.weeks || !workout.weeks[selectedWeekIndex]) {
+      showNotification(t('workoutDetails.weekNotFound'), 'error');
+      return;
+    }
+
+    const weekData = workout.weeks[selectedWeekIndex];
+
+    // Проверяем не является ли эта неделя последней отправленной
+    if (lastAssignedWeek === weekData.weekNumber) {
+      showNotification(t('workoutDetails.weekAlreadySent'), 'error');
+      return;
+    }
+
+    // Проверяем что все дни с упражнениями имеют даты
+    const daysWithExercises = DAYS_ORDER.filter(dayKey => {
+      const dayExercises = weekData.days[dayKey]?.exercises || [];
+      return dayExercises.length > 0;
+    });
+
+    const daysWithoutDates = daysWithExercises.filter(dayKey => {
+      const dateKey = `week${selectedWeekIndex}_${dayKey}`;
+      return !latestDates[dateKey];
+    });
+
+    if (daysWithoutDates.length > 0) {
+      const missingDaysNames = daysWithoutDates.map(dayKey => t(`daysFull.${dayKey}`)).join(', ');
+      showNotification(t('workoutDetails.missingDates', { days: missingDaysNames }), 'error');
+      return;
+    }
+
     try {
-      // Сохраняем все ожидающие сессии
-      for (const session of pendingSessions) {
-        await workoutHistoryService.saveWorkoutSession(session);
-      }
+      setIsSendingWorkout(true);
+      console.log('⏱️ Проверки прошли за:', Date.now() - startTime, 'мс');
       
-      // Очищаем список ожидающих
+      // Подготавливаем данные недели с датами
+      const weekDataWithDates = {
+        ...weekData,
+        dates: {}
+      };
+      
+      // Собираем даты для каждого дня недели
+      DAYS_ORDER.forEach(dayKey => {
+        const dateKey = `week${selectedWeekIndex}_${dayKey}`;
+        if (latestDates[dateKey]) {
+          // Убеждаемся, что дата остается в строковом формате DD.MM.YYYY
+          const dateString = latestDates[dateKey];
+          console.log(`📅 Дата для ${dayKey}:`, dateString);
+          weekDataWithDates.dates[dayKey] = dateString;
+        }
+      });
+      
+      console.log('📦 Данные подготовлены за:', Date.now() - startTime, 'мс');
+      
+      // НЕ удаляем старые назначения - сохраняем историю!
+      // Просто добавляем новое назначение
+      console.log('➕ Добавляем новое назначение (история сохраняется)');
+      
+      // Отправляем клиенту новую тренировку
+      const assignTime = Date.now();
+      await assignedWorkoutsService.assignWeekToClient(
+        params.clientId,
+        clientData.data.userId,
+        weekDataWithDates,
+        workout.name,
+        params.workoutId
+      );
+      console.log('✅ Отправка клиенту заняла:', Date.now() - assignTime, 'мс');
+      
+      // НЕ сохраняем даты в workouts - шаблон должен оставаться без дат!
+      // Даты сохраняются только в assignedWorkouts
+      
+      // Обновляем состояние
+      setLastAssignedWeek(weekData.weekNumber);
       setPendingSessions([]);
       setHasUnsavedChanges(false);
       
-      showNotification('Даты тренировок успешно сохранены!', 'success');
+      console.log('🎉 Общее время:', Date.now() - startTime, 'мс');
+      showNotification(t('workoutDetails.trainingSentSuccess'), 'success');
+      
     } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      showNotification('Ошибка при сохранении дат', 'error');
+      console.error('❌ Ошибка отправки тренировки:', error);
+      console.log('⏱️ Время до ошибки:', Date.now() - startTime, 'мс');
+      showNotification(t('workoutDetails.sendError'), 'error');
+    } finally {
+      setIsSendingWorkout(false);
     }
   };
 
   if (loading) {
     return (
       <div className={styles.workoutDetails}>
-        <p className={styles.loadingMessage}>Загрузка...</p>
+        <p className={styles.loadingMessage}>{t('workoutDetails.loading')}</p>
       </div>
     );
   }
@@ -165,10 +281,8 @@ export default function WorkoutDetails() {
   if (!workout) {
     return (
       <div className={styles.workoutDetails}>
-        <p className={styles.errorMessage}>Тренировка не найдена</p>
-        <button className={styles.backButton} onClick={onButtonBack}>
-          Назад
-        </button>
+        <p className={styles.errorMessage}>{t('workoutDetails.notFound')}</p>
+        <BackButton onClick={onButtonBack} />
       </div>
     );
   }
@@ -178,29 +292,32 @@ export default function WorkoutDetails() {
       <Notification notification={notification} />
       
       <div className={styles.detailsHeader}>
-        <button className={styles.backButton} onClick={onButtonBack}>
-          Назад
-        </button>
-        <h1 className={styles.workoutTitle}>{workout.name}</h1>
-        <button className={styles.editButton} onClick={onButtonEdit}>
-          Редактировать
-        </button>
-      </div>
-
-      {hasUnsavedChanges && (
-        <div className={styles.saveButtonContainer}>
-          <button className={styles.saveButton} onClick={handleSaveToServer}>
-            Сохранить даты на сервер
+        <BackButton onClick={onButtonBack} />
+        <div className={styles.clientName}>
+          {clientData?.data?.surname || ''} {clientData?.data?.name || ''}
+        </div>
+        <div className={styles.headerButtons}>
+          <button className={styles.editButton} onClick={onButtonEdit}>
+            {t('common.edit')}
+          </button>
+          <button 
+            className={styles.sendButton} 
+            onClick={handleSendWorkoutToClient}
+            disabled={isSendingWorkout || !clientData?.data?.userId}
+          >
+            {isSendingWorkout ? t('workoutDetails.sending') : t('workoutDetails.sendToClient')}
           </button>
         </div>
-      )}
+      </div>
+      
+      <h1 className={styles.workoutTitle}>{workout.name}</h1>
 
       <div className={styles.weeklyPlanContainer}>
         {workout.weeks && workout.weeks.length > 0 ? (
           <>
             {workout.weeks[selectedWeekIndex] && (
               <div className={styles.weekSection}>
-                <h2 className={styles.weekTitle}>НЕДЕЛЯ {workout.weeks[selectedWeekIndex].weekNumber}</h2>
+                <h2 className={styles.weekTitle}>{t('workoutDetails.week')} {workout.weeks[selectedWeekIndex].weekNumber}</h2>
                 
                 {DAYS_ORDER.map((dayKey) => {
                   const dayExercises = workout.weeks[selectedWeekIndex].days[dayKey]?.exercises || [];
@@ -215,12 +332,21 @@ export default function WorkoutDetails() {
                       <div className={styles.dayHeader}>
                         <h3 
                           className={styles.dayTitle} 
-                          onClick={() => handleDayClick(dayKey)}
                         >
-                          {DAY_LABELS[dayKey]}
+                          {t(`daysFull.${dayKey}`)}
                         </h3>
-                        {selectedDate && (
-                          <span className={styles.selectedDate}>{selectedDate}</span>
+                        {selectedDate ? (
+                          <span 
+                            className={styles.selectedDate}
+                            onClick={() => handleDayClick(dayKey)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {selectedDate}
+                          </span>
+                        ) : (
+                          <span className={styles.noDate} onClick={() => handleDayClick(dayKey)}>
+                            {t('workoutDetails.selectDate')}
+                          </span>
                         )}
                       </div>
                       <ul className={styles.exercisesList}>
@@ -238,21 +364,38 @@ export default function WorkoutDetails() {
                                     {exercise.exercises.map((ex, idx) => {
                                       const isAerobic = ex.category_id === '6';
                                       
+                                      // Получаем вес из exerciseData (может быть объектом или массивом)
+                                      let weight = '';
+                                      if (ex.exerciseData) {
+                                        // Проверяем формат объекта {weight: '...', sets: '...', reps: '...'}
+                                        if (ex.exerciseData.weight) {
+                                          weight = ex.exerciseData.weight;
+                                        }
+                                        // Проверяем формат массива [вес1, вес2, ...]
+                                        else if (ex.exerciseData[ex.numberTimes - 1]) {
+                                          weight = ex.exerciseData[ex.numberTimes - 1];
+                                        }
+                                      }
+                                      
+                                      // Получаем подходы и повторения
+                                      const sets = ex.exerciseData?.sets || ex.numberSteps || '';
+                                      const reps = ex.exerciseData?.reps || ex.numberTimes || '';
+                                      
                                       return (
                                         <span key={idx} className={styles.groupExerciseItem}>
                                           <span className={styles.exerciseName}>{ex.name}</span>
                                           {isAerobic ? (
                                             <span className={styles.exerciseParams}>
-                                              {ex.duration || 30} хв
+                                              {ex.duration || 30} {t('createWorkout.minutes')}
                                             </span>
                                           ) : (
                                             <>
                                               <span className={styles.exerciseParams}>
-                                                {ex.numberSteps}×{ex.numberTimes}
+                                                {sets}×{reps}
                                               </span>
-                                              {ex.exerciseData && ex.exerciseData[ex.numberTimes - 1] && (
+                                              {weight && (
                                                 <span className={styles.exerciseWeight}>
-                                                  ({ex.exerciseData[ex.numberTimes - 1]})
+                                                  ({weight})
                                                 </span>
                                               )}
                                             </>
@@ -272,6 +415,23 @@ export default function WorkoutDetails() {
                           // Обычное упражнение
                           const isAerobic = exercise.category_id === '6';
                           
+                          // Получаем вес из exerciseData (может быть объектом или массивом)
+                          let weight = '';
+                          if (exercise.exerciseData) {
+                            // Проверяем формат объекта {weight: '...', sets: '...', reps: '...'}
+                            if (exercise.exerciseData.weight) {
+                              weight = exercise.exerciseData.weight;
+                            }
+                            // Проверяем формат массива [вес1, вес2, ...]
+                            else if (exercise.exerciseData[exercise.numberTimes - 1]) {
+                              weight = exercise.exerciseData[exercise.numberTimes - 1];
+                            }
+                          }
+                          
+                          // Получаем подходы и повторения
+                          const sets = exercise.exerciseData?.sets || exercise.numberSteps || '';
+                          const reps = exercise.exerciseData?.reps || exercise.numberTimes || '';
+                          
                           return (
                             <li key={exercise.id} className={styles.exerciseItem}>
                               <div className={styles.exerciseRow}>
@@ -279,16 +439,16 @@ export default function WorkoutDetails() {
                                 <span className={styles.exerciseName}>{exercise.name}</span>
                                 {isAerobic ? (
                                   <span className={styles.exerciseParams}>
-                                    {exercise.duration || 30} хв
+                                    {exercise.duration || 30} {t('createWorkout.minutes')}
                                   </span>
                                 ) : (
                                   <>
                                     <span className={styles.exerciseParams}>
-                                      {exercise.numberSteps} × {exercise.numberTimes}
+                                      {sets} × {reps}
                                     </span>
-                                    {exercise.exerciseData && exercise.exerciseData[exercise.numberTimes - 1] && (
+                                    {weight && (
                                       <span className={styles.exerciseWeight}>
-                                        ({exercise.exerciseData[exercise.numberTimes - 1]})
+                                        ({weight})
                                       </span>
                                     )}
                                   </>
@@ -303,7 +463,7 @@ export default function WorkoutDetails() {
                 })}
                 
                 {Object.values(workout.weeks[selectedWeekIndex].days).every(day => !day.exercises || day.exercises.length === 0) && (
-                  <p className={styles.noExercisesMessage}>В этой неделе нет упражнений</p>
+                  <p className={styles.noExercisesMessage}>{t('workoutDetails.noExercisesWeek')}</p>
                 )}
               </div>
             )}
@@ -323,16 +483,16 @@ export default function WorkoutDetails() {
             )}
           </>
         ) : (
-          <p className={styles.noExercisesMessage}>В этой тренировке нет недель</p>
+          <p className={styles.noExercisesMessage}>{t('workoutDetails.noWeeks')}</p>
         )}
       </div>
 
       {isDateModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setIsDateModalOpen(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>Выберите дату тренировки</h3>
+            <h3 className={styles.modalTitle}>{t('workoutDetails.selectTrainingDate')}</h3>
             <p className={styles.modalSubtitle}>
-              {selectedDay && DAY_LABELS[selectedDay.dayKey]}
+              {selectedDay && t(`daysFull.${selectedDay.dayKey}`)}
             </p>
             <CustomDatePicker 
               onDateSelect={handleDateSelect}

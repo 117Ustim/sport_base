@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { EMPTY_CLIENT } from '../../constants';
 import { gymsService, clientsService } from '../../firebase/services';
+import { useTranslation } from 'react-i18next';
 import ListAddClients from '../ListAddClients';
 import TemporaryDrawer from '../Drawer';
 import AddClient from '../AddClient';
+import CustomSelect from '../CustomSelect';
 import settingsIcon from '../Settings/settings-icon.svg';
 import styles from './Home.module.scss';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [search, setSearch] = useState({ page: 1, limit: 10 });
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
   const [openDrawer, setOpenDrawer] = useState({ right: false });
@@ -29,7 +32,11 @@ export default function Home() {
     if (name === 'gym' && gymId !== undefined) {
       setContacts({ ...contacts, gym: value, gymId: gymId });
     } else {
-      const val = value !== '' && typeof value === 'string' ? value[0].toUpperCase() + value.slice(1) : value;
+      // Не применяем капитализацию к специальным значениям
+      let val = value;
+      if (value !== '' && typeof value === 'string' && value !== 'all') {
+        val = value[0].toUpperCase() + value.slice(1);
+      }
       setContacts({ ...contacts, [name]: val });
     }
   };
@@ -58,8 +65,8 @@ export default function Home() {
 
   const onButtonSearch = () => {
     setSearch({
-      gym: contacts.gym,
-      sex: contacts.sex,
+      gym: contacts.gym === 'all' ? '' : contacts.gym,
+      sex: contacts.sex === 'all' ? '' : contacts.sex,
       page: 1,
       limit: 10,
     });
@@ -74,32 +81,44 @@ export default function Home() {
       <div className={styles.container}>
         <div className={styles.blockSearch}>
           <div className={styles.segment}>
-            <h1>Пошук</h1>
+            <h1>{t('home.search')}</h1>
           </div>
           <div className={styles.formSearch}>
             <div className={styles.homeInput}>
               <div className={styles.homeGym}>
-                <select name='gym' onChange={onChange} value={contacts.gym || ''}>
-                  <option value=''>Зал</option>
-                  {gyms.map((gym) => (
-                    <option key={gym.id} value={gym.name}>
-                      {gym.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  name="gym"
+                  value={contacts.gym || ''}
+                  onChange={onChange}
+                  placeholder={t('home.gym')}
+                  options={[
+                    { value: 'all', label: t('home.all') },
+                    ...gyms.map(gym => ({
+                      value: gym.name,
+                      label: gym.name,
+                      gymId: gym.id
+                    }))
+                  ]}
+                />
               </div>
 
               <div className={styles.homeSex}>
-                <select name='sex' onChange={onChange} value={contacts.sex || ''}>
-                  <option value=''>Стать</option>
-                  <option value='Чоловiча'>Чоловiча</option>
-                  <option value='Жiноча'>Жiноча</option>
-                </select>
+                <CustomSelect
+                  name="sex"
+                  value={contacts.sex || ''}
+                  onChange={onChange}
+                  placeholder={t('home.sex')}
+                  options={[
+                    { value: 'all', label: t('home.all') },
+                    { value: 'Чоловiча', label: t('home.male') },
+                    { value: 'Жiноча', label: t('home.female') }
+                  ]}
+                />
               </div>
             </div>
             <div className={styles.buttonSearch}>
               <button onClick={onButtonSearch} type='button'>
-                Пошук
+                {t('home.search')}
               </button>
             </div>
           </div>

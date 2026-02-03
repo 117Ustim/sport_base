@@ -1,9 +1,10 @@
-// Главный контейнер
 .workoutCreator {
   padding: 20px;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  background-color: #fcfcfc;
 }
 
 // Основная область контента

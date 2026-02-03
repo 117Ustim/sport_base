@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { clientBaseService, categoriesService, workoutsService } from "../../firebase/services";
 import { useState, useEffect } from "react";
 import { arrayMove } from '@dnd-kit/sortable';
 import { useNotification } from '../../hooks/useNotification';
 import Notification from '../Notification';
+import ConfirmDialog from '../ConfirmDialog';
 import TopBar from './components/TopBar';
 import WorkoutModal from './components/WorkoutModal';
 import DaySelector from './components/DaySelector';
@@ -16,6 +18,7 @@ import styles from './CreateWorkout.module.scss';
 export default function CreateWorkout() {
   const navigate = useNavigate();
   const params = useParams();
+  const { t } = useTranslation();
 
   const [exercises, setExercises] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -24,8 +27,9 @@ export default function CreateWorkout() {
   const [workout, setWorkout] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedDay, setSelectedDay] = useState('monday');
-  const [addMode, setAddMode] = useState('single'); // 'single' или 'group'
-  const [groupDraft, setGroupDraft] = useState([]); // Черновик группы
+  const [addMode, setAddMode] = useState('single');
+  const [groupDraft, setGroupDraft] = useState([]);
+  const [deleteWeekDialog, setDeleteWeekDialog] = useState({ isOpen: false, weekIndex: null });
   const { notification, showNotification } = useNotification();
 
   const isEditMode = params.workoutId !== undefined;
@@ -67,10 +71,9 @@ export default function CreateWorkout() {
           setWorkout(data);
         }
       }).catch((error) => {
-        showNotification('Ошибка загрузки тренировки', 'error');
+        showNotification(t('createWorkout.errorLoading'), 'error');
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, params.workoutId]);
 
   const onButtonBack = () => {
@@ -89,7 +92,7 @@ export default function CreateWorkout() {
 
   const onCreateTraining = () => {
     if (!newTrainingName.trim()) {
-      showNotification("Введите название тренировки", "error");
+      showNotification(t('createWorkout.newTrainingName'), "error");
       return;
     }
 
@@ -142,15 +145,56 @@ export default function CreateWorkout() {
     setSelectedWeek(workout.weeks.length);
   };
 
+  const onDeleteWeek = (weekIndex) => {
+    if (workout.weeks.length <= 1) {
+      showNotification(t('createWorkout.lastWeekError'), "error");
+      return;
+    }
+    
+    setDeleteWeekDialog({ isOpen: true, weekIndex });
+  };
+
+  const confirmDeleteWeek = () => {
+    const { weekIndex } = deleteWeekDialog;
+    
+    if (weekIndex === null) return;
+
+    const updatedWeeks = workout.weeks.filter((_, index) => index !== weekIndex);
+    
+    const renumberedWeeks = updatedWeeks.map((week, index) => ({
+      ...week,
+      weekNumber: index + 1
+    }));
+
+    const updatedWorkout = {
+      ...workout,
+      weeks: renumberedWeeks
+    };
+
+    setWorkout(updatedWorkout);
+    
+    if (selectedWeek === weekIndex) {
+      setSelectedWeek(Math.max(0, weekIndex - 1));
+    } else if (selectedWeek > weekIndex) {
+      setSelectedWeek(selectedWeek - 1);
+    }
+    
+    setDeleteWeekDialog({ isOpen: false, weekIndex: null });
+    showNotification(t('createWorkout.weekDeleted'), "success");
+  };
+
+  const cancelDeleteWeek = () => {
+    setDeleteWeekDialog({ isOpen: false, weekIndex: null });
+  };
+
   const onSelectExercise = (exercise) => {
     if (!workout) {
-      showNotification("Сначала создайте тренировку", "error");
+      showNotification(t('createWorkout.createTrainingFirst'), "error");
       return;
     }
 
     const currentDayExercises = workout.weeks[selectedWeek].days[selectedDay].exercises || [];
     
-    // Проверка на дубликат упражнения
     const isDuplicate = currentDayExercises.some(ex => 
       ex.exercise_id === exercise.exercise_id || 
       (ex.type === 'group' && ex.exercises.some(e => e.exercise_id === exercise.exercise_id))
@@ -159,7 +203,7 @@ export default function CreateWorkout() {
     const isDuplicateInDraft = groupDraft.some(ex => ex.exercise_id === exercise.exercise_id);
     
     if (isDuplicate || isDuplicateInDraft) {
-      showNotification(`Упражнение "${exercise.name}" уже добавлено`, "error");
+      showNotification(t('createWorkout.exerciseAdded', { name: exercise.name }), "error");
       return;
     }
 
@@ -180,11 +224,9 @@ export default function CreateWorkout() {
       newExercise.numberTimes = 8;
     }
 
-    if (addMode === 'group') {
-      // Добавляем в черновик группы
+    if (addMode === 'group' && !isAerobic) {
       setGroupDraft([...groupDraft, newExercise]);
     } else {
-      // Обычное добавление
       newExercise.type = 'single';
       
       const updatedWeeks = [...workout.weeks];
@@ -200,12 +242,16 @@ export default function CreateWorkout() {
       };
 
       setWorkout({ ...workout, weeks: updatedWeeks });
+      
+      if (isAerobic && addMode === 'group') {
+         showNotification(t('createWorkout.aerobicAddedAsSingle'), "info");
+      }
     }
   };
 
   const onConfirmGroup = () => {
     if (groupDraft.length < 2) {
-      showNotification("Добавьте минимум 2 упражнения в группу", "error");
+      showNotification(t('createWorkout.minExercisesInGroup'), "error");
       return;
     }
 
@@ -231,7 +277,7 @@ export default function CreateWorkout() {
 
     setWorkout({ ...workout, weeks: updatedWeeks });
     setGroupDraft([]);
-    showNotification("Группа упражнений создана!", "success");
+    showNotification(t('createWorkout.groupCreated'), "success");
   };
 
   const onCancelGroup = () => {
@@ -241,7 +287,7 @@ export default function CreateWorkout() {
 
   const onSaveWorkout = async () => {
     if (!workout) {
-      showNotification("Создайте тренировку", "error");
+      showNotification(t('createWorkout.createTrainingFirst'), "error");
       return;
     }
 
@@ -250,7 +296,7 @@ export default function CreateWorkout() {
     );
     
     if (!hasExercises) {
-      showNotification("Добавьте хотя бы одно упражнение", "error");
+      showNotification(t('createWorkout.addExerciseError'), "error");
       return;
     }
 
@@ -262,17 +308,17 @@ export default function CreateWorkout() {
       
       if (isEditMode) {
         await workoutsService.update(params.workoutId, workoutToSave);
-        showNotification("Тренировка обновлена!", "success");
+        showNotification(t('createWorkout.trainingUpdated'), "success");
       } else {
         await workoutsService.create(workoutToSave);
-        showNotification("Тренировка сохранена!", "success");
+        showNotification(t('createWorkout.trainingSaved'), "success");
       }
       
       setTimeout(() => {
         navigate(-1);
       }, 1500);
     } catch (error) {
-      showNotification("Ошибка при сохранении: " + error.message, "error");
+      showNotification(t('createWorkout.saveError', { error: error.message }), "error");
     }
   };
 
@@ -290,7 +336,6 @@ export default function CreateWorkout() {
       return;
     }
 
-    // Если перетаскивание в черновике
     if (dayKey === 'draft') {
       const oldIndex = groupDraft.findIndex(ex => ex.id === active.id);
       const newIndex = groupDraft.findIndex(ex => ex.id === over.id);
@@ -300,7 +345,6 @@ export default function CreateWorkout() {
       return;
     }
 
-    // Обычное перетаскивание в дне
     const dayExercises = workout.weeks[selectedWeek].days[dayKey].exercises;
     const oldIndex = dayExercises.findIndex(ex => ex.id === active.id);
     const newIndex = dayExercises.findIndex(ex => ex.id === over.id);
@@ -322,16 +366,13 @@ export default function CreateWorkout() {
   };
 
   const handleUpdateExercise = (exerciseId, dayKey, field, value) => {
-    // Проверяем, это упражнение в черновике или уже добавленное
     const draftExercise = groupDraft.find(ex => ex.id === exerciseId);
     
     if (draftExercise) {
-      // Обновляем в черновике
       setGroupDraft(groupDraft.map(ex =>
         ex.id === exerciseId ? { ...ex, [field]: Number(value) } : ex
       ));
     } else {
-      // Обновляем в тренировке
       const updatedWeeks = [...workout.weeks];
       updatedWeeks[selectedWeek] = {
         ...updatedWeeks[selectedWeek],
@@ -349,14 +390,11 @@ export default function CreateWorkout() {
   };
 
   const handleRemoveExercise = (exerciseId, dayKey) => {
-    // Проверяем, это упражнение в черновике или уже добавленное
     const draftExercise = groupDraft.find(ex => ex.id === exerciseId);
     
     if (draftExercise) {
-      // Удаляем из черновика
       setGroupDraft(groupDraft.filter(ex => ex.id !== exerciseId));
     } else {
-      // Удаляем из тренировки
       const updatedWeeks = [...workout.weeks];
       updatedWeeks[selectedWeek] = {
         ...updatedWeeks[selectedWeek],
@@ -371,9 +409,61 @@ export default function CreateWorkout() {
     }
   };
 
+  const handleBulkChangeReps = (reps) => {
+    if (!workout) {
+      showNotification(t('createWorkout.createTrainingFirst'), "error");
+      return;
+    }
+
+    const currentDayExercises = workout.weeks[selectedWeek].days[selectedDay].exercises || [];
+    
+    if (currentDayExercises.length === 0) {
+      showNotification(t('createWorkout.noExercisesInDay'), "error");
+      return;
+    }
+
+    const updatedExercises = currentDayExercises.map(exercise => {
+      if (exercise.type === 'group') {
+        return {
+          ...exercise,
+          exercises: exercise.exercises.map(ex => {
+            const isAerobic = ex.category_id === '6';
+            if (isAerobic) return ex;
+            return { ...ex, numberTimes: reps };
+          })
+        };
+      } else {
+        const isAerobic = exercise.category_id === '6';
+        if (isAerobic) return exercise;
+        return { ...exercise, numberTimes: reps };
+      }
+    });
+
+    const updatedWeeks = [...workout.weeks];
+    updatedWeeks[selectedWeek] = {
+      ...updatedWeeks[selectedWeek],
+      days: {
+        ...updatedWeeks[selectedWeek].days,
+        [selectedDay]: {
+          exercises: updatedExercises
+        }
+      }
+    };
+
+    setWorkout({ ...workout, weeks: updatedWeeks });
+    showNotification(t('createWorkout.repsChanged', { reps }), "success");
+  };
+
   return (
     <div className={styles.workoutCreator}>
       <Notification notification={notification} />
+
+      <ConfirmDialog
+        isOpen={deleteWeekDialog.isOpen}
+        message={t('dialogs.confirmDeleteWeek', { number: deleteWeekDialog.weekIndex !== null ? workout?.weeks[deleteWeekDialog.weekIndex]?.weekNumber : '' })}
+        onConfirm={confirmDeleteWeek}
+        onCancel={cancelDeleteWeek}
+      />
 
       <WorkoutModal
         isOpen={isModalOpen}
@@ -407,6 +497,7 @@ export default function CreateWorkout() {
               selectedWeek={selectedWeek}
               onSelectWeek={setSelectedWeek}
               onAddWeek={onAddWeek}
+              onDeleteWeek={onDeleteWeek}
             />
           </div>
 
@@ -421,6 +512,7 @@ export default function CreateWorkout() {
             onRemoveExercise={handleRemoveExercise}
             onConfirmGroup={onConfirmGroup}
             getWeightForReps={getWeightForReps}
+            onBulkChangeReps={handleBulkChangeReps}
           />
 
           <ExercisesPanel
@@ -430,7 +522,7 @@ export default function CreateWorkout() {
             addMode={addMode}
             onAddModeChange={(mode) => {
               if (mode === 'single' && groupDraft.length > 0) {
-                if (window.confirm('Отменить создание группы?')) {
+                if (window.confirm(t('dialogs.cancelGroup'))) {
                   setGroupDraft([]);
                   setAddMode(mode);
                 }
@@ -444,7 +536,7 @@ export default function CreateWorkout() {
         </div>
       ) : (
         <div className={styles.noWorkoutMessage}>
-          <p>Нажмите "Новая тренировка" для создания недельного плана</p>
+          <p>{t('createWorkout.noWorkoutMessage')}</p>
         </div>
       )}
     </div>

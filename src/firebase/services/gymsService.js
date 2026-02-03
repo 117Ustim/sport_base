@@ -2,66 +2,72 @@ import {
   doc, 
   getDoc, 
   setDoc,
-  updateDoc,
-  arrayUnion
+  collection,
+  getDocs,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../config';
 
-// Структура: коллекция Ustim -> документ Gyms -> массив Gyms
-const COLLECTION_NAME = 'Ustim';
-const DOC_NAME = 'Gyms';
+// НОВАЯ СТРУКТУРА: коллекция gyms (каждый зал = отдельный документ)
+const COLLECTION_NAME = 'gyms';
 
 export const gymsService = {
-  // Получить все залы
+  // Получить все залы (НОВАЯ СТРУКТУРА)
   async getAll() {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
-      const docSnap = await getDoc(docRef);
+      const gymsRef = collection(db, COLLECTION_NAME);
+      const snapshot = await getDocs(gymsRef);
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Массив залов находится в поле Gyms
-        return data.Gyms || [];
-      }
-      return [];
+      const gyms = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || '',
+          Label: data.name || '' // Для совместимости
+        };
+      });
+      
+      return gyms;
     } catch (error) {
       console.error('Error getting gyms:', error);
       throw error;
     }
   },
 
-  // Создать новый зал
+  // Создать новый зал (НОВАЯ СТРУКТУРА)
   async create(name) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
+      const newId = Date.now().toString();
+      const docRef = doc(db, COLLECTION_NAME, newId);
+      
       const newGym = {
-        id: Date.now().toString(),
+        id: newId,
+        name: name,
+        createdAt: new Date().toISOString()
+      };
+      
+      await setDoc(docRef, newGym);
+      
+      return {
+        id: newId,
         name: name,
         Label: name
       };
-      
-      await updateDoc(docRef, {
-        Gyms: arrayUnion(newGym)
-      });
-      
-      return newGym;
     } catch (error) {
       console.error('Error creating gym:', error);
       throw error;
     }
   },
 
-  // Обновить зал
+  // Обновить зал (НОВАЯ СТРУКТУРА)
   async update(id, name) {
     try {
-      // Получаем текущий список
-      const gyms = await this.getAll();
-      const updatedGyms = gyms.map(gym => 
-        gym.id === id ? { ...gym, name, Label: name } : gym
-      );
+      const docRef = doc(db, COLLECTION_NAME, id);
       
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
-      await setDoc(docRef, { Gyms: updatedGyms });
+      await setDoc(docRef, {
+        name: name,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
       
       return { id, name };
     } catch (error) {
@@ -70,15 +76,11 @@ export const gymsService = {
     }
   },
 
-  // Удалить зал
+  // Удалить зал (НОВАЯ СТРУКТУРА)
   async delete(id) {
     try {
-      // Получаем текущий список
-      const gyms = await this.getAll();
-      const filteredGyms = gyms.filter(gym => gym.id !== id);
-      
-      const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
-      await setDoc(docRef, { Gyms: filteredGyms });
+      const docRef = doc(db, COLLECTION_NAME, id);
+      await deleteDoc(docRef);
       
       return true;
     } catch (error) {
