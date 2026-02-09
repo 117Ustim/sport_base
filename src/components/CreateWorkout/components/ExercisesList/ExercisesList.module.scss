@@ -56,11 +56,42 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   
   &:hover {
     background-color: #f57c00;
     color: white;
     transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.starRepsButton {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #ff9800;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(255, 152, 0, 0.4);
   }
   
   &:active {

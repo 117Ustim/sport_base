@@ -22,12 +22,15 @@ export default function ExercisesList({
   selectedDay,
   groupDraft,
   addMode,
+  columns,
   onDragEnd, 
   onUpdateExercise, 
   onRemoveExercise,
   onConfirmGroup,
   getWeightForReps,
-  onBulkChangeReps
+  onBulkChangeReps,
+  onColumnWeightClick,
+  onStarWeightClick
 }) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -65,6 +68,23 @@ export default function ExercisesList({
           >
             12
           </button>
+          {/* Кнопки "*" для колонок "* X" */}
+          {columns && columns
+            .filter(col => col.name.startsWith('* ') && !isNaN(parseInt(col.name.substring(2))))
+            .map(col => {
+              const reps = parseInt(col.name.substring(2));
+              return (
+                <button 
+                  key={col.id}
+                  className={styles.starRepsButton} 
+                  onClick={() => onStarWeightClick(reps)}
+                  title={`Подставить вес из колонки "${col.name}" для последнего добавленного упражнения`}
+                >
+                  * {reps}
+                </button>
+              );
+            })
+          }
         </div>
       </div>
       
@@ -102,6 +122,8 @@ export default function ExercisesList({
                     onConfirm={null}
                     getWeightForReps={getWeightForReps}
                     isInDraft={true}
+                    columns={columns}
+                    onStarWeightClick={onStarWeightClick}
                   />
                 ))}
               </ul>
@@ -138,6 +160,8 @@ export default function ExercisesList({
                       onRemove={onRemoveExercise}
                       getWeightForReps={getWeightForReps}
                       isInDraft={false}
+                      columns={columns}
+                      onStarWeightClick={onStarWeightClick}
                     />
                   ))}
                 </ul>
