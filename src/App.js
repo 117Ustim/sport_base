@@ -11,6 +11,7 @@ import WorkoutDetails from "./components/WorkoutDetails";
 import Settings from "./components/Settings";
 import ManageClients from "./components/Settings/ManageClients";
 import Login from "./components/Login";
+import MigrateWorkouts from "./components/Migration/MigrateWorkouts";
 import { authService } from "./firebase/services";
 import { initCategories } from "./firebase/initData";
 
@@ -119,6 +120,10 @@ export default function App() {
         <Route
           path='/workout_details/:clientId/:workoutId'
           element={user ? <WorkoutDetails/> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path='/migrate-workouts'
+          element={user ? <MigrateWorkouts/> : <Navigate to="/login" replace />}
         />
       </Routes>
     </div>

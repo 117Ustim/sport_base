@@ -225,18 +225,6 @@ export default function CreateWorkout() {
 
     const currentDayExercises = workout.weeks[selectedWeek].days[selectedDay].exercises || [];
     
-    const isDuplicate = currentDayExercises.some(ex => 
-      ex.exercise_id === exercise.exercise_id || 
-      (ex.type === 'group' && ex.exercises.some(e => e.exercise_id === exercise.exercise_id))
-    );
-    
-    const isDuplicateInDraft = groupDraft.some(ex => ex.exercise_id === exercise.exercise_id);
-    
-    if (isDuplicate || isDuplicateInDraft) {
-      showNotification(t('createWorkout.exerciseAdded', { name: exercise.name }), "error");
-      return;
-    }
-
     const isAerobic = exercise.category_id === '6';
 
     const newExercise = {

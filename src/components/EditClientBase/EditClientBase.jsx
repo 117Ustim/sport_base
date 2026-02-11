@@ -101,23 +101,30 @@ export default function EditClientBase() {
   const saveManager = useSaveManager({
     onSave: async (newItems) => {
       try {
-        // Сохраняем новые упражнения на сервер с порядком
-        for (let i = 0; i < newItems.length; i++) {
-          const exerciseData = newItems[i];
+        console.log('Saving new exercises:', newItems);
+        
+        // Сохраняем новые упражнения на сервер
+        for (const exerciseData of newItems) {
           const { id, ...dataToSave } = exerciseData;
           
-          // Находим индекс этого упражнения в общем списке
-          const indexInExercises = exercises.findIndex(ex => ex.id === exerciseData.id);
-          dataToSave.order = indexInExercises;
+          // Пропускаем упражнения без имени
+          if (!dataToSave.name) {
+            console.warn('Skipping exercise without name:', exerciseData);
+            continue;
+          }
           
+          // Находим индекс этого упражнения в общем списке для order
+          const indexInExercises = exercises.findIndex(ex => ex.id === exerciseData.id);
+          dataToSave.order = indexInExercises >= 0 ? indexInExercises : 999999;
+          
+          console.log('Creating exercise:', dataToSave);
           await exercisesService.create(dataToSave);
         }
         
-        // Обновляем порядок ВСЕХ упражнений (включая старые)
-        await exercisesService.updateOrder(exercises);
-        
-        // Обновляем список упражнений с сервера
+        // Обновляем список упражнений с сервера (получаем реальные ID)
         const updatedExercises = await exercisesService.getAll();
+        console.log('Updated exercises from server:', updatedExercises);
+        
         setExercises(updatedExercises);
         saveManager.setOriginalData(updatedExercises);
         

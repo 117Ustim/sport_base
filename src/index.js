@@ -9,6 +9,11 @@ import rootReducer from "./store/indexRedux";
 import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 // Импорт конфига i18n
 import './i18n';
+// Инициализация Sentry
+import { initSentry } from './utils/sentry';
+
+// Инициализируем Sentry перед рендером приложения
+initSentry();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 const store = createStore(rootReducer);

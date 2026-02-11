@@ -132,8 +132,10 @@ export default function ClientBase() {
   };
 
   const backPlanClient = () => {
-    const name = clientName || 'Client';
-    navigate(`/plan_client/${params.id}/${name}`);
+    // Переход на страницу плана клиента (нужно передать id и name)
+    // Используем clientName если есть, иначе пустую строку
+    const encodedName = encodeURIComponent(clientName || 'Client');
+    navigate(`/plan_client/${params.id}/${encodedName}`);
   };
 
   const openEditModal = () => {
@@ -213,7 +215,31 @@ export default function ClientBase() {
       name: columnName
     };
     
-    const updatedColumns = [...columns, newColumn];
+    // Определяем, является ли название колонки числом
+    const isNumericColumn = !isNaN(parseInt(columnName));
+    
+    let updatedColumns;
+    
+    if (isNumericColumn) {
+      // Если колонка с числовым названием - вставляем в правильное место
+      const numericValue = parseInt(columnName);
+      
+      // Разделяем колонки на числовые и нечисловые
+      const numericColumns = columns.filter(col => !isNaN(parseInt(col.name)));
+      const nonNumericColumns = columns.filter(col => isNaN(parseInt(col.name)));
+      
+      // Добавляем новую колонку к числовым и сортируем
+      const updatedNumericColumns = [...numericColumns, newColumn].sort((a, b) => {
+        return parseInt(a.name) - parseInt(b.name);
+      });
+      
+      // Объединяем: сначала числовые (отсортированные), потом нечисловые
+      updatedColumns = [...updatedNumericColumns, ...nonNumericColumns];
+    } else {
+      // Если колонка с нечисловым названием - добавляем в конец
+      updatedColumns = [...columns, newColumn];
+    }
+    
     setColumns(updatedColumns);
     
     const updatedExercises = exercisesArray.map((exercise) => ({
@@ -473,7 +499,7 @@ export default function ClientBase() {
           <button 
             className={styles.button} 
             onClick={createBase}
-            disabled={isCreatingBase}
+            disabled={isCreatingBase || exercisesArray.length > 0}
           >
             {isCreatingBase && (
               <span className={styles.spinner}></span>
@@ -515,7 +541,7 @@ export default function ClientBase() {
               className={deleteMode ? styles.deleteModeActive : ''} 
               onClick={toggleDeleteMode}
             >
-              {deleteMode ? t('common.cancelDelete') : t('common.deleteColumn')}
+              {deleteMode ? t('common.cancelDelete') : `− ${t('common.deleteColumn')}`}
             </button>
           </div>
           {deleteMode && (
@@ -629,7 +655,8 @@ function SortableCategory({ category, exercisesArray, onChangeBase, columns, del
               <th>{t('clientBase.exerciseColumn')}</th>
               {columns.map((column) => (
                 <th 
-                  className={`${styles.numCol} ${deleteMode ? styles.deleteMode : ''}`}
+                 
+                className={`${styles.numCol} ${deleteMode ? styles.deleteMode : ''}`}
                   key={column.id}
                   onClick={() => deleteMode && deleteColumn(column.id)}
                   title={deleteMode ? t('clientBase.deleteColumnTitle', { name: column.name }) : column.name}

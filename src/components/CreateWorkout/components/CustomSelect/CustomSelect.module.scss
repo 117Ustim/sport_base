@@ -1,6 +1,7 @@
 .customSelect {
   position: relative;
   user-select: none;
+  z-index: 1; // Базовый z-index
 
   &.setsSelector {
     width: 50px;
@@ -15,6 +16,11 @@
   &.timeSelector {
     width: 80px;
     margin-left: 0;
+  }
+  
+  // Когда селект открыт - поднимаем весь контейнер
+  &:has(.selectTrigger.open) {
+    z-index: 10001;
   }
 }
 
@@ -32,15 +38,19 @@
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   min-height: 30px;
+  position: relative; 
+  z-index: 1; 
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+   z-index: 1; 
   }
 
   &.open {
     transform: scale(1.05);
     box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    z-index: 1; 
   }
 
   .arrow {
@@ -53,19 +63,44 @@
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  mix-blend-mode: normal;
+  filter: none;
+  isolation: isolate;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e0e0e0; // Добавляем границу
   max-height: 240px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 10005; 
   animation: fadeInScale 0.2s ease-out;
   min-width: 60px;
   padding: 6px;
+  opacity: 1 !important;
+  pointer-events: auto; // Блокируем события мыши от элементов под dropdown
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    opacity: 1;
+    z-index: 0;
+  }
+
+  // Явно указываем, что при hover dropdown остаётся непрозрачным
+  &:hover {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal;
+    filter: none;
+  } 
 
   @keyframes fadeInScale {
     from {
-      opacity: 0;
+      opacity: 1; // Изменили с 0 на 1
       transform: translateX(-50%) scale(0.9);
     }
     to {
@@ -89,6 +124,7 @@
 
     &:hover {
       background: #777;
+      opacity: 1 !important; 
     }
   }
 }
@@ -103,15 +139,22 @@
   text-align: center;
   margin-bottom: 4px;
   color: rgb(57, 56, 56);
+  background-color: #ffffff;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 1;
 
   &:last-child {
     margin-bottom: 0;
   }
 
   &:hover {
-    background: linear-gradient(135deg, #95a6f05f 0%, #c7c3ca 100%);
+    background: linear-gradient(135deg, #b8c5f0 0%, #d8d4db 100%); // Убрали прозрачность!
     color: rgb(145, 19, 19);
     transform: scale(1.05);
     font-weight: 600;
+    opacity: 1 !important;
   }
 }
+
+

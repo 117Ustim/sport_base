@@ -9,7 +9,8 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && 
              (request.auth.token.email == 'ustimweb72@gmail.com' ||
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+              (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
     
     // Функция проверки что пользователь авторизован
@@ -21,17 +22,20 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
     }
     
     // Коллекция clients - только админы
     match /clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      allow delete: if isAuthenticated(); // Разрешаем удаление всем аутентифицированным пользователям
       
       // Subcollection attendance
       match /attendance/{attendanceId} {
         allow read: if isAuthenticated();
         allow write: if isAdmin();
+        allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
       }
     }
     
@@ -51,11 +55,27 @@ service cloud.firestore {
     match /clientBases/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
       
-      // Subcollections
+      // Subcollection exercises
+      match /exercises/{exerciseId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+        allow delete: if isAuthenticated();
+      }
+      
+      // Subcollection metadata
+      match /metadata/{docId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+        allow delete: if isAuthenticated();
+      }
+      
+      // Другие subcollections
       match /{subcollection}/{docId} {
         allow read: if isAuthenticated();
         allow write: if isAdmin();
+        allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
       }
     }
     
@@ -63,12 +83,22 @@ service cloud.firestore {
     match /workoutHistory/{historyId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
     }
     
     // Коллекция assignedWorkouts - только админы
     match /assignedWorkouts/{assignedId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+      allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
+    }
+    
+    // Коллекция assignmentHistory - история назначений
+    match /assignmentHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if false;
+      allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
     }
     
     // Коллекция categories - только админы

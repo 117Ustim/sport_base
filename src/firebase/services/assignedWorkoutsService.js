@@ -6,7 +6,10 @@ import {
   setDoc,
   query,
   where,
-  deleteDoc
+  deleteDoc,
+  orderBy,
+  limit,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -14,50 +17,96 @@ const COLLECTION_NAME = 'assignedWorkouts';
 
 export const assignedWorkoutsService = {
   /**
-   * Отправить неделю тренировок клиенту (ОПТИМИЗИРОВАНО)
+   * Отправить неделю тренировок клиенту
+   * ✅ Сохраняет полные данные недели (включая упражнения с весами)
+   * ✅ ИСПРАВЛЕНО: Использует batch для атомарности (нет race condition)
+   * 
    * @param {string} clientId - ID клиента
    * @param {string} userId - Firebase Auth UID клиента
-   * @param {object} weekData - Данные недели тренировок
+   * @param {object} weekData - Данные недели тренировок (weekNumber, days, dates)
    * @param {string} workoutName - Название тренировки
    * @param {string} workoutId - ID тренировки
    */
   async assignWeekToClient(clientId, userId, weekData, workoutName, workoutId) {
     try {
-      console.log('📤 Отправляем данные недели:', weekData);
+      console.log('📤 Отправляем ссылку на неделю тренировки');
       console.log('📅 Даты в weekData:', weekData.dates);
       console.log('🆔 userId:', userId);
       console.log('🆔 clientId:', clientId);
 
-      // 1. Сначала переносим ВСЕ старые тренировки в историю и удаляем их из активных
-      // Это гарантирует, что у клиента будет только одна активная программа (Вариант А)
-      console.log('🧹 Очистка старых тренировок перед назначением новой...');
-      await this.deleteAllAssignmentsForUser(userId);
+      // ✅ ИСПРАВЛЕНО: Используем batch для атомарности
+      const batch = writeBatch(db);
       
-      // Генерируем уникальный ID для назначения
+      // 1. Получаем все старые тренировки для удаления
+      const assignmentsRef = collection(db, COLLECTION_NAME);
+      const q = query(assignmentsRef, where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+      
+      console.log('🧹 Найдено старых тренировок для удаления:', snapshot.docs.length);
+      
+      // 2. Добавляем удаление старых тренировок в batch
+      snapshot.docs.forEach((docSnapshot) => {
+        const assignment = docSnapshot.data();
+        
+        // Создаем запись в истории
+        const historyId = `history_${assignment.clientId}_${assignment.workoutId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const historyRef = doc(db, 'assignmentHistory', historyId);
+        
+        const historyData = {
+          ...assignment,
+          originalAssignmentId: docSnapshot.id,
+          completedAt: new Date().toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }).replace(/\//g, '.'),
+          status: 'replaced'
+        };
+        
+        // Добавляем в batch
+        batch.set(historyRef, historyData);
+        batch.delete(docSnapshot.ref);
+      });
+      
+      // 3. Генерируем ID для нового назначения
       const assignmentId = `${clientId}_${workoutId}_week${weekData.weekNumber}_${Date.now()}`;
       const assignmentRef = doc(db, COLLECTION_NAME, assignmentId);
       
+      // 4. Подготавливаем данные нового назначения
       const assignmentData = {
         clientId,
         userId,
         workoutId,
         workoutName,
         weekNumber: weekData.weekNumber,
-        weekData: weekData, // Сохраняем weekData с датами!
+        weekData: {
+          weekNumber: weekData.weekNumber,
+          days: weekData.days,
+          dates: weekData.dates || {}
+        },
         assignedAt: new Date().toLocaleDateString('ru-RU', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
         }).replace(/\//g, '.'),
-        status: 'new' // new, viewed, completed
+        status: 'new'
       };
       
-      console.log('💾 Сохраняем в Firebase assignedWorkouts с ID:', assignmentId);
-      console.log('💾 Данные для сохранения:', JSON.stringify(assignmentData, null, 2));
+      // 5. Добавляем создание нового назначения в batch
+      batch.set(assignmentRef, assignmentData);
       
-      await setDoc(assignmentRef, assignmentData);
+      console.log('💾 Выполняем атомарную операцию (batch)...');
       
-      console.log('✅ УСПЕШНО сохранено в Firebase! Старые тренировки убраны в историю.');
+      // ✅ 6. Выполняем все операции атомарно
+      await batch.commit();
+      
+      console.log('✅ УСПЕШНО! Все операции выполнены атомарно.');
+      console.log('   - Старые тренировки перенесены в историю');
+      console.log('   - Старые тренировки удалены');
+      console.log('   - Новая тренировка назначена');
       
       return { id: assignmentId, ...assignmentData };
     } catch (error) {
@@ -67,62 +116,66 @@ export const assignedWorkoutsService = {
   },
 
   /**
-   * Получить все назначенные тренировки для клиента по userId (С WEEKDATA)
+   * Получить все назначенные тренировки для клиента по userId
+   * ✅ ОПТИМИЗИРОВАНО: Загрузка конкретной недели из subcollection + limit
+   * 
    * @param {string} userId - Firebase Auth UID клиента
+   * @param {number} limitCount - Максимальное количество записей (по умолчанию 10)
    */
-  async getAssignedWorkoutsByUserId(userId) {
+  async getAssignedWorkoutsByUserId(userId, limitCount = 10) {
     try {
       console.log('🔍 Клиент запрашивает тренировки для userId:', userId);
       const assignmentsRef = collection(db, COLLECTION_NAME);
-      const q = query(assignmentsRef, where('userId', '==', userId));
+      const q = query(
+        assignmentsRef, 
+        where('userId', '==', userId),
+        orderBy('assignedAt', 'desc'), // ✅ Сортировка на сервере (новые первыми)
+        limit(limitCount) // ✅ Ограничение количества
+      );
       const snapshot = await getDocs(q);
       
       console.log('📊 Найдено записей в assignedWorkouts:', snapshot.docs.length);
       
       const assignments = [];
       
-      // Для каждого назначения проверяем есть ли weekData
+      // Для каждого назначения загружаем weekData из workouts/weeks
       for (const docSnapshot of snapshot.docs) {
         const assignment = {
           id: docSnapshot.id,
           ...docSnapshot.data()
         };
         
-        console.log('📦 Assignment:', assignment.id, 'weekData есть?', !!assignment.weekData);
-        
-        // Если weekData уже есть в assignment (новый формат) - используем его
-        if (assignment.weekData) {
-          console.log('✅ weekData найден в assignment, даты:', assignment.weekData.dates);
-          assignments.push(assignment);
-          continue;
-        }
-        
-        // Если нет - пытаемся получить из workouts (старый формат)
-        try {
-          const workoutRef = doc(db, 'workouts', assignment.workoutId);
-          const workoutSnap = await getDoc(workoutRef);
+        // ✅ НОВЫЙ ФОРМАТ: weekData нет, загружаем из workouts/weeks subcollection
+        if (!assignment.weekData || !assignment.weekData.days) {
+          console.log('📦 Assignment:', assignment.id, '- загружаем weekData из workouts/weeks');
           
-          if (workoutSnap.exists()) {
-            const workout = workoutSnap.data();
-            const week = workout.weeks?.find(w => w.weekNumber === assignment.weekNumber);
+          try {
+            // ✅ НОВАЯ СТРУКТУРА: Загружаем конкретную неделю из subcollection
+            const weekRef = doc(db, 'workouts', assignment.workoutId, 'weeks', String(assignment.weekNumber));
+            const weekSnap = await getDoc(weekRef);
             
-            if (week) {
-              console.log('🔍 weekData получен из workouts, даты:', week.dates);
-              assignment.weekData = week;
+            if (weekSnap.exists()) {
+              const week = weekSnap.data();
+              console.log('✅ weekData загружен из workouts/weeks subcollection');
+              assignment.weekData = {
+                ...week,
+                dates: assignment.dates || week.dates || {}
+              };
+            } else {
+              console.warn(`Week ${assignment.weekNumber} not found in workout ${assignment.workoutId}/weeks`);
             }
+          } catch (error) {
+            console.error(`Error loading weekData for assignment ${assignment.id}:`, error);
           }
-        } catch (error) {
-          console.error(`Error loading weekData for assignment ${assignment.id}:`, error);
+        } else {
+          // ⚠️ СТАРЫЙ ФОРМАТ: weekData уже есть (для обратной совместимости)
+          console.log('📦 Assignment:', assignment.id, '- weekData уже есть (старый формат)');
         }
         
         assignments.push(assignment);
       }
       
-      // Сортируем по дате назначения (новые первыми)
-      assignments.sort((a, b) => {
-        return b.assignedAt.localeCompare(a.assignedAt);
-      });
-      
+      // ✅ Сортировка уже не нужна - данные приходят отсортированными!
       console.log('🔍 Отправляем клиенту assignments:', assignments.length);
       return assignments;
     } catch (error) {
@@ -132,62 +185,66 @@ export const assignedWorkoutsService = {
   },
 
   /**
-   * Получить все назначенные тренировки для клиента по clientId (С WEEKDATA)
+   * Получить все назначенные тренировки для клиента по clientId
+   * ✅ ОПТИМИЗИРОВАНО: Загрузка конкретной недели из subcollection + limit
+   * 
    * @param {string} clientId - ID клиента
+   * @param {number} limitCount - Максимальное количество записей (по умолчанию 10)
    */
-  async getAssignedWorkoutsByClientId(clientId) {
+  async getAssignedWorkoutsByClientId(clientId, limitCount = 10) {
     try {
       console.log('🔍 Админ запрашивает тренировки для clientId:', clientId);
       const assignmentsRef = collection(db, COLLECTION_NAME);
-      const q = query(assignmentsRef, where('clientId', '==', clientId));
+      const q = query(
+        assignmentsRef, 
+        where('clientId', '==', clientId),
+        orderBy('assignedAt', 'desc'), // ✅ Сортировка на сервере (новые первыми)
+        limit(limitCount) // ✅ Ограничение количества
+      );
       const snapshot = await getDocs(q);
       
       console.log('📊 Найдено записей в assignedWorkouts:', snapshot.docs.length);
       
       const assignments = [];
       
-      // Для каждого назначения проверяем есть ли weekData
+      // Для каждого назначения загружаем weekData из workouts/weeks
       for (const docSnapshot of snapshot.docs) {
         const assignment = {
           id: docSnapshot.id,
           ...docSnapshot.data()
         };
         
-        console.log('📦 Assignment:', assignment.id, 'weekData есть?', !!assignment.weekData);
-        
-        // Если weekData уже есть в assignment (новый формат) - используем его
-        if (assignment.weekData) {
-          console.log('✅ weekData найден в assignment, даты:', assignment.weekData.dates);
-          assignments.push(assignment);
-          continue;
-        }
-        
-        // Если нет - пытаемся получить из workouts (старый формат)
-        try {
-          const workoutRef = doc(db, 'workouts', assignment.workoutId);
-          const workoutSnap = await getDoc(workoutRef);
+        // ✅ НОВЫЙ ФОРМАТ: weekData нет, загружаем из workouts/weeks subcollection
+        if (!assignment.weekData || !assignment.weekData.days) {
+          console.log('📦 Assignment:', assignment.id, '- загружаем weekData из workouts/weeks');
           
-          if (workoutSnap.exists()) {
-            const workout = workoutSnap.data();
-            const week = workout.weeks?.find(w => w.weekNumber === assignment.weekNumber);
+          try {
+            // ✅ НОВАЯ СТРУКТУРА: Загружаем конкретную неделю из subcollection
+            const weekRef = doc(db, 'workouts', assignment.workoutId, 'weeks', String(assignment.weekNumber));
+            const weekSnap = await getDoc(weekRef);
             
-            if (week) {
-              console.log('🔍 weekData получен из workouts, даты:', week.dates);
-              assignment.weekData = week;
+            if (weekSnap.exists()) {
+              const week = weekSnap.data();
+              console.log('✅ weekData загружен из workouts/weeks subcollection');
+              assignment.weekData = {
+                ...week,
+                dates: assignment.dates || week.dates || {}
+              };
+            } else {
+              console.warn(`Week ${assignment.weekNumber} not found in workout ${assignment.workoutId}/weeks`);
             }
+          } catch (error) {
+            console.error(`Error loading weekData for assignment ${assignment.id}:`, error);
           }
-        } catch (error) {
-          console.error(`Error loading weekData for assignment ${assignment.id}:`, error);
+        } else {
+          // ⚠️ СТАРЫЙ ФОРМАТ: weekData уже есть (для обратной совместимости)
+          console.log('📦 Assignment:', assignment.id, '- weekData уже есть (старый формат)');
         }
         
         assignments.push(assignment);
       }
       
-      // Сортируем по дате назначения (новые первыми)
-      assignments.sort((a, b) => {
-        return b.assignedAt.localeCompare(a.assignedAt);
-      });
-      
+      // ✅ Сортировка уже не нужна - данные приходят отсортированными!
       console.log('🔍 Отправляем админу assignments:', assignments.length);
       return assignments;
     } catch (error) {

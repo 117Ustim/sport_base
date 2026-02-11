@@ -98,37 +98,94 @@ export default function EditClientExercises() {
 
   // Используем общий хук для управления сохранением
   const saveManager = useSaveManager({
-    onSave: async (newItems) => {
-      // Находим удаленные упражнения (были в оригинале, но нет в текущем списке)
-      const originalIds = originalExercises.map(ex => ex.exercise_id);
-      const currentIds = clientExercises.map(ex => ex.exercise_id);
-      const deletedIds = originalIds.filter(id => !currentIds.includes(id) && !id.toString().startsWith('temp_'));
+    onSave: async (currentExercises, originalExercisesList) => {
+      console.log('=== SAVE START ===');
+      console.log('Saving exercises for client:', params.id);
+      console.log('originalExercisesList:', originalExercisesList);
+      console.log('currentExercises:', currentExercises);
       
-      // Удаляем упражнения с сервера
+      // 1. Находим удаленные упражнения (были в оригинале, но нет в текущем списке)
+      const originalIds = originalExercisesList.map(ex => ex.exercise_id);
+      const currentIds = currentExercises.map(ex => ex.exercise_id);
+      console.log('originalIds:', originalIds);
+      console.log('currentIds:', currentIds);
+      
+      // ВАЖНО: Удаляем ВСЕ упражнения, которых нет в текущем списке (включая temp_)
+      const deletedIds = originalIds.filter(id => !currentIds.includes(id));
+      console.log('deletedIds:', deletedIds);
+      
+      // 2. Удаляем упражнения с сервера
       for (const exerciseId of deletedIds) {
+        console.log('Deleting exercise from server:', exerciseId);
         await clientBaseService.deleteExercise(params.id, exerciseId);
       }
       
-      // Сохраняем новые упражнения на сервер с порядком
-      for (let i = 0; i < newItems.length; i++) {
-        const exerciseData = newItems[i];
-        const { exercise_id, ...dataToSave } = exerciseData;
+      // 3. Находим новые упражнения (с temp_ ID) в текущем списке
+      const newExercises = currentExercises.filter(ex => ex.exercise_id.toString().startsWith('temp_'));
+      console.log('New exercises to add:', newExercises);
+      
+      // 4. Добавляем новые упражнения на сервер
+      for (const exerciseData of newExercises) {
+        // Пропускаем упражнения без имени
+        if (!exerciseData.name) {
+          console.warn('Skipping exercise without name:', exerciseData);
+          continue;
+        }
         
-        // Находим индекс этого упражнения в общем списке
-        const indexInExercises = clientExercises.findIndex(ex => ex.exercise_id === exerciseData.exercise_id);
-        dataToSave.order = indexInExercises;
+        const exerciseToSave = {
+          id: exerciseData.exercise_id, // Используем существующий temp_ ID
+          name: exerciseData.name,
+          categoryId: exerciseData.category_id || exerciseData.categoryId,
+          order: 999999 // Временный order, обновим ниже
+        };
         
-        await clientBaseService.addExerciseToClient(params.id, dataToSave);
+        console.log('Adding exercise to client:', exerciseToSave);
+        await clientBaseService.addExerciseToClient(params.id, exerciseToSave);
       }
       
-      // Обновляем порядок ВСЕХ упражнений (включая старые)
-      await clientBaseService.updateExercisesOrder(params.id, clientExercises);
-      
-      // Обновляем список упражнений с сервера
+      // 5. Получаем обновлённый список с сервера (с реальными ID)
       const updatedExercises = await clientBaseService.getByClientId(params.id);
-      setClientExercises(updatedExercises);
-      setOriginalExercises(updatedExercises);
-      saveManager.setOriginalData(updatedExercises);
+      console.log('Updated exercises from server:', updatedExercises);
+      
+      // 6. Обновляем порядок ВСЕХ упражнений согласно текущему списку
+      // Создаём мапу для быстрого поиска позиций
+      const orderMap = new Map();
+      currentExercises.forEach((ex, index) => {
+        // Для новых упражнений ищем по имени и категории
+        if (ex.exercise_id.toString().startsWith('temp_')) {
+          orderMap.set(`${ex.name}_${ex.category_id}`, index);
+        } else {
+          orderMap.set(ex.exercise_id, index);
+        }
+      });
+      
+      // Применяем порядок к обновлённым упражнениям
+      const exercisesWithOrder = updatedExercises.map(ex => {
+        const key = `${ex.name}_${ex.category_id}`;
+        const order = orderMap.has(ex.exercise_id) 
+          ? orderMap.get(ex.exercise_id) 
+          : orderMap.get(key);
+        
+        return {
+          ...ex,
+          order: order !== undefined ? order : ex.order
+        };
+      });
+      
+      // Сортируем по order
+      exercisesWithOrder.sort((a, b) => a.order - b.order);
+      
+      // 7. Сохраняем обновлённый порядок на сервер
+      console.log('Updating exercises order:', exercisesWithOrder);
+      await clientBaseService.updateExercisesOrder(params.id, exercisesWithOrder);
+      
+      // 8. Финальная загрузка с сервера
+      const finalExercises = await clientBaseService.getByClientId(params.id);
+      console.log('Final exercises from server:', finalExercises);
+      
+      setClientExercises(finalExercises);
+      setOriginalExercises(finalExercises);
+      saveManager.setOriginalData(finalExercises);
     },
     showNotification
   });
@@ -163,7 +220,7 @@ export default function EditClientExercises() {
 
   const onButtonBack = async () => {
     if (saveManager.hasUnsavedChanges) {
-      await saveManager.saveChanges();
+      await saveManager.saveChanges(clientExercises, originalExercises);
     }
     navigate(`/client_base/${params.id}`);
   };
@@ -203,7 +260,7 @@ export default function EditClientExercises() {
 
     // Добавляем упражнение локально
     setClientExercises([...clientExercises, newExercise]);
-    saveManager.addNewItem(newExercise);
+    saveManager.markAsChanged(); // Просто помечаем как изменённое
     setExercise({ categoryId: '', name: '' });
     showNotification(t('editExercises.addedHint'), 'info');
   };
@@ -213,20 +270,19 @@ export default function EditClientExercises() {
       t('editExercises.confirmDelete', { name: exerciseName }),
       async () => {
         try {
-          // Проверяем, это новое упражнение (еще не сохранено на сервере)?
-          const isNewExercise = exerciseId.toString().startsWith('temp_');
+          console.log('=== DELETE EXERCISE START ===');
+          console.log('exerciseId:', exerciseId);
+          console.log('clientExercises BEFORE delete:', clientExercises.map(ex => ({ id: ex.exercise_id, name: ex.name })));
           
           // Удаляем локально
           const updatedExercises = clientExercises.filter((ex) => ex.exercise_id !== exerciseId);
+          console.log('clientExercises AFTER delete:', updatedExercises.map(ex => ({ id: ex.exercise_id, name: ex.name })));
           setClientExercises(updatedExercises);
           
-          if (isNewExercise) {
-            // Если это новое упражнение, просто убираем из списка новых
-            saveManager.removeNewItem(exerciseId);
-          } else {
-            // Если это существующее упражнение, помечаем как измененное
-            saveManager.markAsChanged();
-          }
+          // Помечаем как изменённое
+          saveManager.markAsChanged();
+          
+          console.log('=== DELETE EXERCISE END ===');
         } catch (error) {
           console.error('Error deleting exercise:', error);
           showNotification(t('editExercises.deleteError', { error: error.message }), 'error');
@@ -272,7 +328,7 @@ export default function EditClientExercises() {
           <button
             className={`${styles.saveButton} ${!saveManager.hasUnsavedChanges ? styles.saveButtonDisabled : styles.saveButtonActive}`}
             type='button'
-            onClick={saveManager.saveChanges}
+            onClick={() => saveManager.saveChanges(clientExercises, originalExercises)}
             disabled={!saveManager.hasUnsavedChanges || saveManager.isSaving}>
             {saveManager.isSaving ? t('editExercises.saving') : t('common.save')}
           </button>

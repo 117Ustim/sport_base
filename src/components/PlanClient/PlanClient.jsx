@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { clientsService, workoutsService } from "../../firebase/services";
 import { useNotification } from '../../hooks/useNotification';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useOptimisticUpdate } from '../../hooks';
 import { useTranslation } from 'react-i18next';
 import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog';
@@ -19,6 +20,7 @@ export default function PlanClient() {
   const [workouts, setWorkouts] = useState([]);
   const { notification, showNotification } = useNotification();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
+  const { executeOptimistic } = useOptimisticUpdate();
 
   useEffect(() => {
     clientsService.getById(params.id).then((client) => {
@@ -76,20 +78,38 @@ export default function PlanClient() {
     showConfirm(
       t('dialogs.confirmDeleteWorkout', { name: workoutName }),
       async () => {
-        try {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('User confirmed deletion, calling workoutsService.delete...');
+        // Сохраняем предыдущее состояние для отката
+        const previousWorkouts = [...workouts];
+        
+        await executeOptimistic({
+          // 1. Мгновенно удаляем из UI
+          optimisticUpdate: () => {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Optimistic delete: removing from UI...');
+            }
+            setWorkouts(workouts.filter(w => w.id !== workoutId));
+            showNotification(t('notifications.workoutDeleted'), 'success');
+          },
+          // 2. Реальный API запрос
+          apiCall: async () => {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Calling workoutsService.delete...');
+            }
+            return await workoutsService.delete(workoutId);
+          },
+          // 3. Откат при ошибке
+          rollback: () => {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Delete failed, rolling back...');
+            }
+            setWorkouts(previousWorkouts);
+          },
+          // 4. При ошибке показываем уведомление
+          onError: (error) => {
+            console.error('Delete failed:', error);
+            showNotification(t('notifications.deleteWorkoutError'), 'error');
           }
-          await workoutsService.delete(workoutId);
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Delete successful, updating local state...');
-          }
-          setWorkouts(workouts.filter(w => w.id !== workoutId));
-          showNotification(t('notifications.workoutDeleted'), 'success');
-        } catch (error) {
-          console.error('Delete failed:', error);
-          showNotification(t('notifications.deleteWorkoutError'), 'error');
-        }
+        });
       }
     );
   };

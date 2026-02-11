@@ -1,0 +1,181 @@
+// Базовая анимация пульсации
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Общий контейнер
+.skeletonContainer {
+  padding: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+// Базовый элемент skeleton
+.skeletonBase {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// ============================================================================
+// Skeleton для списка
+// ============================================================================
+
+.skeletonListItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.skeletonAvatar {
+  @extend .skeletonBase;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeletonTitle {
+  @extend .skeletonBase;
+  height: 20px;
+  width: 60%;
+}
+
+.skeletonSubtitle {
+  @extend .skeletonBase;
+  height: 16px;
+  width: 40%;
+}
+
+// ============================================================================
+// Skeleton для карточки
+// ============================================================================
+
+.skeletonCard {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.skeletonCardHeader {
+  @extend .skeletonBase;
+  height: 60px;
+  border-radius: 0;
+}
+
+.skeletonCardBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonLine {
+  @extend .skeletonBase;
+  height: 16px;
+  width: 100%;
+}
+
+// ============================================================================
+// Skeleton для деталей тренировки
+// ============================================================================
+
+.skeletonDetailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.skeletonButton {
+  @extend .skeletonBase;
+  height: 40px;
+  width: 120px;
+  border-radius: 4px;
+}
+
+.skeletonDetailsTitle {
+  @extend .skeletonBase;
+  height: 32px;
+  width: 50%;
+  margin-bottom: 32px;
+}
+
+.skeletonDetailsSection {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.skeletonSectionTitle {
+  @extend .skeletonBase;
+  height: 24px;
+  width: 30%;
+  margin-bottom: 16px;
+}
+
+// ============================================================================
+// Skeleton для таблицы
+// ============================================================================
+
+.skeletonTable {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.skeletonTableHeader {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.skeletonTableRow {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.skeletonTableCell {
+  @extend .skeletonBase;
+  height: 20px;
+  flex: 1;
+}

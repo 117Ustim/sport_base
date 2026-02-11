@@ -60,6 +60,10 @@ export default function Settings() {
     navigate('/manage-clients');
   };
 
+  const onMigrateWorkoutsClick = () => {
+    navigate('/migrate-workouts');
+  };
+
   const onChange = (event) => {
     const { name, value, gymId } = event.target;
     
@@ -97,6 +101,12 @@ export default function Settings() {
       title: t('settings.addExercise'),
       description: t('settings.addExerciseDesc'),
       onClick: onAddExerciseClick
+    },
+    {
+      icon: '🔄',
+      title: 'Миграция тренировок',
+      description: 'Перенос weeks в subcollections',
+      onClick: onMigrateWorkoutsClick
     },
     {
       icon: '🌐',

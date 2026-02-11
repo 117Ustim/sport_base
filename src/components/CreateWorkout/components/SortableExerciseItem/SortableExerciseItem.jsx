@@ -5,7 +5,7 @@ import CustomSelect from '../CustomSelect';
 import { TIME_OPTIONS, SETS_OPTIONS, REPS_OPTIONS } from '../../constants';
 import styles from './SortableExerciseItem.module.scss';
 
-export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate, onRemove, onConfirm, getWeightForReps, isInDraft }) {
+export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate, onRemove, onConfirm, getWeightForReps, isInDraft, columns, onStarWeightClick }) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -21,6 +21,14 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  // Создаём опции для селекта повторений на основе цифровых колонок
+  const repsOptions = columns && columns.length > 0
+    ? columns
+        .filter(col => !isNaN(parseInt(col.name))) // Только колонки с цифровыми названиями
+        .map(col => parseInt(col.name)) // Преобразуем в числа
+        .sort((a, b) => a - b) // Сортируем по возрастанию
+    : REPS_OPTIONS; // Fallback на стандартные опции если колонок нет
 
   // Проверяем, является ли это группой упражнений
   const isGroup = exercise.type === 'group' && exercise.exercises && exercise.exercises.length > 0;
@@ -41,6 +49,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
           <div className={styles.groupExercises}>
             {exercise.exercises.map((ex, idx) => {
               const isAerobic = ex.category_id === '6';
+              const isAbs = ex.name && ex.name.toLowerCase().includes('прес'); // Проверка на "Пресс"
               
               return (
                 <span key={idx} className={styles.groupExerciseItem}>
@@ -49,6 +58,10 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
                   {isAerobic ? (
                     <span className={styles.exerciseParams}>
                       {ex.duration || 30} {t('createWorkout.minutes')}
+                    </span>
+                  ) : isAbs ? (
+                    <span className={styles.exerciseParams}>
+                      {ex.numberSteps}×∞
                     </span>
                   ) : (
                     <span className={styles.exerciseParams}>
@@ -78,6 +91,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
 
   // Обычное упражнение (существующий код)
   const isAerobic = exercise.category_id === '6';
+  const isAbs = exercise.name && exercise.name.toLowerCase().includes('прес'); // Проверка на "Пресс"
 
   return (
     <li 
@@ -95,34 +109,60 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
         {isAerobic ? (
           <>
             <span className={styles.timeLabel}>{t('createWorkout.timeLabel')}:</span>
-            <CustomSelect
-              value={exercise.duration || 30}
-              options={TIME_OPTIONS}
-              onChange={(val) => onUpdate(exercise.id, dayKey, 'duration', val)}
-              className="timeSelector"
-              suffix={` ${t('createWorkout.minutes')}`}
-            />
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                value={exercise.duration || 30}
+                options={TIME_OPTIONS}
+                onChange={(val) => onUpdate(exercise.id, dayKey, 'duration', val)}
+                className="timeSelector"
+                suffix={` ${t('createWorkout.minutes')}`}
+              />
+            </div>
           </>
-        ) : (
+        ) : isAbs ? (
           <>
-            <CustomSelect
-              value={exercise.numberSteps}
-              options={SETS_OPTIONS}
-              onChange={(val) => onUpdate(exercise.id, dayKey, 'numberSteps', val)}
-              className="setsSelector"
-            />
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                value={exercise.numberSteps}
+                options={SETS_OPTIONS}
+                onChange={(val) => onUpdate(exercise.id, dayKey, 'numberSteps', val)}
+                className="setsSelector"
+              />
+            </div>
             
             <span className={styles.multiplySymbol}>×</span>
             
-            <CustomSelect
-              value={exercise.numberTimes}
-              options={REPS_OPTIONS}
-              onChange={(val) => onUpdate(exercise.id, dayKey, 'numberTimes', val)}
-              className="repsSelector"
-            />
+            <span className={styles.infinitySymbol} title={t('createWorkout.infinityReps')}>
+              ∞
+            </span>
+          </>
+        ) : (
+          <>
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                value={exercise.numberSteps}
+                options={SETS_OPTIONS}
+                onChange={(val) => onUpdate(exercise.id, dayKey, 'numberSteps', val)}
+                className="setsSelector"
+              />
+            </div>
+            
+            <span className={styles.multiplySymbol}>×</span>
+            
+            <div className={styles.selectWrapper}>
+              <CustomSelect
+                value={exercise.numberTimes}
+                options={repsOptions}
+                onChange={(val) => onUpdate(exercise.id, dayKey, 'numberTimes', val)}
+                className="repsSelector"
+              />
+            </div>
             
             <span className={styles.weightFromDatabase}>
               ({getWeightForReps(exercise.exerciseData, exercise.numberTimes)})
+              {exercise.isFromStarColumn && (
+                <span className={styles.starIndicator} title="Вес из колонки *">*</span>
+              )}
             </span>
           </>
         )}

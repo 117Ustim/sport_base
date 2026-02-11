@@ -1,35 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { clientsService, gymsService } from '../../firebase/services';
 import { useConfirmDialog } from '../../hooks';
+import { useOptimisticUpdate } from '../../hooks';
+import { useDebounce } from '../../hooks/useDebounce';
 import { EMPTY_CLIENT } from '../../constants';
 import ConfirmDialog from '../ConfirmDialog';
 import BackButton from '../BackButton';
+import SkeletonLoader from '../SkeletonLoader';
 import styles from './ManageClients.module.scss';
 
 export default function ManageClients() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [clients, setClients] = useState([]);
-  const [filteredClients, setFilteredClients] = useState([]);
   const [gyms, setGyms] = useState([]);
-  const [searchName, setSearchName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const searchName = useDebounce(searchInput, 300); // ✅ Debounce 300ms
   const [editingClient, setEditingClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
+  const { executeOptimistic } = useOptimisticUpdate();
 
   useEffect(() => {
     loadClients();
     loadGyms();
   }, []);
 
-  useEffect(() => {
-    filterClients();
+  // ✅ Используем useMemo вместо useEffect + state
+  const filteredClients = useMemo(() => {
+    let filtered = clients.filter(client => client.data !== null);
+
+    if (searchName) {
+      const searchLower = searchName.toLowerCase();
+      filtered = filtered.filter(client => {
+        const fullName = `${client.data?.surname || ''} ${client.data?.name || ''}`.toLowerCase();
+        return fullName.includes(searchLower);
+      });
+    }
+
+    return filtered.sort((a, b) => {
+      const surnameA = (a.data?.surname || '').toLowerCase();
+      const surnameB = (b.data?.surname || '').toLowerCase();
+      return surnameA.localeCompare(surnameB, 'uk');
+    });
   }, [clients, searchName]);
 
   const loadClients = () => {
+    setLoading(true);
     clientsService.getAll({ page: 0, limit: 1000 })
       .then((response) => {
         const clientsData = response.data || [];
@@ -38,6 +59,9 @@ export default function ManageClients() {
       .catch((error) => {
         console.error('Error loading clients:', error);
         setClients([]);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -49,25 +73,6 @@ export default function ManageClients() {
       .catch((error) => {
         console.error('Error loading gyms:', error);
       });
-  };
-
-  const filterClients = () => {
-    let filtered = clients.filter(client => client.data !== null);
-
-    if (searchName) {
-      filtered = filtered.filter(client => {
-        const fullName = `${client.data?.surname || ''} ${client.data?.name || ''}`.toLowerCase();
-        return fullName.includes(searchName.toLowerCase());
-      });
-    }
-
-    filtered.sort((a, b) => {
-      const surnameA = (a.data?.surname || '').toLowerCase();
-      const surnameB = (b.data?.surname || '').toLowerCase();
-      return surnameA.localeCompare(surnameB, 'uk');
-    });
-
-    setFilteredClients(filtered);
   };
 
   const onEditClient = (client) => {
@@ -97,40 +102,90 @@ export default function ManageClients() {
     showConfirm(
       t('dialogs.confirmDeleteClient', { name: clientName }),
       async () => {
-        try {
-          await clientsService.delete(id);
-          loadClients();
-        } catch (error) {
-          console.error('Error deleting client:', error);
-        }
+        // Сохраняем предыдущее состояние для отката
+        const previousClients = [...clients];
+        
+        await executeOptimistic({
+          // 1. Мгновенно удаляем из UI
+          optimisticUpdate: () => {
+            setClients(prev => prev.filter(c => c.id !== id));
+          },
+          // 2. Реальный API запрос
+          apiCall: () => clientsService.delete(id),
+          // 3. Откат при ошибке
+          rollback: () => {
+            setClients(previousClients);
+          },
+          // 4. При ошибке показываем уведомление
+          onError: (error) => {
+            console.error('Error deleting client:', error);
+            // Можно добавить showNotification если есть
+          }
+        });
       }
     );
   };
 
-  const onSaveClient = () => {
+  const onSaveClient = async () => {
     if (!editingClient) return;
 
     if (isAddingNew) {
-      clientsService.create(editingClient.data)
-        .then(() => {
-          loadClients();
+      // Создание нового клиента
+      const tempId = `temp_${Date.now()}`; // Временный ID для optimistic update
+      const newClient = {
+        id: tempId,
+        data: editingClient.data
+      };
+
+      await executeOptimistic({
+        // 1. Мгновенно добавляем в UI
+        optimisticUpdate: () => {
+          setClients(prev => [...prev, newClient]);
           setShowModal(false);
           setEditingClient(null);
           setIsAddingNew(false);
-        })
-        .catch((error) => {
+        },
+        // 2. Реальный API запрос
+        apiCall: () => clientsService.create(editingClient.data),
+        // 3. Откат при ошибке
+        rollback: () => {
+          setClients(prev => prev.filter(c => c.id !== tempId));
+          setShowModal(true);
+        },
+        // 4. При успехе заменяем временный ID на реальный
+        onSuccess: () => {
+          loadClients(); // Перезагружаем для получения реального ID
+        },
+        onError: (error) => {
           console.error('Error creating client:', error);
-        });
+        }
+      });
     } else {
-      clientsService.update(editingClient.id, editingClient.data)
-        .then(() => {
-          loadClients();
+      // Редактирование существующего клиента
+      const previousClients = [...clients];
+
+      await executeOptimistic({
+        // 1. Мгновенно обновляем в UI
+        optimisticUpdate: () => {
+          setClients(prev => prev.map(c => 
+            c.id === editingClient.id 
+              ? { ...c, data: editingClient.data }
+              : c
+          ));
           setShowModal(false);
           setEditingClient(null);
-        })
-        .catch((error) => {
+        },
+        // 2. Реальный API запрос
+        apiCall: () => clientsService.update(editingClient.id, editingClient.data),
+        // 3. Откат при ошибке
+        rollback: () => {
+          setClients(previousClients);
+          setShowModal(true);
+        },
+        onError: (error) => {
           console.error('Error updating client:', error);
-        });
+        }
+      });
     }
   };
 
@@ -171,14 +226,16 @@ export default function ManageClients() {
         <input
           type='text'
           placeholder={t('manageClients.searchPlaceholder')}
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className={styles.search}
         />
       </div>
 
       <div className={styles.list}>
-        {filteredClients.length === 0 ? (
+        {loading ? (
+          <SkeletonLoader type="list" count={5} />
+        ) : filteredClients.length === 0 ? (
           <p className={styles.empty}>{t('manageClients.noClients')}</p>
         ) : (
           filteredClients.map((client) => (

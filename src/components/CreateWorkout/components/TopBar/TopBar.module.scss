@@ -68,6 +68,17 @@
   flex: 1;
 }
 
+.baseButton {
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  width: auto;
+  min-width: 120px;
+
+  &:hover {
+    background: linear-gradient(135deg, #42A5F5 0%, #1E88E5 100%);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+  }
+}
+
 .saveAllButton {
   background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   width: auto;

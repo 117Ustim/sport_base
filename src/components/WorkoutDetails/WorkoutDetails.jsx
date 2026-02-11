@@ -7,8 +7,21 @@ import Notification from "../Notification";
 import { useNotification } from "../../hooks/useNotification";
 import styles from './WorkoutDetails.module.scss';
 import BackButton from "../BackButton";
+import SkeletonLoader from "../SkeletonLoader";
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+// Функция для конвертации даты из YYYY-MM-DD в DD.MM.YYYY для отображения
+const formatDateForDisplay = (isoDate) => {
+  if (!isoDate) return '';
+  
+  // Если дата уже в формате DD.MM.YYYY, возвращаем как есть
+  if (isoDate.includes('.')) return isoDate;
+  
+  // Конвертируем из YYYY-MM-DD в DD.MM.YYYY
+  const [year, month, day] = isoDate.split('-');
+  return `${day}.${month}.${year}`;
+};
 
 export default function WorkoutDetails() {
   const navigate = useNavigate();
@@ -41,22 +54,23 @@ export default function WorkoutDetails() {
       try {
         setLoading(true);
         
-        // Загружаем данные клиента
-        console.log('📥 Начинаем загрузку clientData');
-        const clientStartTime = Date.now();
-        const client = await clientsService.getById(params.clientId);
-        console.log('✅ clientData загружен за:', Date.now() - clientStartTime, 'мс');
+        // ✅ ОПТИМИЗАЦИЯ: Загружаем все данные параллельно
+        console.log('📥 Начинаем параллельную загрузку данных');
+        const startTime = Date.now();
+        
+        const [client, workoutData, assignments] = await Promise.all([
+          clientsService.getById(params.clientId),
+          workoutsService.getById(params.workoutId),
+          assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId)
+        ]);
+        
+        console.log('✅ Все данные загружены за:', Date.now() - startTime, 'мс');
         console.log('👤 Клиент:', client?.data?.name, client?.data?.surname);
+        
         setClientData(client);
         
-// Загружаем шаблон тренировки
-        console.log('📥 Начинаем загрузку workout template');
-        const workoutStartTime = Date.now();
-        const workoutData = await workoutsService.getById(params.workoutId);
-        console.log('✅ workoutData загружен за:', Date.now() - workoutStartTime, 'мс');
-        
+        // Нормализация структуры недель
         if (workoutData) {
-          // Нормализация структуры недель
           if (workoutData.days && !workoutData.weeks) {
             workoutData.weeks = [{ weekNumber: 1, days: workoutData.days }];
             delete workoutData.days;
@@ -66,12 +80,6 @@ export default function WorkoutDetails() {
           }
         }
 
-        // Загружаем ПОСЛЕДНЮЮ отправленную тренировку из assignedWorkouts для получения дат
-        console.log('📥 Начинаем загрузку assignedWorkouts');
-        const assignedStartTime = Date.now();
-        const assignments = await assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId);
-        console.log('✅ assignedWorkouts загружены за:', Date.now() - assignedStartTime, 'мс');
-        
         // Инициализируем объект для дат
         const dates = {};
         let initialWeekIndex = 0;
@@ -85,17 +93,12 @@ export default function WorkoutDetails() {
           
           if (latestAssignment.weekData && latestAssignment.weekData.dates) {
              Object.keys(latestAssignment.weekData.dates).forEach(dayKey => {
-               // Важно: мы сохраняем даты с привязкой к номеру недели из назначения!
-               // Так как мы загружаем ПОЛНЫЙ список недель из шаблона, нам нужно знать
-               // к какой именно неделе (по индексу) привязать эти даты.
-               // Находим индекс недели в шаблоне, у которой weekNumber совпадает с назначенным
-               
                const weekIndex = workoutData.weeks.findIndex(w => w.weekNumber === latestAssignment.weekNumber);
                
                if (weekIndex !== -1) {
                   const dateKey = `week${weekIndex}_${dayKey}`;
                   dates[dateKey] = latestAssignment.weekData.dates[dayKey];
-                  initialWeekIndex = weekIndex; // Открываем эту неделю
+                  initialWeekIndex = weekIndex;
                }
             });
             console.log('📅 Восстановлены даты из назначения:', dates);
@@ -103,13 +106,11 @@ export default function WorkoutDetails() {
         }
 
         setLatestDates(dates);
-        setWorkout(workoutData); // Всегда устанавливаем полный шаблон
+        setWorkout(workoutData);
         setSelectedWeekIndex(initialWeekIndex);
         setLastAssignedWeek(lastAssignedWeekNum);
         
         console.log('🎯 setWorkout выполнен (шаблон + даты из назначения)');
-
-
         console.log('🏁 setLoading(false) - страница должна отобразиться');
         setLoading(false);
         
@@ -127,7 +128,10 @@ export default function WorkoutDetails() {
   };
 
   const onButtonEdit = () => {
-    navigate(`/edit_workout/${params.clientId}/${params.workoutId}`);
+    const editUrl = `/edit_workout/${params.clientId}/${params.workoutId}`;
+    console.log('🔧 Переход на редактирование:', editUrl);
+    console.log('📍 Параметры:', { clientId: params.clientId, workoutId: params.workoutId });
+    navigate(editUrl);
   };
 
   const handleDayClick = (dayKey) => {
@@ -226,10 +230,12 @@ export default function WorkoutDetails() {
       DAYS_ORDER.forEach(dayKey => {
         const dateKey = `week${selectedWeekIndex}_${dayKey}`;
         if (latestDates[dateKey]) {
-          // Убеждаемся, что дата остается в строковом формате DD.MM.YYYY
-          const dateString = latestDates[dateKey];
-          console.log(`📅 Дата для ${dayKey}:`, dateString);
-          weekDataWithDates.dates[dayKey] = dateString;
+          // Конвертируем дату из DD.MM.YYYY в YYYY-MM-DD для совместимости с dayjs
+          const dateString = latestDates[dateKey]; // DD.MM.YYYY
+          const [day, month, year] = dateString.split('.');
+          const isoDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+          console.log(`📅 Дата для ${dayKey}:`, isoDate);
+          weekDataWithDates.dates[dayKey] = isoDate;
         }
       });
       
@@ -273,7 +279,7 @@ export default function WorkoutDetails() {
   if (loading) {
     return (
       <div className={styles.workoutDetails}>
-        <p className={styles.loadingMessage}>{t('workoutDetails.loading')}</p>
+        <SkeletonLoader type="details" />
       </div>
     );
   }
@@ -341,7 +347,7 @@ export default function WorkoutDetails() {
                             onClick={() => handleDayClick(dayKey)}
                             style={{ cursor: 'pointer' }}
                           >
-                            {selectedDate}
+                            {formatDateForDisplay(selectedDate)}
                           </span>
                         ) : (
                           <span className={styles.noDate} onClick={() => handleDayClick(dayKey)}>

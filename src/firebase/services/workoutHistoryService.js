@@ -6,7 +6,8 @@ import {
   getDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -84,13 +85,15 @@ export const workoutHistoryService = {
   },
 
   // Получить все записи тренировок для конкретной тренировки
-  async getByWorkoutId(workoutId) {
+  // ✅ ОПТИМИЗИРОВАНО: Добавлен limit для уменьшения нагрузки
+  async getByWorkoutId(workoutId, limitCount = 50) {
     try {
       const historyRef = collection(db, 'workoutHistory');
       const q = query(
         historyRef,
         where('workoutId', '==', workoutId),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
       );
       const snapshot = await getDocs(q);
       
@@ -107,6 +110,7 @@ export const workoutHistoryService = {
   },
 
   // Получить последнюю дату для конкретного дня тренировки
+  // ✅ ОПТИМИЗИРОВАНО: Добавлен limit(1) - нужна только последняя запись
   async getLatestDateForDay(workoutId, weekNumber, dayKey) {
     try {
       const historyRef = collection(db, 'workoutHistory');
@@ -115,7 +119,8 @@ export const workoutHistoryService = {
         where('workoutId', '==', workoutId),
         where('weekNumber', '==', weekNumber),
         where('dayKey', '==', dayKey),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(1)
       );
       const snapshot = await getDocs(q);
       
@@ -132,7 +137,8 @@ export const workoutHistoryService = {
   },
 
   // Получить все даты для конкретного дня тренировки
-  async getAllDatesForDay(workoutId, weekNumber, dayKey) {
+  // ✅ ОПТИМИЗИРОВАНО: Добавлен limit для уменьшения нагрузки
+  async getAllDatesForDay(workoutId, weekNumber, dayKey, limitCount = 30) {
     try {
       const historyRef = collection(db, 'workoutHistory');
       const q = query(
@@ -140,7 +146,8 @@ export const workoutHistoryService = {
         where('workoutId', '==', workoutId),
         where('weekNumber', '==', weekNumber),
         where('dayKey', '==', dayKey),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
       );
       const snapshot = await getDocs(q);
       
@@ -154,13 +161,15 @@ export const workoutHistoryService = {
   },
 
   // Получить историю тренировок клиента
-  async getByClientId(clientId) {
+  // ✅ ОПТИМИЗИРОВАНО: Добавлен limit для уменьшения нагрузки
+  async getByClientId(clientId, limitCount = 50) {
     try {
       const historyRef = collection(db, 'workoutHistory');
       const q = query(
         historyRef,
         where('clientId', '==', clientId),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(limitCount) // ✅ Ограничение количества
       );
       const snapshot = await getDocs(q);
       

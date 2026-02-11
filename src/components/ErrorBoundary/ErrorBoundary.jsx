@@ -1,33 +1,30 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import styles from './ErrorBoundary.module.scss';
 
-// ✅ SECURITY FIX: Error Boundary для предотвращения белого экрана при ошибках
+/**
+ * Error Boundary для отлова ошибок React
+ * Автоматически отправляет ошибки в Sentry
+ */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error) {
-    // Обновляем состояние чтобы показать fallback UI
-    return { hasError: true };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Логируем ошибку
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('❌ React Error Boundary caught:', error, errorInfo);
     
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // TODO: Отправить ошибку в сервис мониторинга (Sentry, LogRocket)
-    // logErrorToService(error, errorInfo);
+    // Отправляем в Sentry
+    if (process.env.NODE_ENV === 'production') {
+      Sentry.captureException(error, {
+        extra: errorInfo,
+      });
+    }
   }
 
   handleReload = () => {
@@ -38,27 +35,19 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className={styles.errorBoundary}>
-          <div className={styles.container}>
-            <h1 className={styles.title}>😔 Щось пішло не так</h1>
-            <p className={styles.message}>
-              Виникла помилка при завантаженні додатку.
+          <div className={styles.errorContent}>
+            <h1 className={styles.errorTitle}>😕 Что-то пошло не так</h1>
+            <p className={styles.errorMessage}>
+              Произошла непредвиденная ошибка. Мы уже получили уведомление и работаем над исправлением.
             </p>
-            
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className={styles.details}>
-                <summary>Деталі помилки (тільки для розробки)</summary>
-                <pre className={styles.errorStack}>
-                  {this.state.error.toString()}
-                  {this.state.errorInfo?.componentStack}
-                </pre>
+              <details className={styles.errorDetails}>
+                <summary>Детали ошибки (только в dev режиме)</summary>
+                <pre>{this.state.error.toString()}</pre>
               </details>
             )}
-            
-            <button 
-              onClick={this.handleReload}
-              className={styles.button}
-            >
-              Перезавантажити сторінку
+            <button className={styles.reloadButton} onClick={this.handleReload}>
+              Перезагрузить страницу
             </button>
           </div>
         </div>

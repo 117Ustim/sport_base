@@ -88,6 +88,8 @@
   composes: button;
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   box-shadow: 0 8px 32px rgba(255, 152, 0, 0.3);
+  width: auto; // Ширина по содержимому
+  padding: 0 24px; // Добавляем горизонтальные отступы
 
   &:hover {
     transform: translateY(-1px);
@@ -438,9 +440,8 @@
       overflow: visible;
 
       &:first-child {
-        width: 200px;
-        min-width: 200px;
-        max-width: 200px;
+        width: auto; // Ширина по содержимому
+        white-space: nowrap; // Текст в одну строку
       }
     }
   }
@@ -460,12 +461,8 @@
        
 
         &:first-child {
-          width: 200px;
-          min-width: 200px;
-          max-width: 200px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          width: auto; // Ширина по содержимому
+          white-space: nowrap; // Текст в одну строку
         }
       }
 
@@ -590,9 +587,7 @@
       padding: 6px 12px;
 
       &:first-child {
-        width: 180px;
-        min-width: 180px;
-        max-width: 180px;
+        width: auto; // Ширина по содержимому
       }
     }
 
@@ -601,9 +596,7 @@
       padding: 3px 12px;
 
       &:first-child {
-        width: 180px;
-        min-width: 180px;
-        max-width: 180px;
+        width: auto; // Ширина по содержимому
       }
     }
   }
@@ -652,9 +645,7 @@
       padding: 5px 10px;
 
       &:first-child {
-        width: 160px;
-        min-width: 160px;
-        max-width: 160px;
+        width: auto; // Ширина по содержимому
       }
     }
 
@@ -663,9 +654,7 @@
       padding: 3px 10px;
 
       &:first-child {
-        width: 160px;
-        min-width: 160px;
-        max-width: 160px;
+        width: auto; // Ширина по содержимому
       }
     }
   }
@@ -729,9 +718,7 @@
       padding: 4px 8px;
 
       &:first-child {
-        width: 140px;
-        min-width: 140px;
-        max-width: 140px;
+        width: auto; // Ширина по содержимому
       }
     }
 
@@ -740,9 +727,7 @@
       padding: 2px 8px;
 
       &:first-child {
-        width: 140px;
-        min-width: 140px;
-        max-width: 140px;
+        width: auto; // Ширина по содержимому
       }
     }
   }

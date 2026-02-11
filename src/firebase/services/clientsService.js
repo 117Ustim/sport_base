@@ -2,6 +2,7 @@ import {
   doc, 
   getDoc, 
   setDoc,
+  updateDoc,
   collection,
   getDocs,
   deleteDoc,
@@ -187,6 +188,7 @@ export const clientsService = {
   },
 
   // Обновить клиента (НОВАЯ СТРУКТУРА)
+  // ✅ ИСПРАВЛЕНО: Используем updateDoc вместо read-modify-write (нет race condition)
   async update(id, clientData) {
     try {
       // ✅ SECURITY FIX: Валидация данных перед обновлением
@@ -200,31 +202,22 @@ export const clientsService = {
 
       const docRef = doc(db, COLLECTION_NAME, id);
       
-      // Получаем текущие данные
-      const docSnap = await getDoc(docRef);
-      let existingProfile = {};
+      // ✅ ИСПРАВЛЕНО: Обновляем только нужные поля без предварительного чтения
+      // Firestore сам сделает merge атомарно - нет race condition!
+      await updateDoc(docRef, {
+        'profile.name': sanitizedData.name,
+        'profile.surname': sanitizedData.surname,
+        'profile.phone': sanitizedData.phone,
+        'profile.email': sanitizedData.email,
+        'profile.gymName': sanitizedData.gym,
+        'profile.gymId': sanitizedData.gymId,
+        'profile.sex': sanitizedData.sex,
+        'profile.address': sanitizedData.address,
+        'profile.growth': sanitizedData.growth,
+        'profile.weight': sanitizedData.weight,
+        'profile.updatedAt': new Date().toISOString()
+      });
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        existingProfile = data.profile || {};
-      }
-      
-      const updatedProfile = {
-        ...existingProfile,
-        name: sanitizedData.name,
-        surname: sanitizedData.surname,
-        phone: sanitizedData.phone,
-        email: sanitizedData.email,
-        gymName: sanitizedData.gym,
-        gymId: sanitizedData.gymId,
-        sex: sanitizedData.sex,
-        address: sanitizedData.address,
-        growth: sanitizedData.growth,
-        weight: sanitizedData.weight,
-        updatedAt: new Date().toISOString()
-      };
-      
-      await setDoc(docRef, { profile: updatedProfile }, { merge: true });
       return { id, data: clientData };
     } catch (error) {
       console.error('Error updating client:', error);
@@ -360,6 +353,21 @@ export const clientsService = {
         }
       } catch (error) {
         console.error('   ⚠️  Error deleting assigned workouts:', error);
+      }
+      
+      // 8. Удаляем историю назначений (assignmentHistory)
+      try {
+        const historyRef = collection(db, 'assignmentHistory');
+        const historyQuery = query(historyRef, where('clientId', '==', id));
+        const historySnap = await getDocs(historyQuery);
+        
+        if (historySnap.size > 0) {
+          const deleteHistoryPromises = historySnap.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deleteHistoryPromises);
+          console.log(`   ✅ Удалена история назначений (${historySnap.size} записей)`);
+        }
+      } catch (error) {
+        console.error('   ⚠️  Error deleting assignment history:', error);
       }
       
       // 8. Удаляем аккаунт пользователя (users) если есть userId

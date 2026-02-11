@@ -86,12 +86,22 @@ export const clientBaseService = {
       // Получаем все упражнения с их порядком
       const exercises = await exercisesService.getAll();
       
+      console.log(`Creating base for client ${clientId} with ${exercises.length} exercises`);
+      
       // Создаём документы для каждого упражнения
       for (const exercise of exercises) {
+        // Пропускаем упражнения без имени
+        if (!exercise.name) {
+          console.warn(`⚠️  Skipping exercise ${exercise.id} - no name. Data:`, exercise);
+          continue;
+        }
+        
+        console.log(`Adding exercise: ${exercise.id} - ${exercise.name}`);
+        
         const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exercise.id);
         await setDoc(exerciseRef, {
           name: exercise.name,
-          categoryId: exercise.categoryId,
+          categoryId: exercise.categoryId || '7', // По умолчанию "Общее"
           data: {}, // Пустой объект вместо заполненного пустыми строками
           order: exercise.order !== undefined ? exercise.order : 999999
         });
@@ -100,6 +110,7 @@ export const clientBaseService = {
       // Сохраняем метаданные
       await this.saveMetadata(clientId, { columnCount: 15 });
       
+      console.log(`✅ Base created successfully for client ${clientId}`);
       return true;
     } catch (error) {
       console.error('Error creating client base:', error);
@@ -139,11 +150,14 @@ export const clientBaseService = {
   // Удалить упражнение из базы клиента
   async deleteExercise(clientId, exerciseId) {
     try {
+      console.log('🗑️ deleteExercise called:', { clientId, exerciseId });
       const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exerciseId);
+      console.log('🗑️ Deleting document at path:', `clientBases/${clientId}/exercises/${exerciseId}`);
       await deleteDoc(exerciseRef);
+      console.log('✅ Exercise deleted successfully');
       return true;
     } catch (error) {
-      console.error('Error deleting exercise:', error);
+      console.error('❌ Error deleting exercise:', error);
       throw error;
     }
   },
@@ -151,14 +165,31 @@ export const clientBaseService = {
   // Добавить упражнение клиенту
   async addExerciseToClient(clientId, exercise) {
     try {
+      console.log('addExerciseToClient called with:', { clientId, exercise });
+      
+      // Проверяем обязательные поля
+      if (!clientId) {
+        throw new Error('clientId is required');
+      }
+      
+      if (!exercise || !exercise.id) {
+        throw new Error('exercise.id is required');
+      }
+      
+      if (!exercise.name) {
+        throw new Error('exercise.name is required');
+      }
+      
       const exerciseRef = doc(db, 'clientBases', clientId, 'exercises', exercise.id);
       
       await setDoc(exerciseRef, {
         name: exercise.name,
-        categoryId: exercise.categoryId,
-        data: {} // Пустой объект вместо заполненного пустыми строками
+        categoryId: exercise.categoryId || '7', // По умолчанию "Общее"
+        data: {}, // Пустой объект вместо заполненного пустыми строками
+        order: exercise.order !== undefined ? exercise.order : 999999
       });
       
+      console.log(`✅ Exercise ${exercise.id} added to client ${clientId}`);
       return true;
     } catch (error) {
       console.error('Error adding exercise to client:', error);

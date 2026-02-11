@@ -11,6 +11,7 @@ export function useSaveManager({ onSave, showNotification }) {
   const [isSaving, setIsSaving] = useState(false);
   const [newItems, setNewItems] = useState([]); // Новые элементы для сохранения
   const [originalItems, setOriginalItems] = useState([]); // Оригинальные данные
+  const [hasOtherChanges, setHasOtherChanges] = useState(false); // Флаг для других изменений (удаления, перестановки)
 
   // Предупреждение при выходе со страницы
   useEffect(() => {
@@ -33,7 +34,11 @@ export function useSaveManager({ onSave, showNotification }) {
    * Отметить, что есть несохраненные изменения
    */
   const markAsChanged = () => {
+    console.log('markAsChanged called');
+    console.log('Setting hasUnsavedChanges to true');
+    console.log('Setting hasOtherChanges to true');
     setHasUnsavedChanges(true);
+    setHasOtherChanges(true); // Отмечаем, что есть другие изменения (не только новые элементы)
   };
 
   /**
@@ -54,18 +59,17 @@ export function useSaveManager({ onSave, showNotification }) {
       return id !== itemId;
     }));
     
-    // Если больше нет новых элементов, сбрасываем флаг
-    if (newItems.length === 1) {
-      setHasUnsavedChanges(false);
-    }
+    // НЕ сбрасываем hasUnsavedChanges - пусть пользователь сам решает
+    // Возможно, он удалил новое упражнение, но есть другие изменения
   };
 
   /**
    * Сохранить все изменения
    */
-  const saveChanges = async () => {
+  const saveChanges = async (currentData, originalData) => {
     console.log('saveChanges called, hasUnsavedChanges:', hasUnsavedChanges);
-    console.log('newItems:', newItems);
+    console.log('currentData:', currentData);
+    console.log('originalData:', originalData);
     
     if (!hasUnsavedChanges) {
       console.log('No unsaved changes, returning early');
@@ -74,13 +78,15 @@ export function useSaveManager({ onSave, showNotification }) {
 
     setIsSaving(true);
     try {
-      console.log('Calling onSave with newItems:', newItems);
+      console.log('Calling onSave with currentData and originalData');
       // Вызываем функцию сохранения из компонента
-      await onSave(newItems);
+      // Передаём актуальные данные
+      await onSave(currentData, originalData);
       
       // Сбрасываем состояние после успешного сохранения
       setNewItems([]);
       setHasUnsavedChanges(false);
+      setHasOtherChanges(false); // Сбрасываем флаг других изменений
       
       if (showNotification) {
         showNotification('Зміни успішно збережено', 'success');
@@ -103,6 +109,7 @@ export function useSaveManager({ onSave, showNotification }) {
   const resetChanges = () => {
     setNewItems([]);
     setHasUnsavedChanges(false);
+    setHasOtherChanges(false); // Сбрасываем флаг других изменений
   };
 
   /**

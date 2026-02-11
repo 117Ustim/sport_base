@@ -7,12 +7,22 @@
   cursor: move;
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  
 
   &:hover {
     background-color: #ffffff;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-color: rgba(25, 118, 210, 0.3);
+  
+  }
+
+  // Не подсвечиваем карточку, когда взаимодействуем с селектом
+  &:has(.selectWrapper:hover),
+  &:has(.selectWrapper:focus-within) {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.05);
   }
 
   &.dragging {
@@ -28,6 +38,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.selectWrapper {
+  display: inline-flex;
+  align-items: center;
 }
 
 .dragHandle {
@@ -69,6 +84,16 @@
   font-weight: bold;
 }
 
+.infinitySymbol {
+  font-size: 24px;
+  color: #1976d2;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+  user-select: none;
+  cursor: default;
+}
+
 .weightFromDatabase {
   font-size: 20px;
   color: #494949;
@@ -76,6 +101,56 @@
   text-align: center;
   font-weight: 500;
   margin-right: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.starIndicator {
+  color: #ff9800;
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 4px;
+  animation: starPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.starWeightButton {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .deleteExerciseButton {

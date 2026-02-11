@@ -91,6 +91,7 @@
   
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.3);
+    
   }
 }
 
@@ -105,6 +106,7 @@
   &:hover {
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     color: #212529;
+    
   }
   
   &:first-child {

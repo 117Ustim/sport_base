@@ -6,7 +6,9 @@ import {
   getDoc,
   deleteDoc,
   query,
-  where
+  where,
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -82,12 +84,15 @@ const cleanWorkoutExercises = (workout) => {
 
 export const workoutsService = {
   // Получить все тренировки клиента
-  async getByClientId(clientId) {
+  // ✅ ОПТИМИЗИРОВАНО: Добавлен limit + orderBy на сервере
+  async getByClientId(clientId, limitCount = 20) {
     try {
       const workoutsRef = collection(db, 'workouts');
       const q = query(
         workoutsRef, 
-        where('clientId', '==', clientId)
+        where('clientId', '==', clientId),
+        orderBy('createdAt', 'desc'), // ✅ Сортировка на сервере (от новых к старым)
+        limit(limitCount) // ✅ Ограничение количества
       );
       const snapshot = await getDocs(q);
       
@@ -99,13 +104,7 @@ export const workoutsService = {
         };
       });
       
-      // Сортируем на клиенте
-      workouts.sort((a, b) => {
-        const dateA = new Date(a.createdAt);
-        const dateB = new Date(b.createdAt);
-        return dateB - dateA; // от новых к старым
-      });
-      
+      // ✅ Сортировка уже не нужна - данные приходят отсортированными!
       return workouts;
     } catch (error) {
       console.error('Error getting workouts:', error);
@@ -119,15 +118,35 @@ export const workoutsService = {
       const workoutRef = doc(db, 'workouts', workoutId);
       const snapshot = await getDoc(workoutRef);
       
-      if (snapshot.exists()) {
-        const data = {
-          id: snapshot.id,
-          ...snapshot.data()
-        };
-        return data;
+      if (!snapshot.exists()) {
+        return null;
       }
       
-      return null;
+      const data = {
+        id: snapshot.id,
+        ...snapshot.data()
+      };
+      
+      // ✅ НОВАЯ СТРУКТУРА: Загружаем weeks из subcollection
+      if (data.totalWeeks && !data.weeks) {
+        console.log(`[workoutsService] Загружаем ${data.totalWeeks} недель из subcollection`);
+        
+        const weeksRef = collection(db, 'workouts', workoutId, 'weeks');
+        const weeksSnapshot = await getDocs(weeksRef);
+        
+        const weeks = [];
+        weeksSnapshot.docs.forEach(weekDoc => {
+          weeks.push(weekDoc.data());
+        });
+        
+        // Сортируем по weekNumber
+        weeks.sort((a, b) => a.weekNumber - b.weekNumber);
+        
+        data.weeks = weeks;
+        console.log(`[workoutsService] Загружено ${weeks.length} недель`);
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error getting workout:', error);
       throw error;
@@ -145,21 +164,40 @@ export const workoutsService = {
       const workoutRef = doc(db, 'workouts', workoutId);
       
       // Создаем объект данных БЕЗ поля id (id будет в самом документе)
-      const { id, ...dataWithoutId } = cleanedWorkout;
+      const { id, weeks, ...dataWithoutId } = cleanedWorkout;
       
       const data = {
         name: dataWithoutId.name,
         clientId: dataWithoutId.clientId,
-        weeks: dataWithoutId.weeks || [], // Массив недель
+        totalWeeks: weeks ? weeks.length : 0, // ✅ НОВОЕ: totalWeeks вместо weeks
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
+      // Сохраняем основной документ
       await setDoc(workoutRef, data);
+      
+      // ✅ НОВАЯ СТРУКТУРА: Сохраняем weeks в subcollection
+      if (weeks && Array.isArray(weeks) && weeks.length > 0) {
+        console.log(`[workoutsService] Сохраняем ${weeks.length} недель в subcollection`);
+        
+        for (const week of weeks) {
+          const weekRef = doc(db, 'workouts', workoutId, 'weeks', String(week.weekNumber));
+          const weekData = {
+            weekNumber: week.weekNumber,
+            days: week.days || {},
+            dates: week.dates || {}
+          };
+          await setDoc(weekRef, weekData);
+        }
+        
+        console.log(`[workoutsService] Все недели сохранены`);
+      }
       
       return {
         id: workoutId,
-        ...data
+        ...data,
+        weeks: weeks || [] // Возвращаем weeks для обратной совместимости
       };
     } catch (error) {
       console.error('Error creating workout:', error);
@@ -176,21 +214,47 @@ export const workoutsService = {
       const idString = String(workoutId);
       const workoutRef = doc(db, 'workouts', idString);
       
-      // Создаем объект данных БЕЗ поля id
-      const { id, ...dataWithoutId } = cleanedWorkout;
+      // Создаем объект данных БЕЗ поля id и weeks
+      const { id, weeks, ...dataWithoutId } = cleanedWorkout;
       
       const data = {
         name: dataWithoutId.name,
         clientId: dataWithoutId.clientId,
-        weeks: dataWithoutId.weeks || [],
+        totalWeeks: weeks ? weeks.length : 0, // ✅ НОВОЕ: totalWeeks вместо weeks
         updatedAt: new Date().toISOString()
       };
       
+      // Обновляем основной документ
       await setDoc(workoutRef, data, { merge: true });
+      
+      // ✅ НОВАЯ СТРУКТУРА: Обновляем weeks в subcollection
+      if (weeks && Array.isArray(weeks) && weeks.length > 0) {
+        console.log(`[workoutsService] Обновляем ${weeks.length} недель в subcollection`);
+        
+        // Удаляем старые недели
+        const weeksRef = collection(db, 'workouts', idString, 'weeks');
+        const oldWeeksSnapshot = await getDocs(weeksRef);
+        const deletePromises = oldWeeksSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        // Сохраняем новые недели
+        for (const week of weeks) {
+          const weekRef = doc(db, 'workouts', idString, 'weeks', String(week.weekNumber));
+          const weekData = {
+            weekNumber: week.weekNumber,
+            days: week.days || {},
+            dates: week.dates || {}
+          };
+          await setDoc(weekRef, weekData);
+        }
+        
+        console.log(`[workoutsService] Все недели обновлены`);
+      }
       
       return {
         id: idString,
-        ...data
+        ...data,
+        weeks: weeks || [] // Возвращаем weeks для обратной совместимости
       };
     } catch (error) {
       console.error('Error updating workout:', error);
@@ -204,11 +268,25 @@ export const workoutsService = {
       // Преобразуем в строку, так как ID в Firebase всегда строки
       const idString = String(workoutId);
       
-      // ✅ Заменено на console.warn для отладки в production
       if (process.env.NODE_ENV === 'development') {
         console.warn('Deleting workout with ID:', idString);
       }
       
+      // ✅ НОВАЯ СТРУКТУРА: Удаляем subcollection weeks
+      try {
+        const weeksRef = collection(db, 'workouts', idString, 'weeks');
+        const weeksSnapshot = await getDocs(weeksRef);
+        
+        if (weeksSnapshot.size > 0) {
+          console.log(`[workoutsService] Удаляем ${weeksSnapshot.size} недель из subcollection`);
+          const deletePromises = weeksSnapshot.docs.map(doc => deleteDoc(doc.ref));
+          await Promise.all(deletePromises);
+        }
+      } catch (error) {
+        console.warn('[workoutsService] Error deleting weeks subcollection:', error);
+      }
+      
+      // Удаляем основной документ
       const workoutRef = doc(db, 'workouts', idString);
       await deleteDoc(workoutRef);
       
