@@ -23,13 +23,21 @@ export const authService = {
         return result.user;
       }
       
-      // Проверяем существует ли пользователь в базе данных
-      const userExists = await this.checkUserExists(result.user.uid);
+      // Проверяем существует ли пользователь в базе данных и его роль
+      const userDoc = await getDoc(doc(db, USERS_COLLECTION, result.user.uid));
       
-      if (!userExists) {
+      if (!userDoc.exists()) {
         // Пользователь удален из базы - выходим
         await this.logout();
         throw new Error('Доступ заборонено. Користувача видалено.');
+      }
+      
+      const userData = userDoc.data();
+      
+      // Проверяем роль - только админы могут войти в спорт базу
+      if (userData.role !== 'admin') {
+        await this.logout();
+        throw new Error('Доступ заборонено. Тільки адміністратори можуть увійти в систему.');
       }
       
       return result.user;
@@ -81,13 +89,19 @@ export const authService = {
     return onAuthStateChanged(auth, callback);
   },
 
-  // Проверить существует ли пользователь в базе данных
-  async checkUserExists(userId) {
+  // Проверить существует ли пользователь в базе данных и является ли он админом
+  async checkUserIsAdmin(userId) {
     try {
       const userDoc = await getDoc(doc(db, USERS_COLLECTION, userId));
-      return userDoc.exists();
+      
+      if (!userDoc.exists()) {
+        return false;
+      }
+      
+      const userData = userDoc.data();
+      return userData.role === 'admin';
     } catch (error) {
-      console.error('Error checking user existence:', error);
+      console.error('Error checking user role:', error);
       return false;
     }
   },

@@ -193,11 +193,8 @@ export default function WorkoutDetails() {
 
     const weekData = workout.weeks[selectedWeekIndex];
 
-    // Проверяем не является ли эта неделя последней отправленной
-    if (lastAssignedWeek === weekData.weekNumber) {
-      showNotification(t('workoutDetails.weekAlreadySent'), 'error');
-      return;
-    }
+    // ✅ УБРАНА ПРОВЕРКА: Теперь можно отправлять любую неделю повторно
+    // Это позволяет отправлять одну и ту же неделю несколько раз с разными датами
 
     // Проверяем что все дни с упражнениями имеют даты
     const daysWithExercises = DAYS_ORDER.filter(dayKey => {
@@ -232,10 +229,17 @@ export default function WorkoutDetails() {
         if (latestDates[dateKey]) {
           // Конвертируем дату из DD.MM.YYYY в YYYY-MM-DD для совместимости с dayjs
           const dateString = latestDates[dateKey]; // DD.MM.YYYY
-          const [day, month, year] = dateString.split('.');
-          const isoDate = `${year}-${month}-${day}`; // YYYY-MM-DD
-          console.log(`📅 Дата для ${dayKey}:`, isoDate);
-          weekDataWithDates.dates[dayKey] = isoDate;
+          const parts = dateString.split('.');
+          
+          // Проверяем что все части даты присутствуют
+          if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+            const [day, month, year] = parts;
+            const isoDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+            console.log(`📅 Дата для ${dayKey}:`, isoDate);
+            weekDataWithDates.dates[dayKey] = isoDate;
+          } else {
+            console.error(`❌ Некорректный формат даты для ${dayKey}:`, dateString);
+          }
         }
       });
       

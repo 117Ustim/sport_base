@@ -18,6 +18,8 @@ export default function PlanClient() {
   
   const [clientName, setClientName] = useState('');
   const [workouts, setWorkouts] = useState([]);
+  const [editingWorkoutId, setEditingWorkoutId] = useState(null);
+  const [editingName, setEditingName] = useState('');
   const { notification, showNotification } = useNotification();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { executeOptimistic } = useOptimisticUpdate();
@@ -46,11 +48,21 @@ export default function PlanClient() {
         return workout;
       });
       
-      setWorkouts(migratedWorkouts);
+      // Сортируем тренировки по названию с учётом чисел (натуральная сортировка)
+      const sortedWorkouts = migratedWorkouts.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        
+        // Используем localeCompare с numeric: true для правильной сортировки чисел
+        // Это обеспечит порядок: ТРЕНИРОВКА_1, ТРЕНИРОВКА_2, ..., ТРЕНИРОВКА_10
+        return nameA.localeCompare(nameB, 'ru', { numeric: true, sensitivity: 'base' });
+      });
+      
+      setWorkouts(sortedWorkouts);
     }).catch((error) => {
       showNotification(t('notifications.workoutLoadError'), 'error');
     });
-  }, [params.id, showNotification]);
+  }, [params.id, t]); // Убрал showNotification из зависимостей - он вызывает бесконечный цикл
 
   const onButtonBack = () => {
     navigate('/');
@@ -114,6 +126,79 @@ export default function PlanClient() {
     );
   };
 
+  const onStartEditName = (e, workoutId, currentName) => {
+    e.stopPropagation();
+    setEditingWorkoutId(workoutId);
+    setEditingName(currentName);
+  };
+
+  const onCancelEditName = (e) => {
+    if (e) e.stopPropagation();
+    setEditingWorkoutId(null);
+    setEditingName('');
+  };
+
+  const onSaveEditName = async (e, workoutId) => {
+    if (e) e.stopPropagation();
+    
+    const trimmedName = editingName.trim();
+    if (!trimmedName) {
+      showNotification('Название не может быть пустым', 'error');
+      return;
+    }
+
+    const previousWorkouts = [...workouts];
+    const workoutToUpdate = workouts.find(w => w.id === workoutId);
+    
+    if (!workoutToUpdate) {
+      showNotification('Тренировка не найдена', 'error');
+      return;
+    }
+    
+    await executeOptimistic({
+      optimisticUpdate: () => {
+        // Обновляем название в UI и сразу пересортировываем
+        const updatedWorkouts = workouts.map(w => 
+          w.id === workoutId ? { ...w, name: trimmedName } : w
+        );
+        
+        // Пересортировываем после изменения названия
+        const sortedWorkouts = updatedWorkouts.sort((a, b) => {
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB, 'ru', { numeric: true, sensitivity: 'base' });
+        });
+        
+        setWorkouts(sortedWorkouts);
+        setEditingWorkoutId(null);
+        setEditingName('');
+        showNotification('Название обновлено', 'success');
+      },
+      apiCall: async () => {
+        // Обновляем в Firebase - передаем полный объект тренировки
+        return await workoutsService.update(workoutId, {
+          ...workoutToUpdate,
+          name: trimmedName
+        });
+      },
+      rollback: () => {
+        setWorkouts(previousWorkouts);
+      },
+      onError: (error) => {
+        console.error('Update failed:', error);
+        showNotification('Ошибка при обновлении названия', 'error');
+      }
+    });
+  };
+
+  const onNameKeyDown = (e, workoutId) => {
+    if (e.key === 'Enter') {
+      onSaveEditName(e, workoutId);
+    } else if (e.key === 'Escape') {
+      onCancelEditName(e);
+    }
+  };
+
   return (
     <div className={styles.planClient}>
       <Notification notification={notification} />
@@ -153,7 +238,7 @@ export default function PlanClient() {
             <div 
               key={workout.id} 
               className={styles.workoutCard}
-              onClick={() => onWorkoutClick(workout.id)}
+              onClick={() => editingWorkoutId !== workout.id && onWorkoutClick(workout.id)}
             >
               <button 
                 className={styles.deleteWorkoutButton}
@@ -162,7 +247,46 @@ export default function PlanClient() {
               >
                 ×
               </button>
-              <h3 className={styles.workoutCardTitle}>{workout.name}</h3>
+              
+              {editingWorkoutId === workout.id ? (
+                <div className={styles.editNameContainer} onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    className={styles.editNameInput}
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => onNameKeyDown(e, workout.id)}
+                    autoFocus
+                  />
+                  <div className={styles.editNameButtons}>
+                    <button 
+                      className={styles.saveButton}
+                      onClick={(e) => onSaveEditName(e, workout.id)}
+                      title="Сохранить"
+                    >
+                      ✓
+                    </button>
+                    <button 
+                      className={styles.cancelButton}
+                      onClick={onCancelEditName}
+                      title="Отмена"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.titleContainer}>
+                  <h3 className={styles.workoutCardTitle}>{workout.name}</h3>
+                  <button 
+                    className={styles.editNameButton}
+                    onClick={(e) => onStartEditName(e, workout.id, workout.name)}
+                    title="Редактировать название"
+                  >
+                    ✎
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

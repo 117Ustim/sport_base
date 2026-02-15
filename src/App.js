@@ -32,19 +32,19 @@ export default function App() {
           return;
         }
 
-        // Проверяем существует ли пользователь в базе данных
-        const userExists = await authService.checkUserExists(currentUser.uid);
+        // Проверяем существует ли пользователь в базе данных и его роль
+        const isAdmin = await authService.checkUserIsAdmin(currentUser.uid);
         
-        if (userExists) {
-          // Пользователь существует - разрешаем доступ
+        if (isAdmin) {
+          // Пользователь существует и является админом - разрешаем доступ
           setUser(currentUser);
           initCategories();
         } else {
-          // Пользователь удален из базы - НЕ делаем logout здесь
-          // Это будет обработано в Login компоненте
+          // Пользователь не админ или удален из базы - выходим
           if (process.env.NODE_ENV === 'development') {
-            console.warn('User not found in database, waiting for login to handle');
+            console.warn('User is not admin or not found in database');
           }
+          await authService.logout();
           setUser(null);
         }
       } else {
