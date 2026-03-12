@@ -7,7 +7,6 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 Create a local `.env` file based on `.env.example` and заполните значения.
 Обязательные переменные:
 - `REACT_APP_FIREBASE_*`
-- `REACT_APP_SENTRY_DSN` (опционально, только для продакшена)
 
 Для локальных админ-скриптов нужны:
 - `ADMIN_EMAIL`

@@ -4,7 +4,13 @@
  * Использует exponential backoff для повторных попыток
  */
 
-import { logError, logMessage } from '../../utils/sentry';
+const logError = (error, context = {}) => {
+  console.error('❌ Error:', error, context);
+};
+
+const logMessage = (message, level = 'info', context = {}) => {
+  console.log(`[${level.toUpperCase()}]`, message, context);
+};
 
 /**
  * Проверить является ли ошибка сетевой
@@ -89,7 +95,7 @@ export async function retryOperation(operation, options = {}) {
       
       // Если не сетевая ошибка или последняя попытка - пробрасываем
       if (!isNetwork || isLastAttempt) {
-        // Логируем критическую ошибку в Sentry
+        // Логируем критическую ошибку
         if (isLastAttempt) {
           logError(error, {
             context: 'retry_exhausted',
@@ -117,7 +123,7 @@ export async function retryOperation(operation, options = {}) {
         error.message
       );
       
-      // Логируем warning в Sentry при повторных попытках
+      // Логируем warning при повторных попытках
       if (attempt > 0) {
         logMessage(
           `Retry attempt ${attempt + 1}/${maxRetries}`,

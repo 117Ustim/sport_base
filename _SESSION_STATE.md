@@ -95,27 +95,6 @@
   - `PlanClient.jsx` - удаление тренировок
 - **Результат:** UI реагирует мгновенно, запросы идут в фоне, автоматический откат при ошибках
 
-### 6. ✅ Sentry (централизованное логирование)
-- **Статус:** ЗАВЕРШЕНО
-- **Установлено:** `@sentry/react` пакет
-- **Файлы:**
-  - `sport_base/src/utils/sentry.js` - конфигурация и утилиты
-  - `sport_base/src/components/ErrorBoundary/ErrorBoundary.jsx` - Error Boundary
-  - `sport_base/src/components/ErrorBoundary/ErrorBoundary.module.scss` - стили
-  - `sport_base/src/components/ErrorBoundary/index.js` - экспорт
-- **Интегрировано:**
-  - `sport_base/src/index.js` - инициализация Sentry
-  - `sport_base/src/firebase/utils/retry.js` - логирование ошибок retry
-  - `sport_base/.env` - добавлен пример REACT_APP_SENTRY_DSN
-- **Функции:**
-  - `initSentry()` - инициализация
-  - `logError(error, context)` - логирование ошибок
-  - `logMessage(message, level, context)` - логирование сообщений
-  - `setUserContext(user)` - установка контекста пользователя
-  - `clearUserContext()` - очистка контекста
-- **Результат:** Все ошибки автоматически отправляются в Sentry (в production), красивый Error Boundary для пользователей
-
----
 
 ## Итоги всей работы (Аудит + Опциональные задачи):
 
@@ -134,7 +113,6 @@
 - ✅ **UX на уровне 9/10**
 - ✅ **Skeleton loaders** для лучшего UX
 - ✅ **Optimistic updates** для мгновенного отклика UI
-- ✅ **Sentry** для отслеживания ошибок в production
 
 **Создано документации:**
 - 8 отчётов этапов аудита
@@ -146,16 +124,9 @@
 
 ## Следующие шаги (если потребуется):
 
-1. **Настроить Sentry DSN:**
-   - Зарегистрироваться на https://sentry.io
-   - Создать проект
-   - Получить DSN
-   - Добавить в `.env`: `REACT_APP_SENTRY_DSN=your_dsn_here`
-
-2. **Опционально:**
+1. **Опционально:**
    - Добавить больше skeleton loaders в другие компоненты
    - Расширить optimistic updates на другие операции
-   - Настроить Sentry alerts для критических ошибок
 
 ---
 

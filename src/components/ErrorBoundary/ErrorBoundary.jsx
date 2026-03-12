@@ -1,10 +1,9 @@
 import React from 'react';
-import * as Sentry from '@sentry/react';
 import styles from './ErrorBoundary.module.scss';
 
 /**
  * Error Boundary для отлова ошибок React
- * Автоматически отправляет ошибки в Sentry
+ * Логирует ошибки в консоль
  */
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -19,12 +18,8 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('❌ React Error Boundary caught:', error, errorInfo);
     
-    // Отправляем в Sentry
-    if (process.env.NODE_ENV === 'production') {
-      Sentry.captureException(error, {
-        extra: errorInfo,
-      });
-    }
+    // Логируем в консоль (без внешних сервисов)
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReload = () => {
