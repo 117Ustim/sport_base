@@ -248,6 +248,14 @@ export default function PlanClient() {
                 ×
               </button>
               
+              <button 
+                className={styles.editNameButton}
+                onClick={(e) => onStartEditName(e, workout.id, workout.name)}
+                title="Редактировать название"
+              >
+                ✎
+              </button>
+              
               {editingWorkoutId === workout.id ? (
                 <div className={styles.editNameContainer} onClick={(e) => e.stopPropagation()}>
                   <input
@@ -276,16 +284,7 @@ export default function PlanClient() {
                   </div>
                 </div>
               ) : (
-                <div className={styles.titleContainer}>
-                  <h3 className={styles.workoutCardTitle}>{workout.name}</h3>
-                  <button 
-                    className={styles.editNameButton}
-                    onClick={(e) => onStartEditName(e, workout.id, workout.name)}
-                    title="Редактировать название"
-                  >
-                    ✎
-                  </button>
-                </div>
+                <h3 className={styles.workoutCardTitle}>{workout.name}</h3>
               )}
             </div>
           ))

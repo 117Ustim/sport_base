@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   collection,
   getDocs,
   deleteDoc,
@@ -19,6 +20,7 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn(),
   getDoc: jest.fn(),
   setDoc: jest.fn(),
+  updateDoc: jest.fn(),
   collection: jest.fn(),
   getDocs: jest.fn(),
   deleteDoc: jest.fn(),
@@ -372,42 +374,29 @@ describe('clientsService', () => {
         weight: '78',
       };
 
-      const existingClient = {
-        exists: () => true,
-        data: () => ({
-          profile: {
-            id: '123',
-            name: 'Іван',
-            surname: 'Петренко',
-            capacity: 10,
-            attented: 5,
-          },
-        }),
-      };
-
       doc.mockReturnValue('doc-ref');
-      getDoc.mockResolvedValue(existingClient);
-      setDoc.mockResolvedValue();
+      updateDoc.mockResolvedValue();
 
       const result = await clientsService.update('123', clientData);
 
       expect(validateClientData).toHaveBeenCalledWith(clientData);
       expect(sanitizeClientData).toHaveBeenCalledWith(clientData);
       expect(doc).toHaveBeenCalledWith({}, 'clients', '123');
-      expect(setDoc).toHaveBeenCalledWith(
+      expect(updateDoc).toHaveBeenCalledWith(
         'doc-ref',
         {
-          profile: expect.objectContaining({
-            name: 'Іван',
-            surname: 'Петренко (оновлено)',
-            phone: '+380501234567',
-            email: 'ivan.new@example.com',
-            gymName: 'Зал 2',
-            capacity: 10, // preserved
-            attented: 5, // preserved
-          }),
-        },
-        { merge: true }
+          'profile.name': 'Іван',
+          'profile.surname': 'Петренко (оновлено)',
+          'profile.phone': '+380501234567',
+          'profile.email': 'ivan.new@example.com',
+          'profile.gymName': 'Зал 2',
+          'profile.gymId': 'gym2',
+          'profile.sex': 'Чоловік',
+          'profile.address': 'Львів',
+          'profile.growth': '182',
+          'profile.weight': '78',
+          'profile.updatedAt': expect.any(String),
+        }
       );
       expect(result.id).toBe('123');
     });
@@ -427,7 +416,7 @@ describe('clientsService', () => {
         'Помилка валідації: Ім\'я обов\'язкове'
       );
 
-      expect(setDoc).not.toHaveBeenCalled();
+      expect(updateDoc).not.toHaveBeenCalled();
     });
 
     it('should handle non-existing client', async () => {
@@ -439,25 +428,26 @@ describe('clientsService', () => {
         sex: 'Чоловік',
       };
 
-      const nonExistingClient = {
-        exists: () => false,
-      };
-
       doc.mockReturnValue('doc-ref');
-      getDoc.mockResolvedValue(nonExistingClient);
-      setDoc.mockResolvedValue();
+      updateDoc.mockResolvedValue();
 
       await clientsService.update('999', clientData);
 
-      expect(setDoc).toHaveBeenCalledWith(
+      expect(updateDoc).toHaveBeenCalledWith(
         'doc-ref',
         {
-          profile: expect.objectContaining({
-            name: 'Іван',
-            surname: 'Петренко',
-          }),
-        },
-        { merge: true }
+          'profile.name': 'Іван',
+          'profile.surname': 'Петренко',
+          'profile.phone': '+380501234567',
+          'profile.email': undefined,
+          'profile.gymName': 'Зал 1',
+          'profile.gymId': undefined,
+          'profile.sex': 'Чоловік',
+          'profile.address': undefined,
+          'profile.growth': undefined,
+          'profile.weight': undefined,
+          'profile.updatedAt': expect.any(String),
+        }
       );
     });
 
@@ -471,7 +461,7 @@ describe('clientsService', () => {
       };
 
       doc.mockReturnValue('doc-ref');
-      getDoc.mockRejectedValue(new Error('Firestore error'));
+      updateDoc.mockRejectedValue(new Error('Firestore error'));
 
       await expect(clientsService.update('123', clientData)).rejects.toThrow('Firestore error');
     });

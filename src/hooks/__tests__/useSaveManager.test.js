@@ -81,16 +81,18 @@ describe('useSaveManager', () => {
     );
     
     const newItem = { id: '1', name: 'Test Item' };
+    const currentData = [newItem];
+    const originalData = [];
     
     act(() => {
       result.current.addNewItem(newItem);
     });
     
     await act(async () => {
-      await result.current.saveChanges();
+      await result.current.saveChanges(currentData, originalData);
     });
     
-    expect(mockOnSave).toHaveBeenCalledWith([newItem]);
+    expect(mockOnSave).toHaveBeenCalledWith(currentData, originalData);
     expect(mockShowNotification).toHaveBeenCalledWith('Зміни успішно збережено', 'success');
     expect(result.current.hasUnsavedChanges).toBe(false);
     expect(result.current.newItems).toEqual([]);
@@ -110,7 +112,7 @@ describe('useSaveManager', () => {
     
     await expect(async () => {
       await act(async () => {
-        await result.current.saveChanges();
+        await result.current.saveChanges([{ id: '1', name: 'Test' }], []);
       });
     }).rejects.toThrow('Save failed');
     

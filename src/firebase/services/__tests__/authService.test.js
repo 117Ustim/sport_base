@@ -56,7 +56,7 @@ describe('authService', () => {
       };
       
       signInWithEmailAndPassword.mockResolvedValue({ user: mockUser });
-      getDoc.mockResolvedValue({ exists: () => true });
+      getDoc.mockResolvedValue({ exists: () => true, data: () => ({ role: 'admin' }) });
       
       const result = await authService.login('user@example.com', 'password');
       
@@ -113,12 +113,12 @@ describe('authService', () => {
     });
   });
 
-  describe('checkUserExists', () => {
-    it('should return true if user exists', async () => {
+  describe('checkUserIsAdmin', () => {
+    it('should return true if user is admin', async () => {
       const { getDoc } = require('firebase/firestore');
-      getDoc.mockResolvedValue({ exists: () => true });
+      getDoc.mockResolvedValue({ exists: () => true, data: () => ({ role: 'admin' }) });
       
-      const result = await authService.checkUserExists('user123');
+      const result = await authService.checkUserIsAdmin('user123');
       
       expect(result).toBe(true);
     });
@@ -127,7 +127,7 @@ describe('authService', () => {
       const { getDoc } = require('firebase/firestore');
       getDoc.mockResolvedValue({ exists: () => false });
       
-      const result = await authService.checkUserExists('user123');
+      const result = await authService.checkUserIsAdmin('user123');
       
       expect(result).toBe(false);
     });
@@ -136,7 +136,7 @@ describe('authService', () => {
       const { getDoc } = require('firebase/firestore');
       getDoc.mockRejectedValue(new Error('Database error'));
       
-      const result = await authService.checkUserExists('user123');
+      const result = await authService.checkUserIsAdmin('user123');
       
       expect(result).toBe(false);
     });

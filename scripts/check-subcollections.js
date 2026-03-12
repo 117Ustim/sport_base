@@ -19,8 +19,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const ADMIN_EMAIL = 'ustimweb72@gmail.com';
-const ADMIN_PASSWORD = 'UstikMaxus140572';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error('❌ Missing ADMIN_EMAIL or ADMIN_PASSWORD env vars.');
+  console.error('Set them before running this script.');
+  process.exit(1);
+}
 
 // Активные клиенты
 const ACTIVE_CLIENTS = ['1769285194499', '1769418005143'];

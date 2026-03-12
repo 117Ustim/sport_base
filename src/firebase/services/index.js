@@ -12,6 +12,7 @@ import { authService as _authService } from './authService';
 import { gymsService as _gymsService } from './gymsService';
 import { exercisesService as _exercisesService } from './exercisesService';
 import { statisticsService as _statisticsService } from './statisticsService';
+import { exerciseHistoryService as _exerciseHistoryService } from './exerciseHistoryService';
 import { retryOperation, getUserFriendlyErrorMessage, isOfflineError } from '../utils/retry';
 
 /**
@@ -103,6 +104,7 @@ export const authService = wrapService(_authService, 'authService');
 export const gymsService = wrapService(_gymsService, 'gymsService');
 export const exercisesService = wrapService(_exercisesService, 'exercisesService');
 export const statisticsService = wrapService(_statisticsService, 'statisticsService');
+export const exerciseHistoryService = wrapService(_exerciseHistoryService, 'exerciseHistoryService');
 
 // Экспортируем утилиты для использования в компонентах
 export { getUserFriendlyErrorMessage, isOfflineError } from '../utils/retry';

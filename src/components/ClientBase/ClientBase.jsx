@@ -1,4 +1,4 @@
-import { clientBaseService, categoriesService, clientsService } from "../../firebase/services";
+import { clientBaseService, categoriesService, clientsService, exerciseHistoryService } from "../../firebase/services";
 import BackButton from "../BackButton";
 import BaseExercisesOut from "./BaseExercisesOut";
 import { NUMBER_TIMES } from '../../constants';
@@ -294,14 +294,53 @@ export default function ClientBase() {
     );
   };
 
-  const onChangeBase = (value, exerciseId, key) => {
+  const onChangeBase = async (value, exerciseId, key) => {
     const oldValue = [...exercisesArray];
     const oldExerciseIndex = oldValue.findIndex((e) => e.exercise_id === exerciseId);
     const temp = oldValue[oldExerciseIndex];
+    
+    // Получаем старое значение веса
+    const previousWeight = parseFloat(temp.data[key]) || 0;
+    const newWeight = parseFloat(value) || 0;
+    
+    // Обновляем локальный стейт
     const newValue = { ...temp, data: { ...temp.data, [key]: value } };
     oldValue.splice(oldExerciseIndex, 1, newValue);
     setExercisesArray(oldValue);
     setHasUnsavedChanges(true);
+    
+    // Сохраняем историю только если вес реально изменился
+    if (previousWeight !== newWeight && params.id) {
+      try {
+        // Находим название колонки (количество повторений)
+        const column = columns.find(col => col.id === key);
+        const reps = column ? parseInt(column.name) || 0 : 0;
+        
+        // Находим категорию упражнения
+        const category = categories.find(cat => cat.id === temp.category_id);
+        
+        await exerciseHistoryService.addHistoryEntry({
+          clientId: params.id,
+          exerciseName: temp.name,
+          categoryId: temp.category_id,
+          sets: 0, // В client_base нет информации о подходах
+          reps: reps,
+          previousWeight: previousWeight,
+          newWeight: newWeight,
+          previousReps: reps,
+          newReps: reps,
+          weightChange: newWeight - previousWeight,
+          repsChange: 0,
+          timestamp: new Date().toISOString(),
+          trainingDate: new Date().toISOString()
+        });
+        
+        console.log(`История сохранена: ${temp.name} ${reps} раз: ${previousWeight}кг → ${newWeight}кг`);
+      } catch (error) {
+        console.error('Ошибка сохранения истории упражнения:', error);
+        // Не показываем ошибку пользователю, чтобы не мешать работе
+      }
+    }
   };
 
   const handleDragOver = (event) => {

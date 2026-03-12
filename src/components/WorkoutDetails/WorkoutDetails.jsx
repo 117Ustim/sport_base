@@ -1,7 +1,9 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { workoutsService, workoutHistoryService, assignedWorkoutsService, clientsService } from "../../firebase/services";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
+import { workoutsService, assignedWorkoutsService, clientsService, clientBaseService } from "../../firebase/services";
 import CustomDatePicker from "../CustomDatePicker";
 import Notification from "../Notification";
 import { useNotification } from "../../hooks/useNotification";
@@ -41,6 +43,10 @@ export default function WorkoutDetails() {
   const [clientData, setClientData] = useState(null);
   const [isSendingWorkout, setIsSendingWorkout] = useState(false);
   const [lastAssignedWeek, setLastAssignedWeek] = useState(null);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
+  const [exerciseComments, setExerciseComments] = useState({});
+  const [clientBase, setClientBase] = useState([]); // 🔥 База упражнений клиента
 
   useEffect(() => {
     console.log('🚀 useEffect запущен - перезагрузка данных');
@@ -54,28 +60,68 @@ export default function WorkoutDetails() {
       try {
         setLoading(true);
         
-        // ✅ ОПТИМИЗАЦИЯ: Загружаем все данные параллельно
+        // ✅ ОПТИМИЗАЦИЯ: Загружаем все данные параллельно (включая clientBase)
         console.log('📥 Начинаем параллельную загрузку данных');
         const startTime = Date.now();
         
-        const [client, workoutData, assignments] = await Promise.all([
+        const [client, workoutData, assignments, clientBaseData] = await Promise.all([
           clientsService.getById(params.clientId),
           workoutsService.getById(params.workoutId),
-          assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId)
+          assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId),
+          clientBaseService.getByClientId(params.clientId) // 🔥 Загружаем базу упражнений
         ]);
         
         console.log('✅ Все данные загружены за:', Date.now() - startTime, 'мс');
         console.log('👤 Клиент:', client?.data?.name, client?.data?.surname);
+        console.log('📦 Данные тренировки:', workoutData);
+        console.log('🏋️ База упражнений клиента:', clientBaseData.length, 'упражнений');
         
         setClientData(client);
+        setClientBase(clientBaseData); // 🔥 Сохраняем базу упражнений
         
         // Нормализация структуры недель
         if (workoutData) {
+          // Если есть старая структура days без weeks - конвертируем
           if (workoutData.days && !workoutData.weeks) {
+            console.log('🔄 Конвертируем старую структуру days в weeks');
             workoutData.weeks = [{ weekNumber: 1, days: workoutData.days }];
             delete workoutData.days;
           }
+          
+          // Если есть totalWeeks (даже 0) но нет weeks - пробуем загрузить из subcollection
+          if (workoutData.totalWeeks !== undefined && (!workoutData.weeks || workoutData.weeks.length === 0)) {
+            console.log('📦 Обнаружена структура с subcollection, totalWeeks:', workoutData.totalWeeks);
+            
+            try {
+              const loadedWeeks = [];
+              let weekNumber = 1;
+              let maxAttempts = 20; // Максимум 20 недель для безопасности
+              
+              // Загружаем недели пока они существуют
+              while (weekNumber <= maxAttempts) {
+                const weekRef = doc(db, 'workouts', params.workoutId, 'weeks', String(weekNumber));
+                const weekSnap = await getDoc(weekRef);
+                
+                if (weekSnap.exists()) {
+                  loadedWeeks.push(weekSnap.data());
+                  weekNumber++;
+                } else {
+                  // Если неделя не найдена - прекращаем поиск
+                  break;
+                }
+              }
+              
+              workoutData.weeks = loadedWeeks;
+              console.log('✅ Загружено недель из subcollection:', workoutData.weeks.length);
+            } catch (error) {
+              console.error('❌ Ошибка загрузки недель из subcollection:', error);
+              workoutData.weeks = [];
+            }
+          }
+          
+          // Если всё ещё нет weeks - устанавливаем пустой массив
           if (!workoutData.weeks) {
+            console.log('⚠️ Недели не найдены, устанавливаем пустой массив');
             workoutData.weeks = [];
           }
         }
@@ -110,7 +156,38 @@ export default function WorkoutDetails() {
         setSelectedWeekIndex(initialWeekIndex);
         setLastAssignedWeek(lastAssignedWeekNum);
         
+        // Загружаем комментарии из назначенных тренировок
+        const commentsMap = {};
+        if (assignments.length > 0) {
+          assignments.forEach(assignment => {
+            if (assignment.weekData && assignment.weekData.days) {
+              Object.keys(assignment.weekData.days).forEach(dayKey => {
+                const dayExercises = assignment.weekData.days[dayKey]?.exercises || [];
+                dayExercises.forEach((exercise, exIndex) => {
+                  // Проверяем обычное упражнение
+                  if (exercise.exerciseData?.comment) {
+                    const key = `${exercise.id || exercise.exercise_id}_${dayKey}`;
+                    commentsMap[key] = exercise.exerciseData.comment;
+                  }
+                  
+                  // Проверяем упражнения в группе (суперсет)
+                  if (exercise.type === 'group' && exercise.exercises) {
+                    exercise.exercises.forEach((subEx, subIndex) => {
+                      if (subEx.exerciseData?.comment) {
+                        const key = `${subEx.id || subEx.exercise_id}_${dayKey}`;
+                        commentsMap[key] = subEx.exerciseData.comment;
+                      }
+                    });
+                  }
+                });
+              });
+            }
+          });
+        }
+        setExerciseComments(commentsMap);
+        
         console.log('🎯 setWorkout выполнен (шаблон + даты из назначения)');
+        console.log('💬 Загружено комментариев:', Object.keys(commentsMap).length);
         console.log('🏁 setLoading(false) - страница должна отобразиться');
         setLoading(false);
         
@@ -175,6 +252,112 @@ export default function WorkoutDetails() {
     setSelectedDay(null);
   };
 
+  // Обработчик клика на иконку комментария
+  const handleCommentClick = (e, comment) => {
+    e.stopPropagation();
+    setSelectedComment(comment);
+    setCommentModalOpen(true);
+  };
+
+  const handleCloseCommentModal = () => {
+    setCommentModalOpen(false);
+    setSelectedComment('');
+  };
+
+  // 🔥 Функция для получения актуального веса из client_base
+  const getActualWeight = (exerciseId, numberTimes) => {
+    if (!clientBase || clientBase.length === 0) return null;
+    
+    // Ищем упражнение в базе по exercise_id
+    const exercise = clientBase.find(ex => ex.exercise_id === exerciseId);
+    if (!exercise || !exercise.data) return null;
+    
+    // Индекс = количество раз - 1 (например, 8 раз = индекс 7)
+    const weightIndex = String(numberTimes - 1);
+    const weight = exercise.data[weightIndex];
+    
+    // Возвращаем вес только если он не пустой
+    if (weight && weight !== '' && weight !== '—') {
+      return weight;
+    }
+    
+    return null;
+  };
+
+  // 🔥 Функция для обновления весов в weekData перед отправкой клиенту
+  const updateWeightsInWeekData = (weekData) => {
+    const updatedWeekData = { ...weekData };
+    
+    // Проходим по всем дням недели
+    DAYS_ORDER.forEach(dayKey => {
+      const dayExercises = weekData.days[dayKey]?.exercises || [];
+      
+      if (dayExercises.length > 0) {
+        // Обновляем упражнения в этом дне
+        const updatedExercises = dayExercises.map(exercise => {
+          // Проверяем, является ли это группой
+          if (exercise.type === 'group' && exercise.exercises && exercise.exercises.length > 0) {
+            // Обновляем упражнения в группе
+            const updatedGroupExercises = exercise.exercises.map(ex => {
+              const isAerobic = ex.category_id === '6';
+              if (isAerobic) return ex; // Аэробные упражнения не имеют веса
+              
+              const reps = ex.exerciseData?.reps || ex.numberTimes || 8;
+              const actualWeight = getActualWeight(ex.exercise_id, reps);
+              
+              if (actualWeight) {
+                return {
+                  ...ex,
+                  exerciseData: {
+                    ...ex.exerciseData,
+                    weight: actualWeight
+                  }
+                };
+              }
+              
+              return ex;
+            });
+            
+            return {
+              ...exercise,
+              exercises: updatedGroupExercises
+            };
+          }
+          
+          // Обычное упражнение
+          const isAerobic = exercise.category_id === '6';
+          if (isAerobic) return exercise; // Аэробные упражнения не имеют веса
+          
+          const reps = exercise.exerciseData?.reps || exercise.numberTimes || 8;
+          const actualWeight = getActualWeight(exercise.exercise_id, reps);
+          
+          if (actualWeight) {
+            return {
+              ...exercise,
+              exerciseData: {
+                ...exercise.exerciseData,
+                weight: actualWeight
+              }
+            };
+          }
+          
+          return exercise;
+        });
+        
+        // Обновляем день с новыми упражнениями
+        if (!updatedWeekData.days) {
+          updatedWeekData.days = {};
+        }
+        updatedWeekData.days[dayKey] = {
+          ...updatedWeekData.days[dayKey],
+          exercises: updatedExercises
+        };
+      }
+    });
+    
+    return updatedWeekData;
+  };
+
   const handleSendWorkoutToClient = async () => {
     console.log('🚀 Начало отправки тренировки');
     const startTime = Date.now();
@@ -217,9 +400,13 @@ export default function WorkoutDetails() {
       setIsSendingWorkout(true);
       console.log('⏱️ Проверки прошли за:', Date.now() - startTime, 'мс');
       
+      // 🔥 ОБНОВЛЯЕМ ВЕСА: Получаем актуальные веса из client_base перед отправкой
+      const weekDataWithUpdatedWeights = updateWeightsInWeekData(weekData);
+      console.log('✅ Веса обновлены из client_base');
+      
       // Подготавливаем данные недели с датами
       const weekDataWithDates = {
-        ...weekData,
+        ...weekDataWithUpdatedWeights,
         dates: {}
       };
       
@@ -391,9 +578,27 @@ export default function WorkoutDetails() {
                                       const sets = ex.exerciseData?.sets || ex.numberSteps || '';
                                       const reps = ex.exerciseData?.reps || ex.numberTimes || '';
                                       
+                                      // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
+                                      const actualWeight = getActualWeight(ex.exercise_id, reps);
+                                      const displayWeight = actualWeight || weight;
+                                      
+                                      // Проверяем наличие комментария для этого упражнения
+                                      const commentKey = `${ex.id || ex.exercise_id}_${dayKey}`;
+                                      const hasComment = exerciseComments[commentKey];
+                                      
                                       return (
                                         <span key={idx} className={styles.groupExerciseItem}>
                                           <span className={styles.exerciseName}>{ex.name}</span>
+                                          {/* Иконка комментария для упражнения в группе */}
+                                          {hasComment && (
+                                            <span 
+                                              className={styles.commentIcon}
+                                              onClick={(e) => handleCommentClick(e, hasComment)}
+                                              title={t('workoutDetails.viewComment') || 'Посмотреть комментарий'}
+                                            >
+                                              ⚠️
+                                            </span>
+                                          )}
                                           {isAerobic ? (
                                             <span className={styles.exerciseParams}>
                                               {ex.duration || 30} {t('createWorkout.minutes')}
@@ -403,9 +608,9 @@ export default function WorkoutDetails() {
                                               <span className={styles.exerciseParams}>
                                                 {sets}×{reps}
                                               </span>
-                                              {weight && (
+                                              {displayWeight && (
                                                 <span className={styles.exerciseWeight}>
-                                                  ({weight})
+                                                  ({displayWeight})
                                                 </span>
                                               )}
                                             </>
@@ -442,11 +647,29 @@ export default function WorkoutDetails() {
                           const sets = exercise.exerciseData?.sets || exercise.numberSteps || '';
                           const reps = exercise.exerciseData?.reps || exercise.numberTimes || '';
                           
+                          // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
+                          const actualWeight = getActualWeight(exercise.exercise_id, reps);
+                          const displayWeight = actualWeight || weight;
+                          
+                          // Проверяем наличие комментария для этого упражнения
+                          const commentKey = `${exercise.id || exercise.exercise_id}_${dayKey}`;
+                          const hasComment = exerciseComments[commentKey];
+                          
                           return (
                             <li key={exercise.id} className={styles.exerciseItem}>
                               <div className={styles.exerciseRow}>
                                 <span className={styles.exerciseNumber}>{index + 1}.</span>
                                 <span className={styles.exerciseName}>{exercise.name}</span>
+                                {/* Иконка комментария */}
+                                {hasComment && (
+                                  <span 
+                                    className={styles.commentIcon}
+                                    onClick={(e) => handleCommentClick(e, hasComment)}
+                                    title={t('workoutDetails.viewComment') || 'Посмотреть комментарий'}
+                                  >
+                                    ⚠️
+                                  </span>
+                                )}
                                 {isAerobic ? (
                                   <span className={styles.exerciseParams}>
                                     {exercise.duration || 30} {t('createWorkout.minutes')}
@@ -456,9 +679,9 @@ export default function WorkoutDetails() {
                                     <span className={styles.exerciseParams}>
                                       {sets} × {reps}
                                     </span>
-                                    {weight && (
+                                    {displayWeight && (
                                       <span className={styles.exerciseWeight}>
-                                        ({weight})
+                                        ({displayWeight})
                                       </span>
                                     )}
                                   </>
@@ -508,6 +731,19 @@ export default function WorkoutDetails() {
               onDateSelect={handleDateSelect}
               onCancel={handleCancelDatePicker}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно для отображения комментария */}
+      {commentModalOpen && (
+        <div className={styles.modalOverlay} onClick={handleCloseCommentModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Комментарий к упражнению</h3>
+            <p className={styles.commentText}>{selectedComment}</p>
+            <button className={styles.closeButton} onClick={handleCloseCommentModal}>
+              Закрыть
+            </button>
           </div>
         </div>
       )}

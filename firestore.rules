@@ -113,6 +113,26 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    // Коллекция statistics - статистика по залам
+    match /statistics/{gymId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Subcollection daily - ежедневная статистика
+      match /daily/{date} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+    
+    // Коллекция oneTimeVisits - разовые клиенты
+    match /oneTimeVisits/{visitId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
     // ⚠️ ВРЕМЕННО: Fallback для других коллекций (удалить после миграции)
     // Это правило будет работать только если не сработало ни одно из вышеперечисленных
     match /{document=**} {

@@ -9,6 +9,9 @@ import {
   query,
   where,
   deleteDoc,
+  orderBy,
+  limit,
+  writeBatch,
 } from 'firebase/firestore';
 
 // Mock Firestore
@@ -21,6 +24,9 @@ jest.mock('firebase/firestore', () => ({
   query: jest.fn(),
   where: jest.fn(),
   deleteDoc: jest.fn(),
+  orderBy: jest.fn(),
+  limit: jest.fn(),
+  writeBatch: jest.fn(),
 }));
 
 // Mock Firebase config
@@ -44,8 +50,16 @@ describe('assignedWorkoutsService', () => {
   });
 
   describe('assignWeekToClient', () => {
+    let batch;
+
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValue(1234567890000);
+      batch = {
+        set: jest.fn(),
+        delete: jest.fn(),
+        commit: jest.fn().mockResolvedValue(),
+      };
+      writeBatch.mockReturnValue(batch);
     });
 
     afterEach(() => {
@@ -66,7 +80,6 @@ describe('assignedWorkoutsService', () => {
       getDocs.mockResolvedValue({ docs: [] });
 
       doc.mockReturnValue('assignment-ref');
-      setDoc.mockResolvedValue();
 
       const result = await assignedWorkoutsService.assignWeekToClient(
         'client1',
@@ -76,16 +89,22 @@ describe('assignedWorkoutsService', () => {
         'workout1'
       );
 
-      expect(setDoc).toHaveBeenCalledWith('assignment-ref', {
+      expect(writeBatch).toHaveBeenCalledWith({});
+      expect(batch.set).toHaveBeenCalledWith('assignment-ref', {
         clientId: 'client1',
         userId: 'user1',
         workoutId: 'workout1',
         workoutName: 'Тренування 1',
         weekNumber: 1,
-        weekData: weekData,
+        weekData: {
+          weekNumber: 1,
+          days: weekData.days,
+          dates: weekData.dates,
+        },
         assignedAt: expect.any(String),
         status: 'new',
       });
+      expect(batch.commit).toHaveBeenCalled();
       expect(result.id).toContain('client1_workout1_week1');
     });
 
@@ -98,7 +117,7 @@ describe('assignedWorkoutsService', () => {
       getDocs.mockResolvedValue({ docs: [] });
 
       doc.mockReturnValue('assignment-ref');
-      setDoc.mockRejectedValue(new Error('Firestore error'));
+      batch.commit.mockRejectedValue(new Error('Firestore error'));
 
       await expect(
         assignedWorkoutsService.assignWeekToClient('client1', 'user1', weekData, 'Test', 'w1')
@@ -123,6 +142,8 @@ describe('assignedWorkoutsService', () => {
 
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockAssignments });
 
@@ -149,17 +170,15 @@ describe('assignedWorkoutsService', () => {
       const mockWorkout = {
         exists: () => true,
         data: () => ({
-          weeks: [
-            {
-              weekNumber: 1,
-              dates: { monday: '01.01.2024' },
-            },
-          ],
+          weekNumber: 1,
+          dates: { monday: '01.01.2024' },
         }),
       };
 
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockAssignments });
       doc.mockReturnValue('workout-ref');
@@ -174,6 +193,8 @@ describe('assignedWorkoutsService', () => {
     it('should return empty array if no assignments', async () => {
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [] });
 
@@ -185,6 +206,8 @@ describe('assignedWorkoutsService', () => {
     it('should handle errors', async () => {
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 
@@ -209,6 +232,8 @@ describe('assignedWorkoutsService', () => {
 
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockAssignments });
 
@@ -221,6 +246,8 @@ describe('assignedWorkoutsService', () => {
     it('should handle errors', async () => {
       collection.mockReturnValue('collection-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 

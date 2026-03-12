@@ -65,7 +65,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
                     </span>
                   ) : (
                     <span className={styles.exerciseParams}>
-                      {ex.numberSteps}×{ex.numberTimes} ({getWeightForReps(ex.exerciseData, ex.numberTimes)})
+                      {ex.numberSteps}×{ex.numberTimes} ({getWeightForReps(ex.exerciseData, ex.numberTimes, ex.exercise_id)})
                     </span>
                   )}
                   
@@ -159,7 +159,7 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
             </div>
             
             <span className={styles.weightFromDatabase}>
-              ({getWeightForReps(exercise.exerciseData, exercise.numberTimes)})
+              ({getWeightForReps(exercise.exerciseData, exercise.numberTimes, exercise.exercise_id)})
               {exercise.isFromStarColumn && (
                 <span className={styles.starIndicator} title="Вес из колонки *">*</span>
               )}

@@ -9,6 +9,8 @@ import {
   deleteDoc,
   query,
   where,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 
 // Mock Firestore
@@ -21,6 +23,8 @@ jest.mock('firebase/firestore', () => ({
   deleteDoc: jest.fn(),
   query: jest.fn(),
   where: jest.fn(),
+  orderBy: jest.fn(),
+  limit: jest.fn(),
 }));
 
 // Mock Firebase config
@@ -37,14 +41,6 @@ describe('workoutsService', () => {
     it('should get workouts for client sorted by date', async () => {
       const mockWorkouts = [
         {
-          id: 'w1',
-          data: () => ({
-            name: 'Старіша',
-            clientId: 'client1',
-            createdAt: '2024-01-01T00:00:00.000Z',
-          }),
-        },
-        {
           id: 'w2',
           data: () => ({
             name: 'Новіша',
@@ -52,10 +48,20 @@ describe('workoutsService', () => {
             createdAt: '2024-01-02T00:00:00.000Z',
           }),
         },
+        {
+          id: 'w1',
+          data: () => ({
+            name: 'Старіша',
+            clientId: 'client1',
+            createdAt: '2024-01-01T00:00:00.000Z',
+          }),
+        },
       ];
 
       collection.mockReturnValue('workouts-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockWorkouts });
 
@@ -63,6 +69,8 @@ describe('workoutsService', () => {
 
       expect(collection).toHaveBeenCalledWith({}, 'workouts');
       expect(where).toHaveBeenCalledWith('clientId', '==', 'client1');
+      expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(limit).toHaveBeenCalledWith(20);
       expect(result).toHaveLength(2);
       // Sorted from newest to oldest
       expect(result[0].name).toBe('Новіша');
@@ -72,6 +80,8 @@ describe('workoutsService', () => {
     it('should return empty array if no workouts', async () => {
       collection.mockReturnValue('workouts-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [] });
 
@@ -83,6 +93,8 @@ describe('workoutsService', () => {
     it('should handle errors', async () => {
       collection.mockReturnValue('workouts-ref');
       where.mockReturnValue('where-constraint');
+      orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 
@@ -149,6 +161,7 @@ describe('workoutsService', () => {
         clientId: 'client1',
         weeks: [
           {
+            weekNumber: 1,
             days: {
               day1: {
                 exercises: [
@@ -163,7 +176,9 @@ describe('workoutsService', () => {
         ],
       };
 
-      doc.mockReturnValue('workout-ref');
+      doc
+        .mockReturnValueOnce('workout-ref')
+        .mockReturnValueOnce('week-ref');
       setDoc.mockResolvedValue();
 
       const result = await workoutsService.create(workoutData);
@@ -172,9 +187,15 @@ describe('workoutsService', () => {
       expect(setDoc).toHaveBeenCalledWith('workout-ref', {
         name: 'Нове тренування',
         clientId: 'client1',
-        weeks: expect.any(Array),
+        totalWeeks: 1,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
+      });
+      expect(doc).toHaveBeenCalledWith({}, 'workouts', 'custom-id', 'weeks', '1');
+      expect(setDoc).toHaveBeenCalledWith('week-ref', {
+        weekNumber: 1,
+        days: expect.any(Object),
+        dates: {},
       });
       expect(result.id).toBe('custom-id');
     });
@@ -201,6 +222,7 @@ describe('workoutsService', () => {
         clientId: 'client1',
         weeks: [
           {
+            weekNumber: 1,
             days: {
               day1: {
                 exercises: [
@@ -215,13 +237,15 @@ describe('workoutsService', () => {
         ],
       };
 
-      doc.mockReturnValue('workout-ref');
+      doc
+        .mockReturnValueOnce('workout-ref')
+        .mockReturnValueOnce('week-ref');
       setDoc.mockResolvedValue();
 
       await workoutsService.create(workoutData);
 
-      const savedData = setDoc.mock.calls[0][1];
-      const exercise = savedData.weeks[0].days.day1.exercises[0];
+      const savedData = setDoc.mock.calls[1][1];
+      const exercise = savedData.days.day1.exercises[0];
       expect(exercise.exerciseData).toEqual({ sets: '3' });
     });
 
@@ -231,6 +255,7 @@ describe('workoutsService', () => {
         clientId: 'client1',
         weeks: [
           {
+            weekNumber: 1,
             days: {
               day1: {
                 exercises: [
@@ -250,13 +275,15 @@ describe('workoutsService', () => {
         ],
       };
 
-      doc.mockReturnValue('workout-ref');
+      doc
+        .mockReturnValueOnce('workout-ref')
+        .mockReturnValueOnce('week-ref');
       setDoc.mockResolvedValue();
 
       await workoutsService.create(workoutData);
 
-      const savedData = setDoc.mock.calls[0][1];
-      const groupExercise = savedData.weeks[0].days.day1.exercises[0];
+      const savedData = setDoc.mock.calls[1][1];
+      const groupExercise = savedData.days.day1.exercises[0];
       expect(groupExercise.type).toBe('group');
       expect(groupExercise.exercises[0].exerciseData).toEqual({ sets: '3' });
     });
@@ -283,6 +310,7 @@ describe('workoutsService', () => {
         clientId: 'client1',
         weeks: [
           {
+            weekNumber: 1,
             days: {
               day1: {
                 exercises: [
@@ -297,8 +325,12 @@ describe('workoutsService', () => {
         ],
       };
 
-      doc.mockReturnValue('workout-ref');
+      doc
+        .mockReturnValueOnce('workout-ref')
+        .mockReturnValueOnce('week-ref');
       setDoc.mockResolvedValue();
+      getDocs.mockResolvedValue({ docs: [] });
+      deleteDoc.mockResolvedValue();
 
       const result = await workoutsService.update('w1', workoutData);
 
@@ -308,11 +340,16 @@ describe('workoutsService', () => {
         {
           name: 'Оновлене тренування',
           clientId: 'client1',
-          weeks: expect.any(Array),
+          totalWeeks: 1,
           updatedAt: expect.any(String),
         },
         { merge: true }
       );
+      expect(setDoc).toHaveBeenCalledWith('week-ref', {
+        weekNumber: 1,
+        days: expect.any(Object),
+        dates: {},
+      });
       expect(result.id).toBe('w1');
     });
 
@@ -322,6 +359,7 @@ describe('workoutsService', () => {
         clientId: 'client1',
         weeks: [
           {
+            weekNumber: 1,
             days: {
               day1: {
                 exercises: [
@@ -336,13 +374,17 @@ describe('workoutsService', () => {
         ],
       };
 
-      doc.mockReturnValue('workout-ref');
+      doc
+        .mockReturnValueOnce('workout-ref')
+        .mockReturnValueOnce('week-ref');
       setDoc.mockResolvedValue();
+      getDocs.mockResolvedValue({ docs: [] });
+      deleteDoc.mockResolvedValue();
 
       await workoutsService.update('w1', workoutData);
 
-      const savedData = setDoc.mock.calls[0][1];
-      const exercise = savedData.weeks[0].days.day1.exercises[0];
+      const savedData = setDoc.mock.calls[1][1];
+      const exercise = savedData.days.day1.exercises[0];
       expect(exercise.exerciseData).toEqual({ sets: '3' });
     });
 
@@ -355,6 +397,7 @@ describe('workoutsService', () => {
 
       doc.mockReturnValue('workout-ref');
       setDoc.mockRejectedValue(new Error('Firestore error'));
+      getDocs.mockResolvedValue({ docs: [] });
 
       await expect(workoutsService.update('w1', workoutData)).rejects.toThrow('Firestore error');
     });
@@ -363,6 +406,7 @@ describe('workoutsService', () => {
   describe('delete', () => {
     it('should delete workout', async () => {
       doc.mockReturnValue('workout-ref');
+      getDocs.mockResolvedValue({ size: 0, docs: [] });
       deleteDoc.mockResolvedValue();
 
       const result = await workoutsService.delete('w1');
@@ -374,6 +418,7 @@ describe('workoutsService', () => {
 
     it('should convert numeric id to string', async () => {
       doc.mockReturnValue('workout-ref');
+      getDocs.mockResolvedValue({ size: 0, docs: [] });
       deleteDoc.mockResolvedValue();
 
       await workoutsService.delete(123);
@@ -383,6 +428,7 @@ describe('workoutsService', () => {
 
     it('should handle errors', async () => {
       doc.mockReturnValue('workout-ref');
+      getDocs.mockResolvedValue({ size: 0, docs: [] });
       deleteDoc.mockRejectedValue(new Error('Firestore error'));
 
       await expect(workoutsService.delete('w1')).rejects.toThrow('Firestore error');

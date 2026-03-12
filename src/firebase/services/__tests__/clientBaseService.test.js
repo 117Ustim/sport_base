@@ -335,6 +335,7 @@ describe('clientBaseService', () => {
         name: 'Жим',
         categoryId: 'cat1',
         data: {},
+        order: 999999,
       });
       expect(result).toBe(true);
     });

@@ -1,4 +1,4 @@
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -9,21 +9,54 @@ const db = admin.firestore();
 
 setGlobalOptions({ maxInstances: 10, region: "europe-west1" });
 
+const BATCH_LIMIT = 450;
+
+function requireAuth(request) {
+  const auth = request.auth;
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Требуется авторизация");
+  }
+  return auth;
+}
+
+async function requireAdmin(auth) {
+  const userDoc = await db.collection("users").doc(auth.uid).get();
+  if (!userDoc.exists || userDoc.data().role !== "admin") {
+    throw new HttpsError("permission-denied", "Доступ запрещен: только для администраторов");
+  }
+}
+
+async function commitDeleteBatches(refs) {
+  let deletedCount = 0;
+  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+    const chunk = refs.slice(i, i + BATCH_LIMIT);
+    const batch = db.batch();
+    chunk.forEach((ref) => batch.delete(ref));
+    await batch.commit();
+    deletedCount += chunk.length;
+  }
+  return deletedCount;
+}
+
+async function commitSetBatches(items) {
+  let updatedCount = 0;
+  for (let i = 0; i < items.length; i += BATCH_LIMIT) {
+    const chunk = items.slice(i, i + BATCH_LIMIT);
+    const batch = db.batch();
+    chunk.forEach(({ ref, data }) => batch.set(ref, data));
+    await batch.commit();
+    updatedCount += chunk.length;
+  }
+  return updatedCount;
+}
+
 // ============================================
 // ФУНКЦИЯ 1: Создание клиента
 // ============================================
 exports.createClient = onCall(async (request) => {
   const { profile, userId } = request.data;
-  const auth = request.auth;
-
-  if (!auth) {
-    throw new Error("Требуется авторизация");
-  }
-
-  const userDoc = await db.collection("users").doc(auth.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== "admin") {
-    throw new Error("Доступ запрещен: только для администраторов");
-  }
+  const auth = requireAuth(request);
+  await requireAdmin(auth);
 
   try {
     const clientId = Date.now().toString();
@@ -44,7 +77,7 @@ exports.createClient = onCall(async (request) => {
     };
   } catch (error) {
     logger.error("Ошибка создания клиента:", error);
-    throw new Error(`Ошибка создания клиента: ${error.message}`);
+    throw new HttpsError("internal", `Ошибка создания клиента: ${error.message}`);
   }
 });
 
@@ -53,49 +86,29 @@ exports.createClient = onCall(async (request) => {
 // ============================================
 exports.deleteClient = onCall(async (request) => {
   const { clientId } = request.data;
-  const auth = request.auth;
-
-  if (!auth) {
-    throw new Error("Требуется авторизация");
-  }
-
-  const userDoc = await db.collection("users").doc(auth.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== "admin") {
-    throw new Error("Доступ запрещен: только для администраторов");
-  }
+  const auth = requireAuth(request);
+  await requireAdmin(auth);
 
   try {
-    const batch = db.batch();
-    let deletedCount = 0;
-
-    batch.delete(db.collection("clients").doc(clientId));
-    deletedCount++;
+    const deleteRefs = [];
+    deleteRefs.push(db.collection("clients").doc(clientId));
 
     const assignedWorkouts = await db.collection("assignedWorkouts")
       .where("clientId", "==", clientId)
       .get();
-    assignedWorkouts.forEach(doc => {
-      batch.delete(doc.ref);
-      deletedCount++;
-    });
+    assignedWorkouts.forEach(doc => deleteRefs.push(doc.ref));
 
     const workouts = await db.collection("workouts")
       .where("clientId", "==", clientId)
       .get();
-    workouts.forEach(doc => {
-      batch.delete(doc.ref);
-      deletedCount++;
-    });
+    workouts.forEach(doc => deleteRefs.push(doc.ref));
 
     const history = await db.collection("workoutHistory")
       .where("clientId", "==", clientId)
       .get();
-    history.forEach(doc => {
-      batch.delete(doc.ref);
-      deletedCount++;
-    });
+    history.forEach(doc => deleteRefs.push(doc.ref));
 
-    await batch.commit();
+    const deletedCount = await commitDeleteBatches(deleteRefs);
 
     logger.info(`Клиент удален каскадно: ${clientId}`, { 
       clientId, 
@@ -110,7 +123,7 @@ exports.deleteClient = onCall(async (request) => {
     };
   } catch (error) {
     logger.error("Ошибка удаления клиента:", error);
-    throw new Error(`Ошибка удаления клиента: ${error.message}`);
+    throw new HttpsError("internal", `Ошибка удаления клиента: ${error.message}`);
   }
 });
 
@@ -119,16 +132,8 @@ exports.deleteClient = onCall(async (request) => {
 // ============================================
 exports.assignWorkout = onCall(async (request) => {
   const { clientId, userId, workoutId, workoutName, weekNumber } = request.data;
-  const auth = request.auth;
-
-  if (!auth) {
-    throw new Error("Требуется авторизация");
-  }
-
-  const userDoc = await db.collection("users").doc(auth.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== "admin") {
-    throw new Error("Доступ запрещен: только для администраторов");
-  }
+  const auth = requireAuth(request);
+  await requireAdmin(auth);
 
   try {
     const assignmentId = `${clientId}_${workoutId}_week${weekNumber}_${Date.now()}`;
@@ -157,7 +162,7 @@ exports.assignWorkout = onCall(async (request) => {
     };
   } catch (error) {
     logger.error("Ошибка назначения тренировки:", error);
-    throw new Error(`Ошибка назначения тренировки: ${error.message}`);
+    throw new HttpsError("internal", `Ошибка назначения тренировки: ${error.message}`);
   }
 });
 
@@ -165,16 +170,8 @@ exports.assignWorkout = onCall(async (request) => {
 // ФУНКЦИЯ 4: Оптимизация assignedWorkouts (убрать weekData)
 // ============================================
 exports.optimizeAssignedWorkouts = onCall(async (request) => {
-  const auth = request.auth;
-
-  if (!auth) {
-    throw new Error("Требуется авторизация");
-  }
-
-  const userDoc = await db.collection("users").doc(auth.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== "admin") {
-    throw new Error("Доступ запрещен: только для администраторов");
-  }
+  const auth = requireAuth(request);
+  await requireAdmin(auth);
 
   try {
     const assignmentsSnapshot = await db.collection("assignedWorkouts").get();
@@ -188,9 +185,8 @@ exports.optimizeAssignedWorkouts = onCall(async (request) => {
       };
     }
 
-    let optimizedCount = 0;
     let skippedCount = 0;
-    const batch = db.batch();
+    const updates = [];
 
     assignmentsSnapshot.forEach(doc => {
       const data = doc.data();
@@ -210,11 +206,10 @@ exports.optimizeAssignedWorkouts = onCall(async (request) => {
         status: data.status || "new"
       };
 
-      batch.set(doc.ref, optimizedData);
-      optimizedCount++;
+      updates.push({ ref: doc.ref, data: optimizedData });
     });
 
-    await batch.commit();
+    const optimizedCount = await commitSetBatches(updates);
 
     logger.info("assignedWorkouts оптимизированы", { 
       optimizedCount, 
@@ -230,7 +225,7 @@ exports.optimizeAssignedWorkouts = onCall(async (request) => {
     };
   } catch (error) {
     logger.error("Ошибка оптимизации assignedWorkouts:", error);
-    throw new Error(`Ошибка оптимизации: ${error.message}`);
+    throw new HttpsError("internal", `Ошибка оптимизации: ${error.message}`);
   }
 });
 

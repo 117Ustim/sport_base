@@ -8,6 +8,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
 } from 'firebase/firestore';
 
 // Mock Firestore
@@ -19,6 +20,7 @@ jest.mock('firebase/firestore', () => ({
   query: jest.fn(),
   where: jest.fn(),
   orderBy: jest.fn(),
+  limit: jest.fn(),
 }));
 
 // Mock Firebase config
@@ -218,6 +220,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockSessions });
 
@@ -226,6 +229,7 @@ describe('workoutHistoryService', () => {
       expect(collection).toHaveBeenCalledWith({}, 'workoutHistory');
       expect(where).toHaveBeenCalledWith('workoutId', '==', 'w1');
       expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(limit).toHaveBeenCalledWith(50);
       expect(result).toHaveLength(2);
     });
 
@@ -233,6 +237,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [] });
 
@@ -245,6 +250,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 
@@ -272,6 +278,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockSessions, empty: false });
 
@@ -287,6 +294,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [], empty: true });
 
@@ -299,6 +307,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 
@@ -329,6 +338,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockSessions });
 
@@ -341,6 +351,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [] });
 
@@ -353,6 +364,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 
@@ -384,6 +396,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: mockSessions });
 
@@ -398,6 +411,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockResolvedValue({ docs: [] });
 
@@ -410,6 +424,7 @@ describe('workoutHistoryService', () => {
       collection.mockReturnValue('history-ref');
       where.mockReturnValue('where-constraint');
       orderBy.mockReturnValue('orderBy-constraint');
+      limit.mockReturnValue('limit-constraint');
       query.mockReturnValue('query-result');
       getDocs.mockRejectedValue(new Error('Firestore error'));
 

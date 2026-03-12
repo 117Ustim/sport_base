@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { clientBaseService, categoriesService, workoutsService } from "../../firebase/services";
 import { useState, useEffect, useCallback } from "react";
 import { arrayMove } from '@dnd-kit/sortable';
@@ -38,6 +40,26 @@ export default function CreateWorkout() {
 
   const isEditMode = params.workoutId !== undefined;
 
+  // 🔥 Функция для получения веса из client_base по exercise_id и количеству повторений
+  const getWeightFromBase = useCallback((exerciseId, numberTimes) => {
+    if (!exercises || exercises.length === 0) return '';
+    
+    // Ищем упражнение в базе по exercise_id
+    const exercise = exercises.find(ex => ex.exercise_id === exerciseId);
+    if (!exercise || !exercise.data) return '';
+    
+    // Индекс = количество раз - 1 (например, 8 раз = индекс 7)
+    const weightIndex = String(numberTimes - 1);
+    const weight = exercise.data[weightIndex];
+    
+    // Возвращаем вес только если он не пустой
+    if (weight && weight !== '' && weight !== '—') {
+      return weight;
+    }
+    
+    return '';
+  }, [exercises]);
+
   useEffect(() => {
     let isActive = true;
 
@@ -62,6 +84,7 @@ export default function CreateWorkout() {
           if (!isActive) return;
 
           if (data) {
+            // Конвертируем старую структуру days в weeks
             if (data.days && !data.weeks) {
               data.weeks = [{
                 weekNumber: 1,
@@ -70,6 +93,38 @@ export default function CreateWorkout() {
               delete data.days;
             }
             
+            // Если есть totalWeeks но нет weeks - загружаем из subcollection
+            if (data.totalWeeks !== undefined && (!data.weeks || data.weeks.length === 0)) {
+              console.log('📦 Обнаружена структура с subcollection, totalWeeks:', data.totalWeeks);
+              
+              try {
+                const loadedWeeks = [];
+                let weekNumber = 1;
+                let maxAttempts = 20; // Максимум 20 недель для безопасности
+                
+                // Загружаем недели пока они существуют
+                while (weekNumber <= maxAttempts) {
+                  const weekRef = doc(db, 'workouts', params.workoutId, 'weeks', String(weekNumber));
+                  const weekSnap = await getDoc(weekRef);
+                  
+                  if (weekSnap.exists()) {
+                    loadedWeeks.push(weekSnap.data());
+                    weekNumber++;
+                  } else {
+                    // Если неделя не найдена - прекращаем поиск
+                    break;
+                  }
+                }
+                
+                data.weeks = loadedWeeks;
+                console.log('✅ Загружено недель из subcollection:', data.weeks.length);
+              } catch (error) {
+                console.error('❌ Ошибка загрузки недель из subcollection:', error);
+                data.weeks = [];
+              }
+            }
+            
+            // Если всё ещё нет weeks - создаём пустую структуру
             if (!data.weeks || data.weeks.length === 0) {
               data.weeks = [{
                 weekNumber: 1,
@@ -241,19 +296,17 @@ export default function CreateWorkout() {
       newExercise.numberSteps = 3;
       newExercise.numberTimes = 8;
       
-      // 🔥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ВЕСА ИЗ CLIENTBASES
-      if (exercise.data && typeof exercise.data === 'object') {
-        const weightByReps = exercise.data[newExercise.numberTimes - 1];
-        
-        if (weightByReps && weightByReps !== '' && weightByReps !== '—') {
-          newExercise.exerciseData = {
-            ...exercise.data,
-            weight: weightByReps
-          };
-          console.log(`✅ Автозагрузка веса для "${exercise.name}": ${weightByReps} кг (${newExercise.numberTimes} повторений)`);
-        } else {
-          console.log(`ℹ️  Вес для "${exercise.name}" не найден для ${newExercise.numberTimes} повторений (оставляем пустым)`);
-        }
+      // 🔥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ВЕСА ИЗ CLIENT_BASE
+      const weightByReps = getWeightFromBase(exercise.exercise_id, newExercise.numberTimes);
+      
+      if (weightByReps) {
+        newExercise.exerciseData = {
+          ...exercise.data,
+          weight: weightByReps
+        };
+        console.log(`✅ Автозагрузка веса для "${exercise.name}": ${weightByReps} кг (${newExercise.numberTimes} повторений)`);
+      } else {
+        console.log(`ℹ️  Вес для "${exercise.name}" не найден для ${newExercise.numberTimes} повторений (оставляем пустым)`);
       }
     }
 
@@ -377,13 +430,21 @@ export default function CreateWorkout() {
     });
   };
 
-  const getWeightForReps = (exerciseData, reps) => {
-    // Если есть сохранённый вес (из колонки "*"), используем его
+  const getWeightForReps = (exerciseData, reps, exerciseId) => {
+    // 🔥 ПРИОРИТЕТ 1: Берём актуальный вес из client_base (всегда самый свежий!)
+    if (exerciseId) {
+      const weightFromBase = getWeightFromBase(exerciseId, reps);
+      if (weightFromBase) {
+        return weightFromBase;
+      }
+    }
+    
+    // 🔥 ПРИОРИТЕТ 2: Если есть сохранённый вес (из колонки "*"), используем его
     if (exerciseData && exerciseData.weight) {
       return exerciseData.weight;
     }
     
-    // Иначе берём вес из обычной колонки по индексу
+    // 🔥 ПРИОРИТЕТ 3 (fallback): Берём вес из exerciseData по индексу (старая логика)
     if (!exerciseData || !exerciseData[reps - 1]) {
       return "—";
     }
@@ -441,12 +502,12 @@ export default function CreateWorkout() {
           // 🔥 Если изменили количество повторений → автоматически обновляем вес
           if (field === 'numberTimes' && ex.exerciseData) {
             const newReps = Number(value);
-            const weightForNewReps = ex.exerciseData[newReps - 1];
+            const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps);
             
             // Сбрасываем флаг isFromStarColumn при изменении повторений
             delete updated.isFromStarColumn;
             
-            if (weightForNewReps && weightForNewReps !== '' && weightForNewReps !== '—') {
+            if (weightForNewReps) {
               updated.exerciseData = {
                 ...ex.exerciseData,
                 weight: weightForNewReps
@@ -480,12 +541,12 @@ export default function CreateWorkout() {
                 // 🔥 Если изменили количество повторений → автоматически обновляем вес
                 if (field === 'numberTimes' && ex.exerciseData) {
                   const newReps = Number(value);
-                  const weightForNewReps = ex.exerciseData[newReps - 1];
+                  const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps);
                   
                   // Сбрасываем флаг isFromStarColumn при изменении повторений
                   delete updated.isFromStarColumn;
                   
-                  if (weightForNewReps && weightForNewReps !== '' && weightForNewReps !== '—') {
+                  if (weightForNewReps) {
                     updated.exerciseData = {
                       ...ex.exerciseData,
                       weight: weightForNewReps
@@ -555,9 +616,9 @@ export default function CreateWorkout() {
             
             // 🔥 Автоматически обновляем вес для нового количества повторений
             if (ex.exerciseData) {
-              const weightForNewReps = ex.exerciseData[reps - 1];
+              const weightForNewReps = getWeightFromBase(ex.exercise_id, reps);
               
-              if (weightForNewReps && weightForNewReps !== '' && weightForNewReps !== '—') {
+              if (weightForNewReps) {
                 updated.exerciseData = {
                   ...ex.exerciseData,
                   weight: weightForNewReps
@@ -580,9 +641,9 @@ export default function CreateWorkout() {
         
         // 🔥 Автоматически обновляем вес для нового количества повторений
         if (exercise.exerciseData) {
-          const weightForNewReps = exercise.exerciseData[reps - 1];
+          const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps);
           
-          if (weightForNewReps && weightForNewReps !== '' && weightForNewReps !== '—') {
+          if (weightForNewReps) {
             updated.exerciseData = {
               ...exercise.exerciseData,
               weight: weightForNewReps
