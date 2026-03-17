@@ -213,8 +213,7 @@ export default function PlanClient() {
     try {
       const response = await clientsService.getAll({ limit: 1000 });
       const clientsData = response?.data || [];
-      const filteredClients = clientsData.filter(client => client.id !== params.id);
-      setClientsList(filteredClients);
+      setClientsList(clientsData);
     } catch (error) {
       console.error('Error loading clients:', error);
       showNotification(t('notifications.loadError'), 'error');
