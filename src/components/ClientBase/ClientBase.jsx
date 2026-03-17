@@ -489,7 +489,7 @@ export default function ClientBase() {
   };
 
   return (
-    <>
+    <div className={styles.page}>
       <Notification notification={notification} />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -651,7 +651,7 @@ export default function ClientBase() {
           </div>
         )}
       </DndContext>
-    </>
+    </div>
   );
 }
 

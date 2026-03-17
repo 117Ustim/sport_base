@@ -3,7 +3,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  background: var(--bg-panel);
   border-radius: 25px;
 }
 
@@ -16,7 +16,7 @@
   
   h2 {
     font-size: 18px;
-    color: #000000;
+    color: var(--text-primary);
     margin: 0;
     font-weight: 500;
     flex: 1;
@@ -24,10 +24,10 @@
 }
 
 .close {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   font-size: 20px;
-  color: #495057;
+  color: var(--text-tertiary);
   cursor: pointer;
   padding: 0;
   width: 36px;
@@ -37,13 +37,13 @@
   justify-content: center;
   border-radius: 18px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
-    color: #000000;
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
+    background: var(--bg-input-focus);
+    color: var(--text-primary);
   }
 }
 
@@ -57,9 +57,9 @@
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  background: var(--bg-surface);
   border-radius: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
@@ -68,13 +68,13 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
+    background: var(--bg-surface-hover);
   }
 
   &.active {
-    border-color: #3182CE;
-    background: linear-gradient(135deg, #E6F2FF 0%, #D9E6F6 100%);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 15%, var(--bg-panel-solid));
     box-shadow: 0 6px 24px rgba(49, 130, 206, 0.3);
   }
 }
@@ -93,12 +93,12 @@
   flex: 1;
   font-size: 16px;
   font-weight: 500;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .checkmark {
   font-size: 20px;
-  color: #3182CE;
+  color: var(--accent-primary);
   font-weight: bold;
   animation: scaleIn 0.3s ease;
 }

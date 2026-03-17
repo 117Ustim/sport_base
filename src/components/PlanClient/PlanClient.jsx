@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { clientsService, workoutsService } from "../../firebase/services";
+import { clientsService, clientBaseService, workoutsService } from "../../firebase/services";
 import { useNotification } from '../../hooks/useNotification';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useOptimisticUpdate } from '../../hooks';
@@ -20,6 +20,11 @@ export default function PlanClient() {
   const [workouts, setWorkouts] = useState([]);
   const [editingWorkoutId, setEditingWorkoutId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [clientsList, setClientsList] = useState([]);
+  const [isClientsLoading, setIsClientsLoading] = useState(false);
+  const [transferWorkout, setTransferWorkout] = useState(null);
+  const [isTransferring, setIsTransferring] = useState(false);
   const { notification, showNotification } = useNotification();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { executeOptimistic } = useOptimisticUpdate();
@@ -199,6 +204,164 @@ export default function PlanClient() {
     }
   };
 
+  const openTransferModal = async (event, workout) => {
+    event.stopPropagation();
+    setTransferWorkout(workout);
+    setIsTransferModalOpen(true);
+    setIsClientsLoading(true);
+
+    try {
+      const response = await clientsService.getAll({ limit: 1000 });
+      const clientsData = response?.data || [];
+      const filteredClients = clientsData.filter(client => client.id !== params.id);
+      setClientsList(filteredClients);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      showNotification(t('notifications.loadError'), 'error');
+    } finally {
+      setIsClientsLoading(false);
+    }
+  };
+
+  const closeTransferModal = () => {
+    if (isTransferring) return;
+    setIsTransferModalOpen(false);
+    setTransferWorkout(null);
+  };
+
+  const getWeightFromBaseData = (baseData, reps) => {
+    if (!baseData) return '';
+    const repsNumber = Number(reps) || 0;
+    if (repsNumber <= 0) return '';
+    const weightIndex = String(repsNumber - 1);
+    const weight = baseData[weightIndex];
+    if (weight && weight !== '' && weight !== '—') {
+      return weight;
+    }
+    return '';
+  };
+
+  const mapExerciseForTransfer = (exercise, baseMap, counters) => {
+    const isAerobic = exercise.category_id === '6';
+    const reps = exercise.exerciseData?.reps || exercise.numberTimes || 8;
+    const baseExercise = baseMap.get(exercise.exercise_id);
+    const baseData = baseExercise?.data || {};
+
+    const updatedExercise = {
+      ...exercise,
+      exerciseData: { ...baseData }
+    };
+
+    if (!isAerobic) {
+      const weightFromBase = getWeightFromBaseData(baseData, reps);
+      if (weightFromBase) {
+        updatedExercise.exerciseData.weight = weightFromBase;
+      } else {
+        updatedExercise.exerciseData.weight = "0";
+        counters.zeroWeight += 1;
+      }
+    }
+
+    if (!baseExercise) {
+      counters.missingExercises += 1;
+    }
+
+    return updatedExercise;
+  };
+
+  const prepareWorkoutForTransfer = (workoutData, targetClientId, targetBase) => {
+    const baseMap = new Map(targetBase.map(ex => [ex.exercise_id, ex]));
+    const counters = { zeroWeight: 0, missingExercises: 0 };
+
+    let normalizedWorkout = workoutData;
+    if (workoutData.days && !workoutData.weeks) {
+      normalizedWorkout = {
+        ...workoutData,
+        weeks: [
+          {
+            weekNumber: 1,
+            days: workoutData.days
+          }
+        ]
+      };
+    }
+
+    const mappedWeeks = (normalizedWorkout.weeks || []).map(week => {
+      const mappedDays = {};
+      Object.entries(week.days || {}).forEach(([dayKey, dayData]) => {
+        const exercises = dayData.exercises || [];
+        const mappedExercises = exercises.map(ex => {
+          if (ex.type === 'group' && Array.isArray(ex.exercises)) {
+            return {
+              ...ex,
+              exercises: ex.exercises.map(subEx => mapExerciseForTransfer(subEx, baseMap, counters))
+            };
+          }
+          return mapExerciseForTransfer(ex, baseMap, counters);
+        });
+
+        mappedDays[dayKey] = {
+          ...dayData,
+          exercises: mappedExercises
+        };
+      });
+
+      return {
+        ...week,
+        days: mappedDays
+      };
+    });
+
+    const { id, days, ...workoutWithoutId } = normalizedWorkout;
+
+    return {
+      ...workoutWithoutId,
+      name: `${workoutData.name || t('common.plan')} (${t('planClient.copySuffix')})`,
+      clientId: targetClientId,
+      weeks: mappedWeeks,
+      _transferCounters: counters
+    };
+  };
+
+  const handleTransferToClient = async (targetClient) => {
+    if (!transferWorkout || isTransferring) return;
+    setIsTransferring(true);
+
+    try {
+      const [workoutData, targetBase] = await Promise.all([
+        workoutsService.getById(transferWorkout.id),
+        clientBaseService.getByClientId(targetClient.id)
+      ]);
+
+      if (!workoutData) {
+        showNotification(t('notifications.workoutTransferError'), 'error');
+        return;
+      }
+
+      const preparedWorkout = prepareWorkoutForTransfer(workoutData, targetClient.id, targetBase);
+      const { _transferCounters, ...workoutToCreate } = preparedWorkout;
+
+      await workoutsService.create(workoutToCreate);
+
+      const targetName = `${targetClient.data?.surname || ''} ${targetClient.data?.name || ''}`.trim();
+      showNotification(t('notifications.workoutTransferred', { name: targetName || t('common.client') }), 'success');
+
+      if (_transferCounters.zeroWeight > 0) {
+        showNotification(
+          t('notifications.workoutTransferMissingWeights', { count: _transferCounters.zeroWeight }),
+          'info'
+        );
+      }
+
+      closeTransferModal();
+    } catch (error) {
+      console.error('Workout transfer failed:', error);
+      showNotification(t('notifications.workoutTransferError'), 'error');
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   return (
     <div className={styles.planClient}>
       <Notification notification={notification} />
@@ -208,6 +371,44 @@ export default function PlanClient() {
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
+      {isTransferModalOpen && (
+        <div className={styles.transferModal} onClick={closeTransferModal}>
+          <div className={styles.transferModalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.transferModalHeader}>
+              <h2>{t('planClient.transferTitle')}</h2>
+              <button className={styles.transferClose} onClick={closeTransferModal}>
+                ✕
+              </button>
+            </div>
+            <div className={styles.transferModalBody}>
+              {isClientsLoading ? (
+                <p className={styles.transferEmpty}>{t('common.loading')}</p>
+              ) : clientsList.length === 0 ? (
+                <p className={styles.transferEmpty}>{t('planClient.noClients')}</p>
+              ) : (
+                <div className={styles.transferClientsList}>
+                  {clientsList.map((client) => (
+                    <button
+                      key={client.id}
+                      type="button"
+                      className={styles.transferClientItem}
+                      onClick={() => handleTransferToClient(client)}
+                      disabled={isTransferring}
+                    >
+                      <span className={styles.transferClientName}>
+                        {client.data?.surname || ''} {client.data?.name || ''}
+                      </span>
+                      <span className={styles.transferClientGym}>
+                        {client.data?.gym || t('common.notSpecified')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className={styles.blockButton}>
         <button className={styles.buttonBack} onClick={onButtonBack}>
           {clientName || params.name || t('common.client')}
@@ -240,21 +441,31 @@ export default function PlanClient() {
               className={styles.workoutCard}
               onClick={() => editingWorkoutId !== workout.id && onWorkoutClick(workout.id)}
             >
-              <button 
-                className={styles.deleteWorkoutButton}
-                onClick={(e) => onDeleteWorkout(e, workout.id, workout.name)}
-                title={t('common.delete')}
-              >
-                ×
-              </button>
-              
-              <button 
-                className={styles.editNameButton}
-                onClick={(e) => onStartEditName(e, workout.id, workout.name)}
-                title="Редактировать название"
-              >
-                ✎
-              </button>
+              <div className={styles.cardActions}>
+                <button
+                  className={styles.transferButton}
+                  onClick={(e) => openTransferModal(e, workout)}
+                  title={t('planClient.transferButton')}
+                >
+                  ⇄
+                </button>
+                
+                <button 
+                  className={styles.editNameButton}
+                  onClick={(e) => onStartEditName(e, workout.id, workout.name)}
+                  title="Редактировать название"
+                >
+                  ✎
+                </button>
+
+                <button
+                  className={styles.deleteWorkoutButton}
+                  onClick={(e) => onDeleteWorkout(e, workout.id, workout.name)}
+                  title={t('common.delete')}
+                >
+                  ×
+                </button>
+              </div>
               
               {editingWorkoutId === workout.id ? (
                 <div className={styles.editNameContainer} onClick={(e) => e.stopPropagation()}>

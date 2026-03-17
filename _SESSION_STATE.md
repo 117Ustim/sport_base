@@ -149,6 +149,329 @@
 
 ---
 
+## Последнее обновление: 14.03.2026
+
+### ✅ Система переключения тем (Light/Dark Mode)
+
+**Задача:** Добавить возможность переключения между светлой и темной темой
+
+**Решение:**
+- ✅ Создан `ThemeContext` для управления темой
+- ✅ Создан компонент `ThemeToggle` с переключателем
+- ✅ Добавлена карточка с переключателем в Settings
+- ✅ Обновлены стили Home и ListAddClients для поддержки обеих тем
+- ✅ Тема сохраняется в localStorage
+- ✅ Добавлены переводы для украинского языка
+
+**Светлая тема:**
+- Фон: `#D1DFEC`
+- Карточки: светлые с легкой прозрачностью
+- Текст: темный
+
+**Темная тема:**
+- Фон: градиент `linear-gradient(135deg, #0a1929 0%, #1a3a52 50%, #2d5f6f 100%)`
+- Карточки: полупрозрачные с glassmorphism эффектом
+- Текст: белый
+
+**Измененные файлы:**
+- `src/contexts/ThemeContext.jsx` (создан)
+- `src/components/Settings/ThemeToggle.jsx` (создан)
+- `src/components/Settings/ThemeToggle.module.scss` (создан)
+- `src/App.js` (добавлен ThemeProvider)
+- `src/components/Settings/Settings.jsx` (добавлена карточка темы)
+- `src/components/Home/Home.jsx` (добавлена поддержка темы)
+- `src/components/Home/Home.module.scss` (CSS переменные для тем)
+- `src/components/ListAddClients/ListAddClients.module.scss` (CSS переменные для тем)
+- `src/locales/uk.json` (добавлены переводы)
+
+**Как работает:**
+1. Пользователь переключает тему в Settings
+2. Тема сохраняется в localStorage
+3. CSS переменные автоматически меняются
+4. Все компоненты используют переменные вместо жестко заданных цветов
+
+**Статус:** ✅ ПРИМЕНЕНО КО ВСЕМ СТРАНИЦАМ
+
+**Глобальная система тем:**
+- ✅ Создан файл `src/styles/themes.scss` с CSS переменными
+- ✅ Подключен в `src/index.js`
+- ✅ Все компоненты автоматически используют переменные
+
+**CSS Переменные:**
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ Горизонтальный скролл колонок на EditClientBase
+
+**Что сделано:**
+- Добавлен горизонтальный скролл для списка категорий
+- Колонки зафиксированы по минимальной ширине, перенос отключен
+
+**Измененный файл:**
+- `src/components/EditClientBase/EditClientBase.module.scss`
+
+**Апдейт:**
+- Перенес горизонтальный скролл на обертку, чтобы не обрезались упражнения по вертикали
+
+**Апдейт 2:**
+- Добавлен скролл колесиком мыши для горизонтальной прокрутки категорий
+- `src/components/EditClientBase/EditClientBase.jsx`
+
+**Откат:**
+- Убран перехват колесика мыши для горизонтального скролла
+- `src/components/EditClientBase/EditClientBase.jsx`
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ Управление залами: первая буква заглавная
+
+**Что сделано:**
+- Ввод названия зала автоматически делает первую букву заглавной
+
+**Измененный файл:**
+- `src/components/Settings/ManageGyms.jsx`
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ Управление залами: кастомный ConfirmDialog для удаления
+
+**Что сделано:**
+- Заменен нативный `window.confirm` на общий `ConfirmDialog`
+
+**Измененный файл:**
+- `src/components/Settings/ManageGyms.jsx`
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ PlanClient: компактнее карточка + единый стиль синих кнопок
+
+**Что сделано:**
+- Уплотнена карточка тренировки (размеры и отступы)
+- Синие кнопки приведены к общему стилю проекта, текст белый
+
+**Измененный файл:**
+- `src/components/PlanClient/PlanClient.module.scss`
+
+**Апдейт:**
+- Уменьшен размер текста в карточке тренировки
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ Перенос тренировки между клиентами
+
+**Что сделано:**
+- Добавлена кнопка переноса на карточках тренировок
+- Реализовано модальное окно выбора клиента
+- Логика копирования тренировки с подстановкой весов из базы целевого клиента
+- При отсутствии веса устанавливается `0` и показывается уведомление
+
+**Измененные файлы:**
+- `src/components/PlanClient/PlanClient.jsx`
+- `src/components/PlanClient/PlanClient.module.scss`
+- `src/locales/ru.json`
+- `src/locales/uk.json`
+- `src/locales/en.json`
+
+**Апдейт:**
+- Кнопка «Перенос» сделана круглой и размещена рядом с другими кнопками на карточке
+
+**Апдейт 2:**
+- Порядок кнопок: перенос → редактировать → удалить (удалить справа)
+
+**Апдейт 3:**
+- Усилен фон и тени у круглых кнопок на карточке тренировки
+
+**Апдейт 4:**
+- Уменьшена высота карточек клиентов в модальном окне переноса
+
+**Апдейт 5:**
+- Название зала в карточке клиента перенесено вправо
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ ClientBase: фон на всю страницу + 2 колонки карточек
+
+**Что сделано:**
+- Добавлен фон на всю страницу через обертку
+- Возвращена сетка из 2 колонок с подходящей шириной карточек
+- Смещен breakpoint перехода в 1 колонку на 1200px
+
+**Измененные файлы:**
+- `src/components/ClientBase/ClientBase.jsx`
+- `src/components/ClientBase/ClientBase.module.scss`
+
+**Апдейт:**
+- Уменьшены размеры колонок и шрифты, чтобы таблица помещалась без горизонтального скролла
+
+**Апдейт 2:**
+- Кнопки в сайдбаре ClientBase приведены к общему синему стилю проекта
+
+**Апдейт 3:**
+- Добавлены горизонтальные отступы в кнопке редактирования
+
+**Апдейт 4:**
+- Уменьшена высота инпута добавления колонки в модалке редактирования
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ EditClientExercises: фон и дизайн как в EditClientBase
+
+**Что сделано:**
+- Приведены размеры/отступы кнопок и инпутов к стилю EditClientBase
+- Обновлены размеры карточек категорий и упражнений
+- Добавлен контейнер с горизонтальным скроллом как в EditClientBase
+
+**Измененный файл:**
+- `src/components/EditClientExercises/EditClientExercises.module.scss`
+
+---
+
+## Последнее обновление: 16.03.2026
+
+### ✅ CreateWorkout: видимость текстов и единый стиль
+
+**Что сделано:**
+- Верхние кнопки приведены к общему стилю (градиент, тени, белый текст)
+- Блок выбора дня/недели приведен к теме проекта
+- Обновлен стиль панели упражнений и подсказок
+
+**Измененные файлы:**
+- `src/components/CreateWorkout/components/TopBar/TopBar.module.scss`
+- `src/components/CreateWorkout/components/DaySelector/DaySelector.module.scss`
+- `src/components/CreateWorkout/components/WeekSelector/WeekSelector.module.scss`
+- `src/components/CreateWorkout/components/ExercisesPanel/ExercisesPanel.module.scss`
+
+**Апдейт:**
+- Обновлен фон `infoMessageSmall` в списке упражнений
+
+**Апдейт 2:**
+- Обновлен фон `bulkRepsButtons` в списке упражнений
+
+**Апдейт 3:**
+- Кнопки в блоке `bulkRepsButtons` приведены к стилю проекта
+- `--bg-main` - основной фон
+- `--bg-card` - фон карточек
+- `--bg-feature` - фон элементов
+- `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
+- `--border-color`, `--shadow-color` - границы и тени
+- `--button-bg`, `--button-hover` - кнопки
+- `--accent-*` - акцентные цвета
+
+**Применено к страницам:**
+- ✅ Home
+- ✅ ListAddClients  
+- ✅ Settings
+- ✅ PlanClient
+- ✅ WorkoutDetails
+- ✅ ClientBase
+- ✅ EditClientBase
+- ✅ CreateWorkout
+- ✅ Все остальные страницы автоматически через глобальные переменные
+
+**Как работает:**
+1. ThemeContext меняет класс на `<body>` (`theme-light` или `theme-dark`)
+2. CSS переменные автоматически переключаются
+3. Все компоненты используют переменные вместо жестких цветов
+4. Тема сохраняется в localStorage
+
+**Статус:** ✅ ГОТОВО - ТЕМЫ РАБОТАЮТ НА ВСЕХ СТРАНИЦАХ
+
+**Обновленные файлы (14.03.2026):**
+- ✅ `src/components/ClientBase/ClientBase.module.scss` - 12 замен
+- ✅ `src/components/EditClientBase/EditClientBase.module.scss` - 3 замены
+- ✅ `src/components/CreateWorkout/CreateWorkout.module.scss` - 6 замен
+- ✅ `src/components/CreateWorkout/components/WorkoutModal/WorkoutModal.module.scss` - 2 замены
+- ✅ `src/components/CreateWorkout/components/SortableExerciseItem/SortableExerciseItem.module.scss` - 4 замены
+- ✅ `src/components/CreateWorkout/components/ExercisesPanel/ExercisesPanel.module.scss` - 6 замен
+
+**Итого:** Все основные страницы и компоненты теперь поддерживают темную/светлую тему через CSS переменные из `src/styles/themes.scss`
+
+**Исправления (14.03.2026 - вечер):**
+- ✅ Убран `text-shadow` из всех компонентов (устранен эффект "раздвоения" текста на темном фоне)
+- ✅ Фон WorkoutDetails теперь на весь экран (контент по центру с max-width: 1040px)
+
+---
+
+### ✅ Интеграция Tauri для desktop-версии
+
+**Задача:** Превратить веб-приложение в нативное macOS приложение
+
+**Решение:**
+- ✅ Установлен Rust (rustc 1.94.0)
+- ✅ Установлен Tauri CLI v1
+- ✅ Инициализирован Tauri в проекте (папка `src-tauri/`)
+- ✅ Настроен `tauri.conf.json`:
+  - Название: "Sport Base"
+  - Размер окна: 1400x900 (минимум 800x600)
+  - Категория: Productivity
+  - Identifier: com.sportbase.app
+- ✅ Добавлены npm скрипты:
+  - `npm run tauri:dev` - запуск в dev режиме
+  - `npm run tauri:build` - сборка .app для macOS
+
+**Структура проекта:**
+```
+sport_base/
+├── src/              ← React код (БЕЗ ИЗМЕНЕНИЙ)
+├── public/           ← Статика (БЕЗ ИЗМЕНЕНИЙ)
+├── src-tauri/        ← Tauri конфиг (НОВОЕ)
+│   ├── src/
+│   │   └── main.rs
+│   ├── icons/
+│   ├── tauri.conf.json
+│   └── Cargo.toml
+└── package.json      ← Добавлены tauri скрипты
+```
+
+**Как использовать:**
+1. **Dev режим:** `npm run tauri:dev` - запустит React + откроет desktop окно
+2. **Сборка:** `npm run tauri:build` - создаст .app в `src-tauri/target/release/bundle/`
+3. **Браузер:** `npm start` - работает как раньше
+
+**Результат:** 
+- Приложение можно открывать как нативную программу на macOS
+- Весь React код работает БЕЗ ИЗМЕНЕНИЙ
+- Размер приложения: ~5-10 MB (вместо 150+ MB у Electron)
+- Не нужен платный Apple аккаунт для локального использования
+
+**Статус:** ✅ ЗАВЕРШЕНО - Приложение собрано!
+
+**Результаты сборки:**
+- ✅ **Sport Base.app** - готовое приложение (5.4 MB)
+  - Путь: `src-tauri/target/release/bundle/macos/Sport Base.app`
+- ✅ **Sport Base_0.1.0_aarch64.dmg** - установщик (3.4 MB)
+  - Путь: `src-tauri/target/release/bundle/dmg/Sport Base_0.1.0_aarch64.dmg`
+
+**Время сборки:** ~42 секунды (Rust компиляция)
+
+**Как установить:**
+1. Открой `Sport Base_0.1.0_aarch64.dmg`
+2. Перетащи `Sport Base.app` в папку Applications
+3. Запусти двойным кликом
+
+**Если macOS блокирует:**
+```bash
+xattr -cr "/Applications/Sport Base.app"
+```
+
+**Статус:** ✅ ГОТОВО К ИСПОЛЬЗОВАНИЮ
+
+---
+
 ## Последнее обновление: 01.03.2026
 
 ### ✅ Динамическая подстановка веса из client_base

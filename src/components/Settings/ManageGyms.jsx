@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { gymsService } from '../../firebase/services';
+import { useConfirmDialog } from '../../hooks';
+import ConfirmDialog from '../ConfirmDialog';
 import styles from './ManageGyms.module.scss';
 
 export default function ManageGyms({ onClose }) {
@@ -8,6 +10,7 @@ export default function ManageGyms({ onClose }) {
   const [gyms, setGyms] = useState([]);
   const [gymName, setGymName] = useState('');
   const [editingGym, setEditingGym] = useState(null);
+  const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
     loadGyms();
@@ -54,7 +57,7 @@ export default function ManageGyms({ onClose }) {
   };
 
   const onDeleteGym = (id) => {
-    if (window.confirm(t('dialogs.confirmDeleteGym'))) {
+    showConfirm(t('dialogs.confirmDeleteGym'), () => {
       gymsService.delete(id)
         .then(() => {
           loadGyms();
@@ -62,7 +65,7 @@ export default function ManageGyms({ onClose }) {
         .catch((error) => {
           console.error('Error deleting gym:', error);
         });
-    }
+    });
   };
 
   const onCancelEdit = () => {
@@ -70,8 +73,26 @@ export default function ManageGyms({ onClose }) {
     setGymName('');
   };
 
+  const onGymNameChange = (event) => {
+    const { value } = event.target;
+    if (!value) {
+      setGymName('');
+      return;
+    }
+
+    const firstChar = value.charAt(0).toUpperCase();
+    const rest = value.slice(1);
+    setGymName(`${firstChar}${rest}`);
+  };
+
   return (
     <div className={styles.manageGyms}>
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        message={confirmDialog.message}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
       <div className={styles.header}>
         <h2>{t('manageGyms.title')}</h2>
         <button className={styles.close} onClick={onClose}>✕</button>
@@ -82,7 +103,7 @@ export default function ManageGyms({ onClose }) {
           type='text'
           placeholder={t('manageGyms.gymName')}
           value={gymName}
-          onChange={(e) => setGymName(e.target.value)}
+          onChange={onGymNameChange}
           className={styles.input}
         />
         <div className={styles.buttons}>

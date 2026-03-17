@@ -2,37 +2,39 @@
   flex: 1.84025875;
   overflow-y: auto;
   padding-left: 7px;
-  border-left: 2px solid #e0e0e0;
+  border-left: 2px solid var(--border-color);
 }
 
 .panelTitle {
   margin: 0 0 10px 0;
-  color: #1976d2;
+  color: var(--accent-primary);
   font-size: 18px;
 }
 
 .instructionHint {
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
   margin: 0 0 20px 0;
 }
 
 .categoriesGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0;
+  border-left: 1px solid var(--border-color);
 }
 
 .categoryColumn {
-  min-width: 150px;
-  border-right: 1px solid #c4c4c4;
-  padding: 0 7px;
+  min-width: 0;
+  border-right: 1px solid var(--border-color);
+  padding: 0 10px 12px;
+  box-sizing: border-box;
 }
 
 .categoryName {
   font-size: 16px;
-  color: #1976d2;
+  color: var(--accent-primary);
   margin: 0 0 10px 0;
   font-weight: 600;
 }
@@ -41,16 +43,17 @@
   .exerciseNameItem {
     font-size: 14px;
     cursor: pointer;
-    color: #323232;
+    color: var(--text-primary);
     padding: 5px;
     margin: 5px 0;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     font-weight: normal;
 
     &:hover {
-      background-color: #f0f0f0;
-      color: red;
+      background: var(--bg-feature);
+      backdrop-filter: blur(10px);
+      color: var(--accent-danger);
     }
   }
 }
@@ -58,11 +61,13 @@
 .addModeSelector {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 12px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 12px;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
@@ -79,18 +84,18 @@
     height: 16px;
     cursor: pointer;
     margin: 0;
-    transform: scale(0.6);
+    transform: scale(0.7);
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    border: 2px solid #999;
+    border: 2px solid var(--border-color);
     border-radius: 50%;
-    background-color: white;
+    background-color: var(--bg-input);
     position: relative;
     
     &:checked {
-      background-color: #00c721;
-      border-color: #666;
+      background-color: var(--accent-success);
+      border-color: var(--accent-success);
     }
     
     &:checked::after {
@@ -102,45 +107,48 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background-color: white;
+      background-color: var(--text-on-accent);
     }
   }
   
   span {
-    color: #333;
+    color: var(--text-primary);
   }
 }
 
 .groupDraftInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-left: auto;
-  padding: 6px 12px;
-  background-color: #e3f2fd;
-  border-radius: 6px;
-  width: 300px;
+  padding: 6px 10px;
+  background: var(--bg-feature);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--accent-primary);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px var(--shadow-color);
   
   span {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: #1976d2;
+    color: var(--accent-primary);
   }
 }
 
 .cancelGroupButton {
-  width: 90px;
-  padding: 4px 10px;
+  width: 80px;
+  padding: 4px 8px;
   border: none;
-  border-radius: 4px;
-  background-color: #d32f2f;
-  color: white;
-  font-size: 12px;
+  border-radius: 10px;
+  background: var(--button-danger);
+  color: var(--text-on-accent);
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
   
   &:hover {
-    background-color: #b71c1c;
+    background: var(--button-danger-hover);
+    transform: translateY(-1px);
   }
 }

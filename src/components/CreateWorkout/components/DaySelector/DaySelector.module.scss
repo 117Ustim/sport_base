@@ -1,13 +1,13 @@
 .daysSelectorSidebar {
   width: 120px;
-  border-right: 2px solid #e0e0e0;
+  border-right: 1px solid var(--border-color);
   padding-right: 20px;
   overflow-y: auto;
 }
 
 .sidebarTitle {
   margin: 0 0 15px 0;
-  color: #1976d2;
+  color: var(--accent-primary);
   font-size: 16px;
 }
 
@@ -17,41 +17,75 @@
   gap: 8px;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dayButton {
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: #f5f5f5;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color-strong);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 60%);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  box-shadow: none;
 
   &:hover {
-    background-color: #e0e0e0;
+    background: var(--bg-surface-hover);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 60%);
+    transform: translateY(-1px);
+    box-shadow: none;
+  }
+
+  &:active {
+    box-shadow: none;
   }
 
   &.activeDay {
-    background-color: #1976d2;
-    color: white;
-    border-color: #1976d2;
+    background: var(--button-bg);
+    color: var(--text-on-accent);
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+:global(body.theme-dark) .dayButton {
+  border-color: var(--border-color);
+  background: var(--bg-feature);
+  background-image: none;
+  box-shadow: -5px -5px 20px var(--shadow-color-strong), 5px 5px 20px var(--shadow-color);
+
+  &:hover {
+    background: var(--bg-feature-hover);
+    box-shadow: -2px -2px 5px var(--shadow-color-strong), 2px 2px 5px var(--shadow-color);
+  }
+
+  &:active {
+    box-shadow: inset 1px 1px 2px var(--shadow-color), inset -1px -1px 2px var(--shadow-color-strong);
+  }
+
+  &.activeDay {
+    background: var(--button-bg);
+    border-color: transparent;
+    box-shadow: inset 1px 1px 2px var(--shadow-color), inset -1px -1px 2px var(--shadow-color-strong);
   }
 }
 
 .dayLabel {
-  font-size: 14px;
+  font-size: 13px;
   
 }
 
 .dayExercisesCount {
-  background-color: #1976d2;
-  color: white;
+  background: var(--bg-input-focus);
+  color: var(--text-primary);
   border-radius: 50%;
   width: 22px;
   height: 22px;
@@ -63,7 +97,7 @@
   font-weight: normal;
 
   .activeDay & {
-    background-color: white;
-    color: #1976d2;
+    background-color: var(--bg-feature);
+    color: var(--accent-primary);
   }
 }

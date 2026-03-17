@@ -1,0 +1,169 @@
+// Глобальные CSS переменные для тем
+
+// Светлая тема (по умолчанию)
+:root,
+body.theme-light {
+  // Фоны
+  --bg-main: linear-gradient(180deg, #dfeaf6 0%, #d4e2f2 45%, #d8e4f1 100%);
+  --bg-card: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.6) 100%);
+  --bg-card-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.75) 100%);
+  --bg-feature: rgba(255, 255, 255, 0.95);
+  --bg-feature-hover: #ffffff;
+  --bg-header: linear-gradient(135deg, #eef5ff 0%, #dfeaf6 100%);
+  --bg-panel: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(226, 236, 248, 0.9) 100%);
+  --bg-panel-solid: #dbe7f5;
+  --bg-surface: linear-gradient(135deg, #ffffff 0%, #f1f6fc 100%);
+  --bg-surface-hover: linear-gradient(135deg, #ffffff 0%, #e9f0f9 100%);
+  --bg-dropdown: var(--bg-card);
+  --bg-dropdown-hover: var(--bg-card-hover);
+  --bg-input: linear-gradient(135deg, #f8fbff 0%, #e9f1fb 100%);
+  --bg-input-focus: linear-gradient(135deg, #ffffff 0%, #f2f7fd 100%);
+  --bg-muted: #f0f4f8;
+  --bg-muted-hover: #e4eaf1;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  
+  // Текст
+  --text-primary: #0f172a;
+  --text-secondary: #111827;
+  --text-tertiary: #475569;
+  --text-muted: #6c757d;
+  --text-inverse: #ffffff;
+  
+  // Границы и тени
+  --border-color: rgba(15, 23, 42, 0.06);
+  --border-color-strong: rgba(15, 23, 42, 0.12);
+  --shadow-color: rgba(15, 23, 42, 0.1);
+  --shadow-color-strong: rgba(15, 23, 42, 0.16);
+  
+  // Акценты
+  --accent-primary: #3182CE;
+  --accent-success: #28a745;
+  --accent-danger: #dc3545;
+  --accent-warning: #ffc107;
+  --text-accent: #3182CE;
+  
+  // Элементы
+  --badge-bg: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  --button-primary: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
+  --button-primary-hover: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+  --button-success: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  --button-success-hover: linear-gradient(135deg, #43a047 0%, #388e3c 100%);
+  --button-warning: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  --button-warning-hover: linear-gradient(135deg, #fb8c00 0%, #e65100 100%);
+  --button-danger: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  --button-danger-hover: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  --button-neutral: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  --button-neutral-hover: linear-gradient(135deg, #7c8690 0%, #5a6268 100%);
+  --button-group: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+  --button-group-hover: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
+  --button-bg: var(--button-primary);
+  --button-hover: var(--button-primary-hover);
+  --text-on-accent: #ffffff;
+}
+
+// Темная тема
+body.theme-dark {
+  // Фоны
+  --bg-main: linear-gradient(135deg, #0a1929 0%, #1a3a52 50%, #2d5f6f 100%);
+  --bg-card: rgba(255, 255, 255, 0.1);
+  --bg-card-hover: rgba(255, 255, 255, 0.15);
+  --bg-feature: rgba(255, 255, 255, 0.15);
+  --bg-feature-hover: rgba(255, 255, 255, 0.2);
+  --bg-header: rgba(255, 255, 255, 0.1);
+  --bg-panel: rgba(255, 255, 255, 0.1);
+  --bg-panel-solid: rgba(255, 255, 255, 0.08);
+  --bg-surface: rgba(255, 255, 255, 0.12);
+  --bg-surface-hover: rgba(255, 255, 255, 0.18);
+  --bg-dropdown: #1c2b3a;
+  --bg-dropdown-hover: #223446;
+  --bg-input: rgba(255, 255, 255, 0.12);
+  --bg-input-focus: rgba(255, 255, 255, 0.18);
+  --bg-muted: rgba(255, 255, 255, 0.08);
+  --bg-muted-hover: rgba(255, 255, 255, 0.14);
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+  
+  // Текст - ПОЛНОСТЬЮ НЕПРОЗРАЧНЫЙ для четкости
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-tertiary: #ffffff;
+  --text-muted: #cccccc;
+  --text-inverse: #1a1a1a;
+  
+  // Границы и тени
+  --border-color: rgba(255, 255, 255, 0.18);
+  --border-color-strong: rgba(255, 255, 255, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-color-strong: rgba(0, 0, 0, 0.5);
+  
+  // Акценты
+  --accent-primary: #4299E1;
+  --accent-success: #48bb78;
+  --accent-danger: #f56565;
+  --accent-warning: #ed8936;
+  --text-accent: #4299E1;
+  
+  // Элементы
+  --badge-bg: rgba(255, 255, 255, 0.2);
+  --button-primary: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+  --button-primary-hover: linear-gradient(135deg, #63b3ed 0%, #4299E1 100%);
+  --button-success: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  --button-success-hover: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+  --button-warning: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  --button-warning-hover: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+  --button-danger: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  --button-danger-hover: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+  --button-neutral: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+  --button-neutral-hover: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+  --button-group: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%);
+  --button-group-hover: linear-gradient(135deg, #b794f4 0%, #9f7aea 100%);
+  --button-bg: var(--button-primary);
+  --button-hover: var(--button-primary-hover);
+  --text-on-accent: #ffffff;
+}
+
+// Глобальное правило для четкого текста на темной теме
+body.theme-dark {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  
+  * {
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    text-rendering: optimizeSpeed;
+  }
+  
+  // Убираем font-weight: 500 и 600 которые создают раздвоение
+  *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(button) {
+    font-weight: 400;
+  }
+}
+
+// Миксин для применения темы к компоненту
+@mixin themed-component {
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+@mixin themed-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px var(--shadow-color);
+  
+  &:hover {
+    background: var(--bg-card-hover);
+    box-shadow: 0 12px 40px var(--shadow-color-strong);
+  }
+}
+
+@mixin themed-feature {
+  background: var(--bg-feature);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px var(--shadow-color);
+  
+  &:hover {
+    background: var(--bg-feature-hover);
+    box-shadow: 0 12px 40px var(--shadow-color-strong);
+  }
+}

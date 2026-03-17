@@ -19,6 +19,7 @@ export default function ManageClients() {
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
   const searchName = useDebounce(searchInput, 300); // ✅ Debounce 300ms
+  const [currentPage, setCurrentPage] = useState(1);
   const [editingClient, setEditingClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -48,6 +49,23 @@ export default function ManageClients() {
       return surnameA.localeCompare(surnameB, 'uk');
     });
   }, [clients, searchName]);
+
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize));
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredClients.slice(start, start + pageSize);
+  }, [filteredClients, currentPage]);
+
+  useEffect(() => {
+    // Сбрасываем на первую страницу при изменении поиска
+    setCurrentPage(1);
+  }, [searchName]);
+
+  useEffect(() => {
+    // Корректируем текущую страницу если количество страниц уменьшилось
+    setCurrentPage((prev) => (prev > totalPages ? totalPages : prev));
+  }, [totalPages]);
 
   const loadClients = () => {
     setLoading(true);
@@ -203,6 +221,21 @@ export default function ManageClients() {
     navigate('/settings');
   };
 
+  const normalizeFirstLetter = (value) => {
+    if (!value) return '';
+    return value[0].toUpperCase() + value.slice(1);
+  };
+
+  const normalizePhone = (value) => {
+    if (!value) return '';
+    let cleaned = value.replace(/[^0-9+()\-\s]/g, '');
+    // Удаляем все '+' не в начале
+    cleaned = cleaned.replace(/(?!^)\+/g, '');
+    // Если в начале несколько '+', оставляем один
+    cleaned = cleaned.replace(/^\++/, '+');
+    return cleaned;
+  };
+
   return (
     <div className={styles.manageClients}>
       <ConfirmDialog
@@ -214,7 +247,7 @@ export default function ManageClients() {
       
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <BackButton onClick={onBackClick} />
+          <BackButton onClick={onBackClick} size="small" />
           <h1 className={styles.pageTitle}>{t('manageClients.title')}</h1>
         </div>
         <button className={styles.addBtn} onClick={onAddNewClient} title={t('manageClients.addClient')}>
@@ -227,7 +260,11 @@ export default function ManageClients() {
           type='text'
           placeholder={t('manageClients.searchPlaceholder')}
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            const normalized = value ? value[0].toUpperCase() + value.slice(1) : '';
+            setSearchInput(normalized);
+          }}
           className={styles.search}
         />
       </div>
@@ -238,7 +275,7 @@ export default function ManageClients() {
         ) : filteredClients.length === 0 ? (
           <p className={styles.empty}>{t('manageClients.noClients')}</p>
         ) : (
-          filteredClients.map((client) => (
+          paginatedClients.map((client) => (
             <div 
               key={client.id} 
               className={styles.item}
@@ -257,6 +294,25 @@ export default function ManageClients() {
         )}
       </div>
 
+      {!loading && filteredClients.length > 0 && totalPages > 1 && (
+        <div className={styles.pagination}>
+          {Array.from({ length: totalPages }, (_, index) => {
+            const page = index + 1;
+            const isActive = page === currentPage;
+            return (
+              <button
+                key={page}
+                type="button"
+                className={`${styles.pageButton} ${isActive ? styles.pageButtonActive : ''}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {showModal && editingClient && (
         <div className={styles.modal} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -271,21 +327,21 @@ export default function ManageClients() {
                 type='text'
                 placeholder={t('manageClients.surname')}
                 value={editingClient.data.surname || ''}
-                onChange={(e) => onModalChange('surname', e.target.value)}
+                onChange={(e) => onModalChange('surname', normalizeFirstLetter(e.target.value))}
                 className={styles.formInput}
               />
               <input
                 type='text'
                 placeholder={t('manageClients.name')}
                 value={editingClient.data.name || ''}
-                onChange={(e) => onModalChange('name', e.target.value)}
+                onChange={(e) => onModalChange('name', normalizeFirstLetter(e.target.value))}
                 className={styles.formInput}
               />
               <input
                 type='text'
                 placeholder={t('manageClients.phone')}
                 value={editingClient.data.phone || ''}
-                onChange={(e) => onModalChange('phone', e.target.value)}
+                onChange={(e) => onModalChange('phone', normalizePhone(e.target.value))}
                 className={styles.formInput}
               />
               <select

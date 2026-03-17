@@ -2,20 +2,20 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: auto !important;
-  height: 25px !important;
+  width: auto;
+  height: 25px;
   margin-bottom: 20px;
   font-size: 13px;
   padding: 4px 12px;
-  background: #4a90e2;
-  color: white;
+  background: var(--button-bg);
+  color: var(--text-on-accent);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #357abd;
+    background: var(--button-hover);
   }
 }
 
@@ -27,20 +27,20 @@
 
 .addExercises {
   width: auto;
-  height: 25px !important;
+  height: 25px;
   font-size: 13px;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 4px 12px;
-  background: #4a90e2;
-  color: white;
+  background: var(--button-bg);
+  color: var(--text-on-accent);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #357abd;
+    background: var(--button-hover);
   }
 }

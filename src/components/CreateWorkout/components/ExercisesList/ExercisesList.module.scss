@@ -6,25 +6,27 @@
 
 .sectionTitle {
   margin: 0 0 10px 0;
-  color: #1976d2;
+  color: var(--accent-primary);
   font-size: 18px;
 }
 
 .infoMessageSmall {
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
   margin: 0 0 20px 0;
   padding: 8px 12px;
-  background-color: #e3f2fd;
-  border-radius: 4px;
-  border-left: 3px solid #1976d2;
+  background: var(--bg-feature);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-primary);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 
   strong {
-    color: #1976d2;
+    color: var(--accent-primary);
   }
 }
 
@@ -33,41 +35,44 @@
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  background-color: #fff3e0;
-  border-radius: 4px;
+  background: var(--bg-feature);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 
 .bulkRepsLabel {
   font-size: 12px;
   font-weight: 600;
-  color: #e65100;
+  color: var(--accent-primary);
 }
 
 .bulkRepsButton {
   width: 32px;
   height: 28px;
   padding: 0;
-  border: 2px solid #f57c00;
-  border-radius: 4px;
-  background-color: white;
-  color: #f57c00;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--button-primary);
+  color: var(--text-on-accent);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-shadow: 0 4px 16px var(--shadow-color);
   
   &:hover {
-    background-color: #f57c00;
-    color: white;
-    transform: scale(1.05);
+    background: var(--button-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
   }
   
   &:active {
-    transform: scale(0.95);
+    transform: translateY(0);
   }
 }
 
@@ -75,27 +80,27 @@
   width: 32px;
   height: 28px;
   padding: 0;
-  border: 2px solid #ff9800;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-  color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--button-warning);
+  color: var(--text-on-accent);
   font-size: 12px;
   font-weight: 400;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px var(--shadow-color);
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
   &:hover {
-    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
-    transform: scale(1.1);
-    box-shadow: 0 3px 6px rgba(255, 152, 0, 0.4);
+    background: var(--button-warning-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
   }
   
   &:active {
-    transform: scale(0.95);
+    transform: translateY(0);
   }
 }
 
@@ -106,10 +111,10 @@
 .daySectionTitle {
   margin: 0 0 15px 0;
   font-size: 18px;
-  color: #f57c00;
+  color: var(--accent-warning);
   font-weight: 700;
   padding-bottom: 8px;
-  border-bottom: 2px solid #f57c00;
+  border-bottom: 2px solid var(--accent-warning);
 }
 
 .exercisesList {
@@ -119,7 +124,7 @@
 }
 
 .infoMessage {
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
   font-size: 14px;
   margin: 0;
@@ -128,44 +133,47 @@
 }
 
 .groupDraftSection {
-  margin-bottom: 30px;
-  padding: 15px;
-  background-color: #e8f5e9;
-  border-radius: 8px;
-  border: 2px dashed #4caf50;
+  margin-bottom: 24px;
+  padding: 12px 14px;
+  background: var(--bg-feature);
+  border-radius: 12px;
+  border: 1px dashed var(--accent-primary);
+  box-shadow: 0 6px 18px var(--shadow-color);
+  backdrop-filter: blur(10px);
 }
 
 .groupDraftHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .groupDraftTitle {
   margin: 0;
-  font-size: 16px;
-  color: #2e7d32;
-  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent-primary);
+  font-weight: 600;
 }
 
 .confirmGroupButton {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: none;
-  background-color: #4caf50;
-  color: white;
-  font-size: 24px;
+  background: var(--button-bg);
+  color: var(--text-on-accent);
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
-  transition: background-color 0.2s;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  font-weight: 700;
+  box-shadow: 0 4px 12px var(--shadow-color);
 
   &:hover {
-    background-color: #45a049;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    background: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px var(--shadow-color-strong);
   }
 }

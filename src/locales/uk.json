@@ -1,6 +1,8 @@
 {
   "settings": {
-    "title": "Головна",
+    "title": "Налаштування",
+    "theme": "Тема",
+    "themeDesc": "Світла або темна тема",
     "manageGyms": "Управління залами",
     "manageGymsDesc": "Додавайте та редагуйте зали",
     "manageClients": "Управління клієнтами",
@@ -37,14 +39,19 @@
     "notSpecified": "Не вказано",
     "confirmation": "Підтвердження",
     "yes": "Так",
-    "no": "Ні"
+    "no": "Ні",
+    "loading": "Завантаження..."
   },
   "clientBase": {
     "title": "База клієнта",
     "empty": "Список порожній"
   },
   "planClient": {
-    "noWorkouts": "Немає створених тренувань. Натисніть \"Створити тренування\" для додавання."
+    "noWorkouts": "Немає створених тренувань. Натисніть \"Створити тренування\" для додавання.",
+    "transferTitle": "Перенести тренування",
+    "transferButton": "Перенесення",
+    "copySuffix": "копія",
+    "noClients": "Клієнтів не знайдено"
   },
   "home": {
     "search": "Пошук",
@@ -63,6 +70,9 @@
     "workoutLoadError": "Помилка завантаження тренувань",
     "workoutDeleted": "Treнування видалено",
     "deleteWorkoutError": "Помилка при видаленні тренування",
+    "workoutTransferred": "Тренування перенесено клієнту {{name}}",
+    "workoutTransferError": "Помилка перенесення тренування",
+    "workoutTransferMissingWeights": "Вага встановлена в 0 для вправ: {{count}}",
     "lastColumnError": "Не можна видалити останню колонку",
     "baseCreatedSuccess": "База успішно створена!",
     "baseCreatedError": "Помилка створення бази",

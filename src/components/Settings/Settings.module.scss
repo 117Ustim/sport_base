@@ -1,16 +1,16 @@
 .settings {
   min-height: 100vh;
-  background: #D1DFEC;
+  background: var(--bg-main);
   padding-bottom: 20px;
 }
 
 .header {
-  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  background: var(--bg-header);
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px var(--shadow-color);
   backdrop-filter: blur(10px);
   border-radius: 0 0 25px 25px;
   position: sticky;
@@ -21,16 +21,15 @@
 .pageTitle {
   font-size: 24px;
   font-weight: 600;
-  color: #3182CE;
+  color: var(--accent-primary);
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .title {
   font-size: 20px;
   font-weight: 500;
   margin: 0;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .content {
@@ -40,12 +39,16 @@
   gap: 12px;
   max-width: 600px;
   margin: 50px auto 0 auto;
-  background: #D9E6F6;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px var(--shadow-color);
   border-radius: 25px;
 }
 
 .card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  background: var(--bg-feature);
+  border-radius: 25px;
   border-radius: 25px;
   padding: 20px 24px;
   display: flex;
@@ -53,15 +56,14 @@
   gap: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px var(--shadow-color);
+  border: 1px solid var(--border-color);
   min-height: 80px;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    box-shadow: 0 12px 40px var(--shadow-color-strong);
+    background: var(--bg-feature-hover);
   }
 
   &:active {
@@ -71,25 +73,26 @@
 
 .cardDanger {
   .cardIcon {
-    background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+    background: var(--badge-bg);
   }
   
   .cardTitle {
-    color: #dc3545;
+    color: var(--accent-danger);
   }
 }
+
 
 .cardIcon {
   width: 52px;
   height: 52px;
   border-radius: 26px;
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  background: var(--badge-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .cardContent {
@@ -100,19 +103,19 @@
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .cardDescription {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-muted);
   margin: 4px 0 0 0;
   font-weight: 400;
 }
 
 .cardArrow {
   font-size: 20px;
-  color: #495057;
+  color: var(--text-tertiary);
   flex-shrink: 0;
   font-weight: 500;
 }

@@ -306,7 +306,7 @@ export default function EditClientBase() {
   };
 
   return (
-    <>
+    <div className={styles.page}>
       <Notification notification={notification} />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -325,7 +325,7 @@ export default function EditClientBase() {
       />
       
       <div className={styles.buttonBack}>
-        <BackButton onClick={onButtonBackClient} />
+        <BackButton onClick={onButtonBackClient} size="small" />
         
         <div className={styles.rightButtons}>
           <button
@@ -347,7 +347,7 @@ export default function EditClientBase() {
         </div>
       </div>
 
-      <div className='_container'>
+      <div className={`${styles.container} _container`}>
         <div className={styles.blockCategory}>
           <div className={styles.category}>
             <CustomSelect
@@ -412,6 +412,6 @@ export default function EditClientBase() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

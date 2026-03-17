@@ -312,7 +312,7 @@ export default function EditClientExercises() {
   };
 
   return (
-    <>
+    <div className={styles.pageWrapper}>
       <Notification notification={notification} />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -404,6 +404,6 @@ export default function EditClientExercises() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

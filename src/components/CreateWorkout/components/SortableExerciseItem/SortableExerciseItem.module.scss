@@ -1,19 +1,19 @@
 .exerciseRow {
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  background-color: #ffffff;
-  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--bg-feature);
+  border-radius: 10px;
   transition: all 0.2s ease;
   cursor: move;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px var(--shadow-color);
   
 
   &:hover {
-    background-color: #ffffff;
+    background: var(--bg-feature-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: rgba(25, 118, 210, 0.3);
+    box-shadow: 0 4px 12px var(--shadow-color-strong);
+    border-color: var(--accent-primary);
   
   }
 
@@ -21,15 +21,15 @@
   &:has(.selectWrapper:hover),
   &:has(.selectWrapper:focus-within) {
     transform: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    border-color: var(--border-color);
   }
 
   &.dragging {
     opacity: 0.8;
-    background-color: #e3f2fd;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    border: 2px solid #1976d2;
+    background: var(--bg-feature-hover);
+    box-shadow: 0 8px 24px var(--shadow-color-strong);
+    border: 2px solid var(--accent-primary);
     z-index: 100;
   }
 }
@@ -37,7 +37,7 @@
 .exerciseContent {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .selectWrapper {
@@ -46,8 +46,8 @@
 }
 
 .dragHandle {
-  color: #999;
-  font-size: 18px;
+  color: var(--text-primary);
+  font-size: 16px;
   cursor: grab;
   user-select: none;
   line-height: 1;
@@ -59,45 +59,45 @@
 
 .exerciseIndex {
   font-weight: bold;
-  color: #1976d2;
-  min-width: 25px;
+  color: var(--text-primary);
+  min-width: 22px;
+  font-size: 14px;
 }
 
 .exerciseTitle {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 500;
   flex: 1;
   min-width: auto;
-   color: #373737;
-
+  color: var(--text-primary);
 }
 
 .timeLabel {
-  font-size: 14px;
-  color: #666;
-  margin-right: 5px;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-right: 4px;
 }
 
 .multiplySymbol {
-  font-size: 18px;
-  color: #666;
+  font-size: 16px;
+  color: var(--text-primary);
   font-weight: bold;
 }
 
 .infinitySymbol {
-  font-size: 24px;
-  color: #1976d2;
+  font-size: 20px;
+  color: var(--text-primary);
   font-weight: bold;
-  min-width: 60px;
+  min-width: 48px;
   text-align: center;
   user-select: none;
   cursor: default;
 }
 
 .weightFromDatabase {
-  font-size: 20px;
-  color: #494949;
-  min-width: 60px;
+  font-size: 16px;
+  color: var(--text-primary);
+  min-width: 56px;
   text-align: center;
   font-weight: 500;
   margin-right: 130px;
@@ -108,8 +108,8 @@
 }
 
 .starIndicator {
-  color: #ff9800;
-  font-size: 18px;
+  color: var(--accent-warning);
+  font-size: 16px;
   font-weight: bold;
   margin-left: 4px;
   animation: starPulse 1.5s ease-in-out infinite;
@@ -127,25 +127,25 @@
 }
 
 .starWeightButton {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-  color: white;
-  font-size: 18px;
+  background: var(--button-warning);
+  color: var(--text-on-accent);
+  font-size: 16px;
   font-weight: bold;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
   transition: all 0.2s ease;
   margin-left: 8px;
-  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 2px 4px var(--shadow-color);
 
   &:hover {
-    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+    background: var(--button-warning-hover);
     transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
+    box-shadow: 0 4px 8px var(--shadow-color-strong);
   }
 
   &:active {
@@ -154,44 +154,44 @@
 }
 
 .deleteExerciseButton {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   background-color: transparent;
-  color: #d32f2f;
-  font-size: 24px;
+  color: var(--accent-danger);
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(211, 47, 47, 0.1);
+    background-color: color-mix(in srgb, var(--accent-danger) 12%, transparent);
   }
 }
 
 .groupRow {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border: 1px solid #90caf9;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-primary);
   
   &:hover {
-    background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    background: var(--bg-card-hover);
+    box-shadow: 0 4px 12px var(--shadow-color);
     transform: translateY(-2px);
   }
 
   .exerciseTitle {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
   }
 
   .exerciseParams {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .plusSign {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -199,7 +199,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   flex: 1;
 }
 
@@ -210,27 +210,27 @@
 }
 
 .exerciseParams {
-  font-size: 16px;
-  color: #666;
+  font-size: 14px;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
 }
 
 .plusSign {
-  font-size: 18px;
-  color: #1976d2;
+  font-size: 16px;
+  color: var(--text-primary);
   font-weight: bold;
-  margin: 0 4px;
+  margin: 0 3px;
 }
 
 .confirmButton {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
-  background-color: #4caf50;
-  color: white;
-  font-size: 20px;
+  background-color: var(--accent-success);
+  color: var(--text-on-accent);
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
@@ -238,6 +238,6 @@
   font-weight: bold;
 
   &:hover {
-    background-color: #45a049;
+    background-color: color-mix(in srgb, var(--accent-success) 85%, #000);
   }
 }

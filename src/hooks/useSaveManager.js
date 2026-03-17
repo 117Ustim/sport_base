@@ -11,7 +11,6 @@ export function useSaveManager({ onSave, showNotification }) {
   const [isSaving, setIsSaving] = useState(false);
   const [newItems, setNewItems] = useState([]); // Новые элементы для сохранения
   const [originalItems, setOriginalItems] = useState([]); // Оригинальные данные
-  const [hasOtherChanges, setHasOtherChanges] = useState(false); // Флаг для других изменений (удаления, перестановки)
 
   // Предупреждение при выходе со страницы
   useEffect(() => {
@@ -36,9 +35,7 @@ export function useSaveManager({ onSave, showNotification }) {
   const markAsChanged = () => {
     console.log('markAsChanged called');
     console.log('Setting hasUnsavedChanges to true');
-    console.log('Setting hasOtherChanges to true');
     setHasUnsavedChanges(true);
-    setHasOtherChanges(true); // Отмечаем, что есть другие изменения (не только новые элементы)
   };
 
   /**
@@ -86,7 +83,6 @@ export function useSaveManager({ onSave, showNotification }) {
       // Сбрасываем состояние после успешного сохранения
       setNewItems([]);
       setHasUnsavedChanges(false);
-      setHasOtherChanges(false); // Сбрасываем флаг других изменений
       
       if (showNotification) {
         showNotification('Зміни успішно збережено', 'success');
@@ -109,7 +105,6 @@ export function useSaveManager({ onSave, showNotification }) {
   const resetChanges = () => {
     setNewItems([]);
     setHasUnsavedChanges(false);
-    setHasOtherChanges(false); // Сбрасываем флаг других изменений
   };
 
   /**

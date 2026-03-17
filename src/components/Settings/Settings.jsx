@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { clientsService, authService } from '../../firebase/services';
 import { EMPTY_CLIENT } from '../../constants';
-// import { useLanguage } from '../../contexts/LanguageContext'; // Удаляем старый контекст
-import { useTranslation } from 'react-i18next'; // Добавляем новый хук
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../contexts/ThemeContext'; // Импорт useTheme
 import TemporaryDrawer from '../Drawer';
 import ManageGyms from './ManageGyms';
 import LanguageSelector from './LanguageSelector';
+import ThemeToggle from './ThemeToggle'; // Импорт ThemeToggle
 import AddClient from '../AddClient';
 import BackButton from '../BackButton';
 import styles from './Settings.module.scss';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { t } = useTranslation(); // Используем хук useTranslation
+  const { t } = useTranslation();
+  const { theme } = useTheme(); // Получаем текущую тему
   const [openDrawer, setOpenDrawer] = useState({ right: false });
   const [drawerContent, setDrawerContent] = useState('gyms');
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
@@ -60,9 +62,6 @@ export default function Settings() {
     navigate('/manage-clients');
   };
 
-  const onMigrateWorkoutsClick = () => {
-    navigate('/migrate-workouts');
-  };
 
   const onChange = (event) => {
     const { name, value, gymId } = event.target;
@@ -85,6 +84,13 @@ export default function Settings() {
 
   const menuItems = [
     {
+      icon: '🎨',
+      title: t('settings.theme'),
+      description: t('settings.themeDesc'),
+      component: <ThemeToggle />,
+      noArrow: true
+    },
+    {
       icon: '🏢',
       title: t('settings.manageGyms'),
       description: t('settings.manageGymsDesc'),
@@ -103,12 +109,6 @@ export default function Settings() {
       onClick: onAddExerciseClick
     },
     {
-      icon: '🔄',
-      title: 'Миграция тренировок',
-      description: 'Перенос weeks в subcollections',
-      onClick: onMigrateWorkoutsClick
-    },
-    {
       icon: '🌐',
       title: t('settings.language'),
       description: t('settings.languageDesc'),
@@ -124,17 +124,17 @@ export default function Settings() {
   ];
 
   return (
-    <div className={styles.settings}>
-      <div className={styles.header}>
-        <BackButton onClick={onBackClick} />
-        <h1 className={styles.pageTitle}>{t('settings.title')}</h1>
+    <div className={`${styles.settings} ${theme === 'dark' ? styles.dark : ''}`}>
+      <div className={`${styles.header} ${theme === 'dark' ? styles.dark : ''}`}>
+        <BackButton onClick={onBackClick} size="small" />
+        <h1 className={styles.pageTitle} />
       </div>
 
-      <div className={styles.content}>
+      <div className={`${styles.content} ${theme === 'dark' ? styles.dark : ''}`}>
         {menuItems.map((item, index) => (
           <div 
             key={index}
-            className={`${styles.card} ${item.danger ? styles.cardDanger : ''}`}
+            className={`${styles.card} ${item.danger ? styles.cardDanger : ''} ${theme === 'dark' ? styles.dark : ''}`}
             onClick={item.onClick}
           >
             <div className={styles.cardIcon}>{item.icon}</div>
@@ -142,7 +142,7 @@ export default function Settings() {
               <h3 className={styles.cardTitle}>{item.title}</h3>
               <p className={styles.cardDescription}>{item.description}</p>
             </div>
-            <div className={styles.cardArrow}>→</div>
+            {item.component ? item.component : <div className={styles.cardArrow}>→</div>}
           </div>
         ))}
       </div>

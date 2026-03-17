@@ -1,6 +1,6 @@
 {
   "settings": {
-    "title": "Главная",
+    "title": "Настройки",
     "manageGyms": "Управление залами",
     "manageGymsDesc": "Добавляйте и редактируйте залы",
     "manageClients": "Управление клиентами",
@@ -37,7 +37,8 @@
     "notSpecified": "Не указано",
     "confirmation": "Подтверждение",
     "yes": "Да",
-    "no": "Нет"
+    "no": "Нет",
+    "loading": "Загрузка..."
   },
   "clientBase": {
     "title": "База клиента",
@@ -53,7 +54,11 @@
     "deleteModeHint": "Нажмите на название колонки в таблице для её удаления"
   },
   "planClient": {
-    "noWorkouts": "Нет созданных тренировок. Нажмите \"Создать тренировку\" для добавления."
+    "noWorkouts": "Нет созданных тренировок. Нажмите \"Создать тренировку\" для добавления.",
+    "transferTitle": "Перенести тренировку",
+    "transferButton": "Перенос",
+    "copySuffix": "копия",
+    "noClients": "Клиенты не найдены"
   },
   "home": {
     "search": "Поиск",
@@ -72,6 +77,9 @@
     "workoutLoadError": "Ошибка загрузки тренировок",
     "workoutDeleted": "Тренировка удалена",
     "deleteWorkoutError": "Ошибка при удалении тренировки",
+    "workoutTransferred": "Тренировка перенесена к клиенту {{name}}",
+    "workoutTransferError": "Ошибка переноса тренировки",
+    "workoutTransferMissingWeights": "Вес установлен в 0 для упражнений: {{count}}",
     "lastColumnError": "Нельзя удалить последнюю колонку",
     "baseCreatedSuccess": "База успешно создана!",
     "baseCreatedError": "Ошибка создания базы",
@@ -224,6 +232,30 @@
     "missingDates": "Необходимо выбрать даты для всех дней тренировки. Не хватает дат для: {{days}}",
     "trainingSentSuccess": "Тренировка успешно отправлена клиенту!",
     "sendError": "Ошибка при отправке тренировки"
+  },
+  "editBase": {
+    "exerciseExists": "Упражнение с таким названием уже существует в этой категории",
+    "exerciseDeleted": "Упражнение удалено",
+    "exerciseDeletedServer": "Упражнение удалено с сервера",
+    "categoryAdded": "Категория \"{{name}}\" успешно добавлена",
+    "addCategoryError": "Ошибка добавления категории",
+    "categoryNotEmpty": "Невозможно удалить категорию с упражнениями. Сначала удалите все упражнения.",
+    "categoryDeleted": "Категория успешно удалена",
+    "deleteCategoryError": "Ошибка удаления категории",
+    "manageCategories": "Управление категориями",
+    "categoriesBtn": "Категории +",
+    "addCategory": "Добавить категорию",
+    "categoryNamePlaceholder": "Название категории",
+    "deleteCategory": "Удалить категорию",
+    "editCategory": "Редактировать категории",
+    "categoriesList": "Список категорий",
+    "noCategoriesToDelete": "Нет категорий для удаления",
+    "noCategoriesToEdit": "Нет категорий для редактирования",
+    "addCategoriesFirst": "Сначала добавьте категории",
+    "confirmDeleteCategory": "Вы уверены, что хотите удалить категорию \"{{name}}\"?",
+    "categoryUpdated": "Категория \"{{name}}\" успешно обновлена",
+    "updateCategoryError": "Ошибка обновления категории",
+    "editCategoryName": "Редактировать название"
   },
   "editExercises": {
     "fillAllFields": "Заполните все поля",

@@ -11,9 +11,9 @@ import WorkoutDetails from "./components/WorkoutDetails";
 import Settings from "./components/Settings";
 import ManageClients from "./components/Settings/ManageClients";
 import Login from "./components/Login";
-import MigrateWorkouts from "./components/Migration/MigrateWorkouts";
 import { authService } from "./firebase/services";
 import { initCategories } from "./firebase/initData";
+import { ThemeProvider } from "./contexts/ThemeContext"; // Импорт ThemeProvider
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -63,8 +63,9 @@ export default function App() {
   }
 
   return (
-    <div className='app'>
-      <Routes>
+    <ThemeProvider>
+      <div className='app'>
+        <Routes>
         {/* Роут для логина */}
         <Route
           path='/login'
@@ -121,11 +122,8 @@ export default function App() {
           path='/workout_details/:clientId/:workoutId'
           element={user ? <WorkoutDetails/> : <Navigate to="/login" replace />}
         />
-        <Route
-          path='/migrate-workouts'
-          element={user ? <MigrateWorkouts/> : <Navigate to="/login" replace />}
-        />
       </Routes>
     </div>
+    </ThemeProvider>
   );
 }

@@ -44,7 +44,10 @@
     "restore": "node scripts/restore-firestore.js",
     "migrate": "node scripts/migrate-to-new-structure.js",
     "optimize": "node scripts/optimize-assigned-workouts.js",
-    "cleanup": "node scripts/cleanup-legacy-data.js"
+    "cleanup": "node scripts/cleanup-legacy-data.js",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "eslintConfig": {
     "extends": [
@@ -66,6 +69,7 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
+    "@tauri-apps/cli": "^1.6.3",
     "babel-jest": "^30.2.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "gh-pages": "^6.3.0",

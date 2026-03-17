@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,14 +22,16 @@
 }
 
 .content {
-  background: white;
-  padding: 30px !important;
-  border-radius: 12px;
+  background: var(--bg-panel);
+  padding: 30px;
+  border-radius: 25px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-color-strong);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
   animation: slideUp 0.3s ease-out;
-  box-sizing: border-box !important;
+  box-sizing: border-box;
 
   @keyframes slideUp {
     from {
@@ -45,14 +47,14 @@
   .title {
     margin: 0 0 16px 0;
     font-size: 22px;
-    color: #333;
+    color: var(--text-primary);
     font-weight: 700;
   }
 
   .message {
     margin: 0 0 24px 0;
     font-size: 16px;
-    color: #666;
+    color: var(--text-muted);
     line-height: 1.5;
     word-wrap: break-word;
   }
@@ -63,43 +65,43 @@
     justify-content: flex-end;
 
     .button {
-      padding: 12px 28px !important;
+      padding: 8px 18px;
       border: none;
-      border-radius: 6px;
-      font-size: 15px;
+      border-radius: 999px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: background-color 0.2s;
       flex: 1;
-      max-width: 120px;
-      box-sizing: border-box !important;
-      height: auto !important;
+      max-width: 100px;
+      box-sizing: border-box;
+      height: auto;
 
       &.cancel {
-        background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
-        color: #FFFFFF;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: var(--button-primary);
+        color: var(--text-on-accent);
+        border: 1px solid var(--border-color);
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        box-shadow: 0 4px 16px rgba(49, 130, 206, 0.3);
+        box-shadow: 0 4px 16px var(--shadow-color);
 
         &:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4);
-          background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+          box-shadow: 0 6px 20px var(--shadow-color-strong);
+          background: var(--button-primary-hover);
         }
       }
 
       &.delete {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: #FFFFFF;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: var(--button-danger);
+        color: var(--text-on-accent);
+        border: 1px solid var(--border-color);
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+        box-shadow: 0 4px 16px var(--shadow-color);
 
         &:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-          background: linear-gradient(135deg, #e85563 0%, #d42c3c 100%);
+          box-shadow: 0 6px 20px var(--shadow-color-strong);
+          background: var(--button-danger-hover);
         }
       }
     }

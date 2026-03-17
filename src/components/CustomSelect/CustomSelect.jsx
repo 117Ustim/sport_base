@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from './CustomSelect.module.scss';
 
-const CustomSelect = ({ name, value, onChange, options, placeholder }) => {
+const CustomSelect = ({ name, value, onChange, options, placeholder, className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef(null);
 
@@ -32,8 +32,10 @@ const CustomSelect = ({ name, value, onChange, options, placeholder }) => {
 
   const selectedOption = options.find(option => option.value === value);
 
+  const rootClassName = className ? `${styles.customSelect} ${styles[className]}` : styles.customSelect;
+
   return (
-    <div className={styles.customSelect} ref={selectRef}>
+    <div className={rootClassName} ref={selectRef}>
       <div 
         className={`${styles.selectButton} ${isOpen ? styles.open : ''}`}
         onClick={() => setIsOpen(!isOpen)}

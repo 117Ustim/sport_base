@@ -1,6 +1,6 @@
 {
   "settings": {
-    "title": "Home",
+    "title": "Settings",
     "manageGyms": "Manage Gyms",
     "manageGymsDesc": "Add and edit gyms",
     "manageClients": "Manage Clients",
@@ -37,14 +37,19 @@
     "notSpecified": "Not specified",
     "confirmation": "Confirmation",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "loading": "Loading..."
   },
   "clientBase": {
     "title": "Client Base",
     "empty": "List is empty"
   },
   "planClient": {
-    "noWorkouts": "No workouts created. Click \"Create Workout\" to add one."
+    "noWorkouts": "No workouts created. Click \"Create Workout\" to add one.",
+    "transferTitle": "Transfer Workout",
+    "transferButton": "Transfer",
+    "copySuffix": "copy",
+    "noClients": "No clients found"
   },
   "home": {
     "search": "Search",
@@ -63,6 +68,9 @@
     "workoutLoadError": "Error loading workouts",
     "workoutDeleted": "Workout deleted",
     "deleteWorkoutError": "Error deleting workout",
+    "workoutTransferred": "Workout transferred to {{name}}",
+    "workoutTransferError": "Error transferring workout",
+    "workoutTransferMissingWeights": "Weight set to 0 for exercises: {{count}}",
     "lastColumnError": "Cannot delete the last column",
     "baseCreatedSuccess": "Base created successfully!",
     "baseCreatedError": "Error creating base",

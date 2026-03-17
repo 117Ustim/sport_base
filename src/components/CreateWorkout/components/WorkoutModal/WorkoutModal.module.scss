@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,31 +12,35 @@
 }
 
 .modalContent {
-  background: white;
+  background: var(--bg-panel);
+  backdrop-filter: blur(10px);
   padding: 30px;
-  border-radius: 8px;
+  border-radius: 25px;
   min-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px var(--shadow-color-strong);
+  border: 1px solid var(--border-color);
 }
 
 .modalTitle {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .modalInput {
   width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
   margin-bottom: 20px;
   box-sizing: border-box;
 
   &:focus {
     outline: none;
-    border-color: #1976d2;
+    border-color: var(--accent-primary);
   }
 }
 
@@ -49,26 +53,29 @@
 .modalButton {
   padding: 8px 16px;
   border: none;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 20px;
+  font-size: 13px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .cancelButton {
-  background-color: #f5f5f5;
-  color: #333;
+  background: var(--bg-feature);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 
   &:hover {
-    background-color: #e0e0e0;
+    background: var(--bg-feature-hover);
   }
 }
 
 .createButton {
-  background-color: #1976d2;
-  color: white;
+  background: var(--button-bg);
+  color: var(--text-on-accent);
+  border: 1px solid var(--border-color);
 
   &:hover {
-    background-color: #1565c0;
+    background: var(--button-hover);
   }
 }

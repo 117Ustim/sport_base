@@ -3,17 +3,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #D1DFEC;
+  background: var(--bg-main);
   padding: 20px;
 }
 
 .container {
-  background: linear-gradient(135deg, #D9E6F6 0%, #f8f9fa 100%);
+  background: var(--bg-panel);
   padding: 40px;
   border-radius: 25px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px var(--shadow-color);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-color);
   width: 100%;
   max-width: 400px;
 }
@@ -21,7 +21,7 @@
 .title {
   text-align: center;
   margin-bottom: 30px;
-  color: #000000;
+  color: var(--text-primary);
   font-size: 24px;
   font-weight: 500;
 }
@@ -34,40 +34,40 @@
 
 .input {
   padding: 16px 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   border-radius: 25px;
   font-size: 16px;
-  color: #000000;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: var(--text-primary);
+  background: var(--bg-input);
   outline: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
   backdrop-filter: blur(10px);
 
   &:focus {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
-    border-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
+    background: var(--bg-input-focus);
+    border-color: var(--border-color-strong);
   }
 
   &::placeholder {
-    color: #6c757d;
+    color: var(--text-muted);
   }
 }
 
 .button {
   padding: 16px 32px;
-  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
-  color: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--button-primary);
+  color: var(--text-on-accent);
+  border: 1px solid var(--border-color);
   border-radius: 25px;
   font-size: 16px;
   font-weight: 500;
   text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.3);
+  box-shadow: 0 8px 32px var(--shadow-color);
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
@@ -85,8 +85,8 @@
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(49, 130, 206, 0.4);
-    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+    box-shadow: 0 12px 40px var(--shadow-color-strong);
+    background: var(--button-primary-hover);
 
     &::before {
       left: 100%;
@@ -95,14 +95,14 @@
 
   &:active:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(49, 130, 206, 0.3);
+    box-shadow: 0 6px 24px var(--shadow-color);
   }
 
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px var(--shadow-color);
 
     &::before {
       display: none;
@@ -111,13 +111,13 @@
 }
 
 .error {
-  color: #dc3545;
+  color: var(--accent-danger);
   text-align: center;
   margin: 0;
   font-size: 14px;
   font-weight: 500;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  background: color-mix(in srgb, var(--accent-danger) 15%, transparent);
   border-radius: 15px;
-  border: 1px solid rgba(220, 53, 69, 0.2);
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 35%, transparent);
 }

@@ -1,6 +1,7 @@
 // Import global variables and mixins
 @import './styles/variables';
 @import './styles/mixins';
+@import './styles/themes';
 
 // Import reset and base styles
 @import './zeroing.scss';
@@ -8,12 +9,31 @@
 
 // Global styles
 body, html {
-  background-color: $color-bg;
+  background: var(--bg-main);
+  color: var(--text-primary);
   font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+// Специальные стили для темной темы - убираем сглаживание
+body.theme-dark {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  
+  *, *::before, *::after {
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    text-rendering: optimizeSpeed;
+    font-weight: 400;
+  }
+  
+  // Исключения для заголовков и кнопок
+  h1, h2, h3, h4, h5, h6, button {
+    font-weight: 600;
+  }
 }
 
 // All component styles are now in CSS Modules

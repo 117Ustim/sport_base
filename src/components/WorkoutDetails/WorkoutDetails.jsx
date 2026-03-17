@@ -486,28 +486,29 @@ export default function WorkoutDetails() {
 
   return (
     <div className={styles.workoutDetails}>
-      <Notification notification={notification} />
-      
-      <div className={styles.detailsHeader}>
-        <BackButton onClick={onButtonBack} />
-        <div className={styles.clientName}>
-          {clientData?.data?.surname || ''} {clientData?.data?.name || ''}
+      <div className={styles.workoutDetailsContent}>
+        <Notification notification={notification} />
+        
+        <div className={styles.detailsHeader}>
+          <BackButton onClick={onButtonBack} />
+          <div className={styles.clientName}>
+            {clientData?.data?.surname || ''} {clientData?.data?.name || ''}
+          </div>
+          <div className={styles.headerButtons}>
+            <button className={styles.editButton} onClick={onButtonEdit}>
+              {t('common.edit')}
+            </button>
+            <button 
+              className={styles.sendButton} 
+              onClick={handleSendWorkoutToClient}
+              disabled={isSendingWorkout || !clientData?.data?.userId}
+            >
+              {isSendingWorkout ? t('workoutDetails.sending') : t('workoutDetails.sendToClient')}
+            </button>
+          </div>
         </div>
-        <div className={styles.headerButtons}>
-          <button className={styles.editButton} onClick={onButtonEdit}>
-            {t('common.edit')}
-          </button>
-          <button 
-            className={styles.sendButton} 
-            onClick={handleSendWorkoutToClient}
-            disabled={isSendingWorkout || !clientData?.data?.userId}
-          >
-            {isSendingWorkout ? t('workoutDetails.sending') : t('workoutDetails.sendToClient')}
-          </button>
-        </div>
-      </div>
-      
-      <h1 className={styles.workoutTitle}>{workout.name}</h1>
+        
+        <h1 className={styles.workoutTitle}>{workout.name}</h1>
 
       <div className={styles.weeklyPlanContainer}>
         {workout.weeks && workout.weeks.length > 0 ? (
@@ -719,6 +720,7 @@ export default function WorkoutDetails() {
           <p className={styles.noExercisesMessage}>{t('workoutDetails.noWeeks')}</p>
         )}
       </div>
+      </div> {/* Закрываем workoutDetailsContent */}
 
       {isDateModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setIsDateModalOpen(false)}>

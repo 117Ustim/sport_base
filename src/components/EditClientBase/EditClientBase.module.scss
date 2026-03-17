@@ -2,8 +2,15 @@ $bgList: rgba(215, 215, 241, 0.4);
 $border: rgb(206, 204, 204);
 $br: 3px;
 
+.page {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg-main);
+}
+
 .buttonBack {
-  margin: 10px 10px;
+  margin: 0px 10px 6px 10px;
+  padding-top: 15px;
   width: auto;
   display: flex;
   justify-content: space-between;
@@ -18,89 +25,88 @@ $br: 3px;
 
 .buttonBack .rightButtons .saveButton,
 .buttonBack .saveButton {
-  width: 120px !important;
-  height: 44px !important;
-  padding: 0 !important;
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
-  color: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  border-radius: 22px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 8px 32px rgba(244, 67, 54, 0.3) !important;
-  backdrop-filter: blur(10px) !important;
-  position: relative !important;
-  overflow: hidden !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  width: 100px;
+  height: 36px;
+  padding: 0;
+  background: var(--button-danger);
+  color: var(--text-on-accent);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(244, 67, 54, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: -100% !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-    transition: left 0.5s !important;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
   }
 
   &:hover:not(:disabled) {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 12px 40px rgba(244, 67, 54, 0.4) !important;
-    background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(244, 67, 54, 0.4);
+    background: var(--button-danger-hover);
     
     &::before {
-      left: 100% !important;
+      left: 100%;
     }
   }
 
   &:active:not(:disabled) {
-    transform: translateY(0) !important;
-    box-shadow: 0 6px 24px rgba(244, 67, 54, 0.3) !important;
+    transform: translateY(0);
+    box-shadow: 0 6px 24px rgba(244, 67, 54, 0.3);
   }
   
   &:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2) !important;
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
     
     &::before {
-      display: none !important;
+      display: none;
     }
   }
 
   // Пульсирующая анимация для несохраненных изменений
   &.saveButtonActive:not(:disabled) {
-    animation: pulse 1.5s infinite !important;
-    box-shadow: 0 8px 32px rgba(244, 67, 54, 0.6) !important;
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 8px 32px rgba(244, 67, 54, 0.6);
   }
 
   @keyframes pulse {
     0% {
       box-shadow: 0 8px 32px rgba(244, 67, 54, 0.6);
       transform: scale(1);
-      background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+      background: var(--button-danger);
     }
     50% {
       box-shadow: 0 16px 48px rgba(244, 67, 54, 0.9);
       transform: scale(1.05);
-      background: linear-gradient(135deg, #ff5722 0%, #e53935 100%);
+      background: var(--button-danger-hover);
     }
     100% {
       box-shadow: 0 8px 32px rgba(244, 67, 54, 0.6);
       transform: scale(1);
-      background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+      background: var(--button-danger);
     }
   }
 
   i {
-    display: none !important;
+    display: none;
   }
 }
 
@@ -110,54 +116,55 @@ $br: 3px;
 
 .buttonBack .rightButtons .categoryMenuButton,
 .buttonBack .categoryMenuButton {
-  width: auto !important;
-  min-width: auto !important;
-  height: 44px !important;
-  border-radius: 22px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.3) !important;
-  backdrop-filter: blur(10px) !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-  color: #FFFFFF !important;
-  padding: 0 20px !important;
-  white-space: nowrap !important;
+  width: auto;
+  min-width: auto;
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--button-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.3);
+  backdrop-filter: blur(10px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-accent);
+  padding: 0 14px;
+  white-space: nowrap;
 
   &:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 12px 40px rgba(49, 130, 206, 0.4) !important;
-    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(49, 130, 206, 0.4);
+    background: var(--button-primary-hover);
   }
 
   &:active {
-    transform: translateY(0) !important;
+    transform: translateY(0);
   }
 }
 
 // Дополнительный селектор для перекрытия глобальных стилей
 div[class*="buttonBack"] button[class*="categoryMenuButton"] {
-  font-weight: 500 !important;
-  font-size: 14px !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .blockCategory {
   display: flex;
   align-items: center;
   gap: 30px;
-  margin: 50px 50px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+  margin: 12px 16px 16px 16px;
+  padding: 14px;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
   border-radius: 15px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 15px var(--shadow-color);
+  position: relative;
+  z-index: 5;
 
   .category {
     flex: 1;
@@ -165,65 +172,63 @@ div[class*="buttonBack"] button[class*="categoryMenuButton"] {
 
   .exercise input {
     width: 100%;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #495057;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 25px;
-    font-size: 16px;
+    padding: 10px 16px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 14px;
     font-weight: 500;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px var(--shadow-color);
     backdrop-filter: blur(10px);
 
     &:hover {
       transform: translateY(-1px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-      background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
-      border-color: rgba(0, 0, 0, 0.15);
+      box-shadow: 0 12px 40px var(--shadow-color-strong);
+      background: var(--bg-input);
+      border-color: var(--border-color-strong);
     }
 
     &:focus {
       outline: none;
       transform: translateY(-1px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-      background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
-      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 12px 40px var(--shadow-color-strong);
+      background: var(--bg-input);
+      border-color: var(--border-color-strong);
     }
 
     &::placeholder {
-      color: #6c757d;
+      color: var(--text-muted);
       font-size: 15px;
-     
     }
   }
 
   .button button {
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    border-radius: 22px !important;
-    color: #FFFFFF !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3) !important;
-    backdrop-filter: blur(10px) !important;
-    transition: all 0.3s ease !important;
-    padding: 12px 20px !important;
-    height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
+    background: var(--button-success);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    color: var(--text-on-accent);
+    font-weight: 500;
+    font-size: 13px;
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    padding: 8px 16px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 
     &:hover {
-      transform: translateY(-1px) !important;
-      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
-      background: linear-gradient(135deg, #43a047 0%, #388e3c 100%) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+      background: var(--button-success-hover);
     }
 
     &:active {
-      transform: translateY(0) !important;
+      transform: translateY(0);
     }
 
     i {
@@ -234,39 +239,50 @@ div[class*="buttonBack"] button[class*="categoryMenuButton"] {
 
 .columnCategory {
   display: flex;
-  gap: 5px;
-  padding: 0 50px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.container {
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 .textCategory {
   display: flex;
   padding-top: 8px;
   flex-direction: column;
-   gap: 3px;
+  gap: 3px;
   align-items: center;
-  background: linear-gradient(135deg, #3182CE 0%, #2C5282 100%);
-  width: 288px;
+  background: var(--button-primary);
+  width: 100%;
+  max-width: 260px;
+  min-width: 220px;
+  flex: 1 0 220px;
   height: 30px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
-  color: #FFFFFF;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  color: var(--text-on-accent);
   box-shadow: 0 4px 16px rgba(49, 130, 206, 0.3);
   transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4);
-    background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);
+    background: var(--button-primary-hover);
   }
 
   h4 {
-    color: #FFFFFF;
+    color: var(--text-on-accent);
     margin: 0;
     font-weight: 500;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
 }
 
@@ -276,35 +292,35 @@ div[class*="buttonBack"] button[class*="categoryMenuButton"] {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  width: 288px;
+  background: rgba(55, 72, 88, 0.98);
+  width: 100%;
   height: 35px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  font-size: 14px !important;
-  color: #0d0d0d;
+  font-size: 14px;
+  color: var(--text-primary);
   font-weight: 400;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.337);
-    background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%);
+    box-shadow: 0 4px 12px var(--shadow-color-strong);
+    background: var(--bg-feature-hover);
   }
 }
 
 .delete {
-   display: flex;
-    align-items: center;
-    justify-content: center;
-  width: 30px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
   margin: 0px 5px;
-  height: 20px !important;
- 
+  height: 20px;
   border: none;
   border-radius: 10px;
-  
   transition: all 0.2s ease;
   cursor: pointer;
   
@@ -318,14 +334,28 @@ div[class*="buttonBack"] button[class*="categoryMenuButton"] {
     align-items: center;
     justify-content: center;
     font-size: 8px;
-    color: rgb(255, 0, 0);
+    color: var(--accent-danger);
     height: 20px;
     font-weight: 600;
   }
 }
 
 .blockTextExercises {
-  margin-top: 25px;
+  margin-top: 10px;
+}
+
+.blockOutputCategoryExercises {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: visible;
+  height: 100vh;
+  min-height: 100vh;
+  padding-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .blockExercises {

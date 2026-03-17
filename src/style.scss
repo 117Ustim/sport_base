@@ -4,12 +4,12 @@
 
 $ruler: 16px;
 $color-red: #AE1100;
-$color-bg: #EBECF0;
-$color-shadow: #ccbbba;
-$color-white: #FFF;
+$color-bg: var(--bg-main);
+$color-shadow: var(--shadow-color);
+$color-white: var(--shadow-color-strong);
 
 body, html {
-  background-color: $color-bg;
+  background: $color-bg;
 }
 
 body, p, input, select, textarea, button {
@@ -19,16 +19,19 @@ body, p, input, select, textarea, button {
 }
 
 div, p {
-  color: $color-shadow;
-  text-shadow: 1px 1px 1px $color-white;
+  color: var(--text-secondary);
+  // text-shadow убран - создавал эффект раздвоения на темной теме
 }
 
 ._container {
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 80px;
+  padding: 0 24px;
+  box-sizing: border-box;
 }
 
 .segment {
@@ -40,13 +43,14 @@ button, input, select {
   font-size: $ruler;
   border-radius: 12px;
   padding: $ruler;
-  background-color: $color-bg;
-  text-shadow: 1px 1px 0 $color-white;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  // text-shadow убран - создавал эффект раздвоения на темной теме
 }
 
 select {
   margin-right: $ruler / 0.13;
-  box-shadow: inset 2px 2px 5px $color-shadow, inset -5px -5px 10px $color-white;
+  box-shadow: inset 2px 2px 5px var(--shadow-color), inset -5px -5px 10px var(--shadow-color-strong);
   width: 100%;
   box-sizing: border-box;
   transition: all 0.2s ease-in-out;
@@ -54,13 +58,13 @@ select {
   -webkit-appearance: none;
 
   &:focus {
-    box-shadow: inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+    box-shadow: inset 1px 1px 2px var(--shadow-color), inset -1px -1px 2px var(--shadow-color-strong);
   }
 }
 
 input {
   margin-right: $ruler / 2;
-  box-shadow: inset 2px 2px 5px $color-shadow, inset -5px -5px 10px $color-white;
+  box-shadow: inset 2px 2px 5px var(--shadow-color), inset -5px -5px 10px var(--shadow-color-strong);
   width: 100%;
   box-sizing: border-box;
   transition: all 0.2s ease-in-out;
@@ -68,32 +72,32 @@ input {
   -webkit-appearance: none;
 
   &:focus {
-    box-shadow: inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+    box-shadow: inset 1px 1px 2px var(--shadow-color), inset -1px -1px 2px var(--shadow-color-strong);
   }
 }
 
 button {
-  color: #61677C;
+  color: var(--text-tertiary);
   padding: 10px 30px;
   width: 100%;
   height: 100%;
-  box-shadow: -5px -5px 20px $color-white, 5px 5px 20px $color-shadow;
+  box-shadow: -5px -5px 20px var(--shadow-color-strong), 5px 5px 20px var(--shadow-color);
   transition: all 0.2s ease-in-out;
   cursor: pointer;
   font-weight: 500;
   
   &:hover {
-    box-shadow: -2px -2px 5px $color-white, 2px 2px 5px $color-shadow;
+    box-shadow: -2px -2px 5px var(--shadow-color-strong), 2px 2px 5px var(--shadow-color);
   }
   
   &:active {
-    box-shadow: inset 1px 1px 2px $color-shadow, inset -1px -1px 2px $color-white;
+    box-shadow: inset 1px 1px 2px var(--shadow-color), inset -1px -1px 2px var(--shadow-color-strong);
   }
   
   &.red {
     display: block;
     width: 100%;
-    color: #1976d2;
+    color: var(--text-accent);
   }
 }
 
@@ -101,10 +105,10 @@ button {
 // КАСТОМНЫЙ КУРСОР ДЛЯ DRAG & DROP
 // ============================================
 
-[draggable="true"],
-.draggable,
-.category-drag-handle {
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234a90e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grab !important;
+body [draggable="true"],
+body .draggable,
+body .category-drag-handle {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234a90e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grab;
   transition: background-color 0.2s ease, transform 0.1s ease;
   
   &:hover {
@@ -113,7 +117,7 @@ button {
   }
   
   &:active {
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grabbing !important;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>'), grabbing;
     background-color: rgba(74, 144, 226, 0.15);
     transform: translateY(0);
   }

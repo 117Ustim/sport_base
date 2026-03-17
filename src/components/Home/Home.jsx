@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { EMPTY_CLIENT } from '../../constants';
 import { gymsService, clientsService } from '../../firebase/services';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../contexts/ThemeContext'; // Импорт useTheme
 import ListAddClients from '../ListAddClients';
 import TemporaryDrawer from '../Drawer';
 import AddClient from '../AddClient';
@@ -13,6 +14,7 @@ import styles from './Home.module.scss';
 export default function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { theme } = useTheme(); // Получаем текущую тему
   const [search, setSearch] = useState({ page: 1, limit: 10 });
   const [contacts, setContacts] = useState(EMPTY_CLIENT);
   const [openDrawer, setOpenDrawer] = useState({ right: false });
@@ -73,7 +75,7 @@ export default function Home() {
   };
 
   return (
-    <div className={styles.home}>
+    <div className={`${styles.home} ${theme === 'dark' ? styles.dark : ''}`}>
       <div className={styles.settingsIcon} onClick={onSettingsClick}>
         <img src={settingsIcon} alt='Settings' />
       </div>
@@ -91,6 +93,7 @@ export default function Home() {
                   value={contacts.gym || ''}
                   onChange={onChange}
                   placeholder={t('home.gym')}
+                  className="compact"
                   options={[
                     { value: 'all', label: t('home.all') },
                     ...gyms.map(gym => ({
@@ -108,6 +111,7 @@ export default function Home() {
                   value={contacts.sex || ''}
                   onChange={onChange}
                   placeholder={t('home.sex')}
+                  className="compact"
                   options={[
                     { value: 'all', label: t('home.all') },
                     { value: 'Чоловiча', label: t('home.male') },
