@@ -284,6 +284,17 @@ export default function WorkoutDetails() {
     return null;
   };
 
+  // Для упражнений из колонок "* X" приоритет у сохраненного веса со звездочкой
+  const hasStarWeight = (exercise) => {
+    const starWeight = exercise?.exerciseData?.weight;
+    return Boolean(
+      exercise?.exerciseData?.weightFromStar &&
+      starWeight &&
+      starWeight !== '' &&
+      starWeight !== '—'
+    );
+  };
+
   // 🔥 Функция для обновления весов в weekData перед отправкой клиенту
   const updateWeightsInWeekData = (weekData) => {
     const updatedWeekData = { ...weekData };
@@ -301,6 +312,9 @@ export default function WorkoutDetails() {
             const updatedGroupExercises = exercise.exercises.map(ex => {
               const isAerobic = ex.category_id === '6';
               if (isAerobic) return ex; // Аэробные упражнения не имеют веса
+
+              // Не перезаписываем вес, если он выбран из колонки "*"
+              if (hasStarWeight(ex)) return ex;
               
               const reps = ex.exerciseData?.reps || ex.numberTimes || 8;
               const actualWeight = getActualWeight(ex.exercise_id, reps);
@@ -327,6 +341,9 @@ export default function WorkoutDetails() {
           // Обычное упражнение
           const isAerobic = exercise.category_id === '6';
           if (isAerobic) return exercise; // Аэробные упражнения не имеют веса
+
+          // Не перезаписываем вес, если он выбран из колонки "*"
+          if (hasStarWeight(exercise)) return exercise;
           
           const reps = exercise.exerciseData?.reps || exercise.numberTimes || 8;
           const actualWeight = getActualWeight(exercise.exercise_id, reps);
@@ -578,10 +595,11 @@ export default function WorkoutDetails() {
                                       // Получаем подходы и повторения
                                       const sets = ex.exerciseData?.sets || ex.numberSteps || '';
                                       const reps = ex.exerciseData?.reps || ex.numberTimes || '';
+                                      const isStarWeight = hasStarWeight(ex);
                                       
                                       // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
-                                      const actualWeight = getActualWeight(ex.exercise_id, reps);
-                                      const displayWeight = actualWeight || weight;
+                                      const actualWeight = isStarWeight ? null : getActualWeight(ex.exercise_id, reps);
+                                      const displayWeight = (isStarWeight ? ex.exerciseData?.weight : null) || actualWeight || weight;
                                       
                                       // Проверяем наличие комментария для этого упражнения
                                       const commentKey = `${ex.id || ex.exercise_id}_${dayKey}`;
@@ -612,6 +630,7 @@ export default function WorkoutDetails() {
                                               {displayWeight && (
                                                 <span className={styles.exerciseWeight}>
                                                   ({displayWeight})
+                                                  {isStarWeight && <span className={styles.starWeightMark}>*</span>}
                                                 </span>
                                               )}
                                             </>
@@ -647,10 +666,11 @@ export default function WorkoutDetails() {
                           // Получаем подходы и повторения
                           const sets = exercise.exerciseData?.sets || exercise.numberSteps || '';
                           const reps = exercise.exerciseData?.reps || exercise.numberTimes || '';
+                          const isStarWeight = hasStarWeight(exercise);
                           
                           // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
-                          const actualWeight = getActualWeight(exercise.exercise_id, reps);
-                          const displayWeight = actualWeight || weight;
+                          const actualWeight = isStarWeight ? null : getActualWeight(exercise.exercise_id, reps);
+                          const displayWeight = (isStarWeight ? exercise.exerciseData?.weight : null) || actualWeight || weight;
                           
                           // Проверяем наличие комментария для этого упражнения
                           const commentKey = `${exercise.id || exercise.exercise_id}_${dayKey}`;
@@ -683,6 +703,7 @@ export default function WorkoutDetails() {
                                     {displayWeight && (
                                       <span className={styles.exerciseWeight}>
                                         ({displayWeight})
+                                        {isStarWeight && <span className={styles.starWeightMark}>*</span>}
                                       </span>
                                     )}
                                   </>

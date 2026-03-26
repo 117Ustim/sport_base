@@ -48,9 +48,21 @@ export default function CreateWorkout() {
     const exercise = exercises.find(ex => ex.exercise_id === exerciseId);
     if (!exercise || !exercise.data) return '';
     
-    // Индекс = количество раз - 1 (например, 8 раз = индекс 7)
-    const weightIndex = String(numberTimes - 1);
-    const weight = exercise.data[weightIndex];
+    let weight;
+    
+    // ✅ Пытаемся найти колонку по названию (например "8")
+    if (columns && columns.length > 0) {
+      const numericColumn = columns.find(col => String(col.name).trim() === String(numberTimes));
+      if (numericColumn) {
+        weight = exercise.data[numericColumn.id] ?? exercise.data[String(numericColumn.id)];
+      }
+    }
+    
+    // Fallback: индекс = количество раз - 1 (старая логика)
+    if (weight === undefined) {
+      const weightIndex = String(numberTimes - 1);
+      weight = exercise.data[weightIndex];
+    }
     
     // Возвращаем вес только если он не пустой
     if (weight && weight !== '' && weight !== '—') {
@@ -58,7 +70,7 @@ export default function CreateWorkout() {
     }
     
     return '';
-  }, [exercises]);
+  }, [exercises, columns]);
 
   useEffect(() => {
     let isActive = true;
@@ -431,7 +443,12 @@ export default function CreateWorkout() {
   };
 
   const getWeightForReps = (exerciseData, reps, exerciseId) => {
-    // 🔥 ПРИОРИТЕТ 1: Берём актуальный вес из client_base (всегда самый свежий!)
+    // 🔥 ПРИОРИТЕТ 1: Если вес был выбран из колонки "*" — используем его
+    if (exerciseData && exerciseData.weightFromStar && exerciseData.weight) {
+      return exerciseData.weight;
+    }
+    
+    // 🔥 ПРИОРИТЕТ 2: Берём актуальный вес из client_base (всегда самый свежий!)
     if (exerciseId) {
       const weightFromBase = getWeightFromBase(exerciseId, reps);
       if (weightFromBase) {
@@ -439,7 +456,7 @@ export default function CreateWorkout() {
       }
     }
     
-    // 🔥 ПРИОРИТЕТ 2: Если есть сохранённый вес (из колонки "*"), используем его
+    // 🔥 ПРИОРИТЕТ 3: Если есть сохранённый вес (fallback), используем его
     if (exerciseData && exerciseData.weight) {
       return exerciseData.weight;
     }
@@ -508,14 +525,15 @@ export default function CreateWorkout() {
             delete updated.isFromStarColumn;
             
             if (weightForNewReps) {
+              const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
               updated.exerciseData = {
-                ...ex.exerciseData,
+                ...dataWithoutStar,
                 weight: weightForNewReps
               };
               console.log(`✅ Вес обновлен для "${ex.name}": ${weightForNewReps} кг (${newReps} повторений)`);
             } else {
               // Убираем вес если его нет для нового количества повторений
-              const { weight, ...dataWithoutWeight } = ex.exerciseData;
+              const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
               updated.exerciseData = dataWithoutWeight;
               console.log(`ℹ️  Вес убран для "${ex.name}" (нет веса для ${newReps} повторений)`);
             }
@@ -547,14 +565,15 @@ export default function CreateWorkout() {
                   delete updated.isFromStarColumn;
                   
                   if (weightForNewReps) {
+                    const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
                     updated.exerciseData = {
-                      ...ex.exerciseData,
+                      ...dataWithoutStar,
                       weight: weightForNewReps
                     };
                     console.log(`✅ Вес обновлен для "${ex.name}": ${weightForNewReps} кг (${newReps} повторений)`);
                   } else {
                     // Убираем вес если его нет для нового количества повторений
-                    const { weight, ...dataWithoutWeight } = ex.exerciseData;
+                    const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
                     updated.exerciseData = dataWithoutWeight;
                     console.log(`ℹ️  Вес убран для "${ex.name}" (нет веса для ${newReps} повторений)`);
                   }
@@ -619,13 +638,14 @@ export default function CreateWorkout() {
               const weightForNewReps = getWeightFromBase(ex.exercise_id, reps);
               
               if (weightForNewReps) {
+                const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
                 updated.exerciseData = {
-                  ...ex.exerciseData,
+                  ...dataWithoutStar,
                   weight: weightForNewReps
                 };
               } else {
                 // Убираем вес если его нет для нового количества повторений
-                const { weight, ...dataWithoutWeight } = ex.exerciseData;
+                const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
                 updated.exerciseData = dataWithoutWeight;
               }
             }
@@ -644,13 +664,14 @@ export default function CreateWorkout() {
           const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps);
           
           if (weightForNewReps) {
+            const { weightFromStar, ...dataWithoutStar } = exercise.exerciseData;
             updated.exerciseData = {
-              ...exercise.exerciseData,
+              ...dataWithoutStar,
               weight: weightForNewReps
             };
           } else {
             // Убираем вес если его нет для нового количества повторений
-            const { weight, ...dataWithoutWeight } = exercise.exerciseData;
+            const { weight, weightFromStar, ...dataWithoutWeight } = exercise.exerciseData;
             updated.exerciseData = dataWithoutWeight;
           }
         }
@@ -810,13 +831,13 @@ export default function CreateWorkout() {
       return;
     }
 
-    // Получаем вес из колонки "* X"
-    if (!targetExercise.exerciseData || !targetExercise.exerciseData[starColumn.id]) {
-      showNotification(`Вес не найден в колонке "${starColumnName}" для упражнения "${targetExercise.name}"`, "error");
-      return;
-    }
-
-    const weightFromColumn = targetExercise.exerciseData[starColumn.id];
+    // Берем данные из базы клиента (актуальные) с fallback на данные упражнения
+    const baseExercise = exercises.find(ex => ex.exercise_id === targetExercise.exercise_id);
+    const sourceData = baseExercise?.data || targetExercise.exerciseData;
+    const weightFromColumn =
+      sourceData?.[starColumn.id] ??
+      sourceData?.[String(starColumn.id)] ??
+      sourceData?.[starColumn.name];
     
     if (!weightFromColumn || weightFromColumn === '' || weightFromColumn === '—') {
       showNotification(`Вес не найден в колонке "${starColumnName}" для упражнения "${targetExercise.name}"`, "error");
@@ -830,7 +851,8 @@ export default function CreateWorkout() {
           ...exercise,
           exerciseData: {
             ...exercise.exerciseData,
-            weight: weightFromColumn
+            weight: weightFromColumn,
+            weightFromStar: true
           },
           isFromStarColumn: true // Флаг что вес взят из колонки "*"
         };
@@ -851,7 +873,7 @@ export default function CreateWorkout() {
 
     setWorkout({ ...workout, weeks: updatedWeeks });
     showNotification(`Вес ${weightFromColumn} кг подставлен для упражнения "${targetExercise.name}" из колонки "${starColumnName}"`, "success");
-  }, [workout, selectedWeek, selectedDay, columns, lastAddedExerciseId, showNotification, t]);
+  }, [workout, selectedWeek, selectedDay, columns, lastAddedExerciseId, exercises, showNotification, t]);
 
   return (
     <div className={styles.workoutCreator}>

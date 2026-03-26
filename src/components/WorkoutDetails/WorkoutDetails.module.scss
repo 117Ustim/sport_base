@@ -273,6 +273,12 @@ height: 40px;
   white-space: nowrap;
 }
 
+.starWeightMark {
+  margin-left: 4px;
+  color: var(--accent-warning);
+  font-weight: 700;
+}
+
 .saveButtonContainer {
   display: flex;
   justify-content: center;
