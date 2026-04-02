@@ -158,3 +158,88 @@
   position: relative;
   z-index: 1;
 }
+
+.contentLayout {
+  width: 100%;
+}
+
+.gymsBar {
+  width: 100%;
+  margin-bottom: 14px;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px var(--shadow-color);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gymsButtons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+.gymsTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 2px 4px;
+}
+
+button.gymButton {
+  min-width: 130px;
+  min-height: 38px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-feature);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: none !important;
+  text-align: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    background: var(--bg-feature-hover);
+    border-color: var(--border-color-strong);
+    box-shadow: none !important;
+  }
+
+  &:focus,
+  &:active {
+    box-shadow: none !important;
+  }
+}
+
+button.gymButtonActive {
+  background: var(--button-primary);
+  color: var(--text-on-accent);
+  border-color: transparent;
+  box-shadow: none !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .gymsButtons {
+    gap: 8px;
+  }
+  
+  button.gymButton {
+    min-width: 110px;
+  }
+}

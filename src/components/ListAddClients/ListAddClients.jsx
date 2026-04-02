@@ -1,7 +1,5 @@
 import { useNavigate } from 'react-router';
-import { useEffect, useState } from 'react';
-import Pagination from '@mui/material/Pagination';
-import Stack from '@mui/material/Stack';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clientsService } from '../../firebase/services';
 import styles from './ListAddClients.module.scss';
@@ -12,7 +10,6 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
 
   const [serverContacts, setServerContacts] = useState([]);
   const [page, setPage] = useState(1);
-  const [pageQty, setPageQty] = useState(0);
   const [limit] = useState(10);
 
   const onButtonPlanClient = (id, surname, name) => {
@@ -21,11 +18,14 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
 
   useEffect(() => {
     const gym = search.gym;
+    const gymId = search.gymId;
     const sex = search.sex;
     
-    const searchParams = { page: page - 1, limit: limit };
+    const searchParams = { limit: 1000 };
     
-    if (gym) {
+    if (gymId) {
+      searchParams.gymId = gymId;
+    } else if (gym) {
       searchParams.gym = gym;
     }
     if (sex) {
@@ -38,23 +38,45 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
     if (!openDrawer.right) {
       clientsService.getAll(searchParams).then((response) => {
         console.log('Response from clientsService:', response);
-        setServerContacts(response.data);
-        setPageQty(Math.ceil(response.total / limit));
+        setServerContacts(response.data || []);
       });
     }
-  }, [openDrawer, page, limit, search, refreshTrigger]); // Добавили refreshTrigger
+  }, [openDrawer, search, refreshTrigger]); // Добавили refreshTrigger
   
   useEffect(() => {
     setPage(1);
-  }, [search.gym, search.sex]);
+  }, [search.gym, search.gymId, search.sex]);
+
+  const filteredContacts = useMemo(() => {
+    const normalizedContacts = serverContacts.filter(
+      (contact) => contact.data !== null && contact.data?.isActive !== false
+    );
+
+    return normalizedContacts.sort((a, b) => {
+      const aSurname = (a.data?.surname || '').toLowerCase();
+      const bSurname = (b.data?.surname || '').toLowerCase();
+      return aSurname.localeCompare(bSurname, 'uk');
+    });
+  }, [serverContacts]);
+
+  const pageQty = Math.ceil(filteredContacts.length / limit);
+  const paginatedContacts = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredContacts.slice(start, start + limit);
+  }, [filteredContacts, page, limit]);
+
+  useEffect(() => {
+    if (pageQty > 0 && page > pageQty) {
+      setPage(pageQty);
+    }
+  }, [pageQty, page]);
 
   return (
     <div className={styles.listAddClients}>
       <div className={styles.clientList}>
         <div className={styles.features}>
           <div className={styles.fieldset}>
-            {serverContacts
-              .filter(contact => contact.data !== null)
+            {paginatedContacts
               .map((contact, index) => (
                 <div key={contact.id} className={styles.feature}>
                   <div className={styles.featureContent}>
@@ -88,20 +110,26 @@ export default function ListAddClients({ openDrawer, search, refreshTrigger }) {
           </div>
         </div>
 
-        <Stack spacing={2}>
-          {!!pageQty && pageQty > 1 && (
-            <Pagination
-              size='small'
-              count={pageQty}
-              page={page}
-              onChange={(_, num) => {
-                setPage(num);
-              }}
-              variant='outlined'
-              shape='rounded'
-            />
-          )}
-        </Stack>
+        {filteredContacts.length > limit && pageQty > 1 && (
+          <div className={styles.pagination}>
+            {Array.from({ length: pageQty }, (_, index) => {
+              const pageNumber = index + 1;
+              const isActive = pageNumber === page;
+
+              return (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  className={`${styles.pageButton} ${isActive ? styles.pageButtonActive : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={() => setPage(pageNumber)}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

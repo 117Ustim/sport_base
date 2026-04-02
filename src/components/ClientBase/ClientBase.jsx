@@ -3,7 +3,7 @@ import BackButton from "../BackButton";
 import BaseExercisesOut from "./BaseExercisesOut";
 import { NUMBER_TIMES } from '../../constants';
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -31,6 +31,7 @@ export default function ClientBase() {
   const { t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [exercisesArray, setExercisesArray] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -132,6 +133,12 @@ export default function ClientBase() {
   };
 
   const backPlanClient = () => {
+    const returnTo = location.state?.returnTo;
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+
     // Переход на страницу плана клиента (нужно передать id и name)
     // Используем clientName если есть, иначе пустую строку
     const encodedName = encodeURIComponent(clientName || 'Client');
@@ -473,9 +480,10 @@ export default function ClientBase() {
 
     setIsSavingOrder(true);
     try {
-      const dbCategories = categories.map((cat, index) => ({
+      const dbCategories = categories.map((cat) => ({
         id: cat.id,
-        order: index
+        order: cat.order ?? 0,
+        column: cat.column ?? 0
       }));
       await categoriesService.updateOrder(dbCategories);
       setHasCategoryOrderChanges(false);

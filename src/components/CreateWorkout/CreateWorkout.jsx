@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
@@ -16,11 +16,13 @@ import DaySelector from './components/DaySelector';
 import WeekSelector from './components/WeekSelector';
 import ExercisesList from './components/ExercisesList';
 import ExercisesPanel from './components/ExercisesPanel';
+import { DAYS_OF_WEEK } from './constants';
 import styles from './CreateWorkout.module.scss';
 
 export default function CreateWorkout() {
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
   const { t } = useTranslation();
 
   const [exercises, setExercises] = useState([]);
@@ -39,6 +41,45 @@ export default function CreateWorkout() {
   const { executeOptimistic } = useOptimisticUpdate();
 
   const isEditMode = params.workoutId !== undefined;
+  const initialTrainingNameFromRoute = location.state?.initialTrainingName;
+  const editDraftStorageKey = isEditMode ? `editWorkoutDraft:${params.id}:${params.workoutId}` : null;
+
+  const createEmptyWorkout = useCallback((name) => ({
+    id: Date.now(),
+    name,
+    clientId: params.id,
+    weeks: [{
+      weekNumber: 1,
+      days: {
+        monday: { exercises: [] },
+        tuesday: { exercises: [] },
+        wednesday: { exercises: [] },
+        thursday: { exercises: [] },
+        friday: { exercises: [] },
+        saturday: { exercises: [] },
+        sunday: { exercises: [] }
+      }
+    }]
+  }), [params.id]);
+
+  const readEditDraft = useCallback(() => {
+    if (!isEditMode || !editDraftStorageKey) return null;
+
+    try {
+      const rawDraft = sessionStorage.getItem(editDraftStorageKey);
+      if (!rawDraft) return null;
+      const parsedDraft = JSON.parse(rawDraft);
+
+      if (!parsedDraft || typeof parsedDraft !== 'object' || !parsedDraft.workout) {
+        return null;
+      }
+
+      return parsedDraft;
+    } catch (error) {
+      console.error('Failed to parse edit workout draft:', error);
+      return null;
+    }
+  }, [isEditMode, editDraftStorageKey]);
 
   // 🔥 Функция для получения веса из client_base по exercise_id и количеству повторений
   const getWeightFromBase = useCallback((exerciseId, numberTimes) => {
@@ -91,6 +132,15 @@ export default function CreateWorkout() {
         setColumns(metadata.columns || []); // Сохраняем колонки
 
         if (isEditMode) {
+          const existingDraft = readEditDraft();
+          if (existingDraft) {
+            setWorkout(existingDraft.workout);
+            setSelectedWeek(typeof existingDraft.selectedWeek === 'number' ? existingDraft.selectedWeek : 0);
+            setSelectedDay(typeof existingDraft.selectedDay === 'string' ? existingDraft.selectedDay : 'monday');
+            setAddMode(existingDraft.addMode === 'group' ? 'group' : 'single');
+            return;
+          }
+
           const data = await workoutsService.getById(params.workoutId);
           
           if (!isActive) return;
@@ -166,15 +216,52 @@ export default function CreateWorkout() {
     return () => {
       isActive = false;
     };
-  }, [params.id, params.workoutId, isEditMode]); // ✅ Убрали showNotification и t из зависимостей
+  }, [params.id, params.workoutId, isEditMode, readEditDraft]); // ✅ Убрали showNotification и t из зависимостей
+
+  useEffect(() => {
+    if (isEditMode || workout) return;
+
+    const trimmedName = typeof initialTrainingNameFromRoute === 'string'
+      ? initialTrainingNameFromRoute.trim()
+      : '';
+
+    if (!trimmedName) return;
+
+    setWorkout(createEmptyWorkout(trimmedName));
+    setSelectedWeek(0);
+    setSelectedDay('monday');
+  }, [isEditMode, workout, initialTrainingNameFromRoute, createEmptyWorkout]);
+
+  useEffect(() => {
+    if (!isEditMode || !editDraftStorageKey || !workout) return;
+
+    try {
+      const draftPayload = {
+        workout,
+        selectedWeek,
+        selectedDay,
+        addMode
+      };
+
+      sessionStorage.setItem(editDraftStorageKey, JSON.stringify(draftPayload));
+    } catch (error) {
+      console.error('Failed to save edit workout draft:', error);
+    }
+  }, [isEditMode, editDraftStorageKey, workout, selectedWeek, selectedDay, addMode]);
 
   const onButtonBack = () => {
+    if (isEditMode) {
+      navigate(`/plan_client/${params.id}/client`);
+      return;
+    }
     navigate(-1);
   };
 
   const onGoToClientBase = () => {
     // Переход в client_base данного клиента
-    navigate(`/client_base/${params.id}`);
+    navigate(`/client_base/${params.id}`, {
+      state: { returnTo: location.pathname }
+    });
   };
 
   const onOpenModal = () => {
@@ -193,31 +280,22 @@ export default function CreateWorkout() {
       return;
     }
 
-    const newWorkout = {
-      id: Date.now(),
-      name: newTrainingName,
-      clientId: params.id,
-      weeks: [{
-        weekNumber: 1,
-        days: {
-          monday: { exercises: [] },
-          tuesday: { exercises: [] },
-          wednesday: { exercises: [] },
-          thursday: { exercises: [] },
-          friday: { exercises: [] },
-          saturday: { exercises: [] },
-          sunday: { exercises: [] }
-        }
-      }]
-    };
+    const newWorkout = createEmptyWorkout(newTrainingName.trim());
 
     setWorkout(newWorkout);
     setSelectedWeek(0);
+    setSelectedDay('monday');
     onCloseModal();
   };
 
   const onAddWeek = () => {
     if (!workout) return;
+    
+    const previousWeek = workout.weeks[workout.weeks.length - 1];
+    const firstPlannedDay = DAYS_OF_WEEK.find((day) => {
+      const dayExercises = previousWeek?.days?.[day.key]?.exercises || [];
+      return dayExercises.length > 0;
+    })?.key || 'monday';
 
     const newWeekNumber = workout.weeks.length + 1;
     const newWeek = {
@@ -240,6 +318,7 @@ export default function CreateWorkout() {
 
     setWorkout(updatedWorkout);
     setSelectedWeek(workout.weeks.length);
+    setSelectedDay(firstPlannedDay);
   };
 
   const onDeleteWeek = (weekIndex) => {
@@ -431,6 +510,10 @@ export default function CreateWorkout() {
       },
       // 4. При успехе переходим назад
       onSuccess: () => {
+        if (isEditMode && editDraftStorageKey) {
+          sessionStorage.removeItem(editDraftStorageKey);
+        }
+
         setTimeout(() => {
           navigate(-1);
         }, 1500);

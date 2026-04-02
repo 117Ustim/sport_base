@@ -44,7 +44,7 @@ export const clientsService = {
       let constraints = [orderBy('profile.surname', 'asc')];
       
       // Фильтр по залу
-      if (filters.gym) {
+      if (filters.gym && !filters.gymId) {
         console.log('Adding gym filter:', filters.gym);
         constraints.unshift(where('profile.gymName', '==', filters.gym));
       }
@@ -67,7 +67,7 @@ export const clientsService = {
       console.log('Query result count:', snapshot.docs.length);
       
       // Преобразуем в формат который ожидает приложение
-      const formattedClients = snapshot.docs.map(doc => {
+      let formattedClients = snapshot.docs.map(doc => {
         const data = doc.data();
         const profile = data.profile || {};
         
@@ -77,7 +77,7 @@ export const clientsService = {
             name: profile.name || '',
             surname: profile.surname || '',
             phone: profile.phone || '',
-            gym: profile.gymName || '',
+            gym: (profile.gymName || '').trim(),
             gymId: profile.gymId || '',
             sex: profile.sex || '',
             address: profile.address || '',
@@ -87,10 +87,31 @@ export const clientsService = {
             capacity: profile.capacity || 0,
             attented: profile.attented || 0,
             userId: profile.userId || '',
-            email: profile.email || ''
+            email: profile.email || '',
+            isActive: profile.isActive !== false
           }
         };
       });
+
+      // Устойчивый фильтр по залу: сначала по gymId, затем fallback по названию (для старых данных)
+      if (filters.gymId) {
+        const targetGymId = String(filters.gymId).trim();
+        const targetGymName = String(filters.gym || '').trim().toLowerCase();
+        formattedClients = formattedClients.filter((client) => {
+          const clientGymId = String(client.data?.gymId || '').trim();
+          const clientGymName = String(client.data?.gym || '').trim().toLowerCase();
+
+          if (clientGymId) {
+            return clientGymId === targetGymId;
+          }
+
+          if (targetGymName) {
+            return clientGymName === targetGymName;
+          }
+
+          return false;
+        });
+      }
 
       return {
         total: formattedClients.length,
@@ -128,7 +149,8 @@ export const clientsService = {
             capacity: profile.capacity || 0,
             attented: profile.attented || 0,
             userId: profile.userId || '',
-            email: profile.email || ''
+            email: profile.email || '',
+            isActive: profile.isActive !== false
           }
         };
       }
@@ -191,6 +213,8 @@ export const clientsService = {
   // ✅ ИСПРАВЛЕНО: Используем updateDoc вместо read-modify-write (нет race condition)
   async update(id, clientData) {
     try {
+      console.log('clientsService.update called:', { id, gym: clientData?.gym, gymId: clientData?.gymId });
+      
       // ✅ SECURITY FIX: Валидация данных перед обновлением
       const validation = validateClientData(clientData);
       if (!validation.isValid) {
@@ -217,6 +241,7 @@ export const clientsService = {
         'profile.weight': sanitizedData.weight,
         'profile.updatedAt': new Date().toISOString()
       });
+      console.log('clientsService.update success:', { id, gym: sanitizedData.gym, gymId: sanitizedData.gymId });
       
       return { id, data: clientData };
     } catch (error) {

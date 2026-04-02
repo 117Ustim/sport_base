@@ -324,6 +324,18 @@ describe('categoriesService', () => {
       expect(BaseService.prototype.update).not.toHaveBeenCalled();
     });
 
+    it('should not send undefined column to firestore', async () => {
+      const categories = [
+        { id: '1', order: 2 },
+      ];
+
+      BaseService.prototype.update = jest.fn().mockResolvedValue();
+
+      await categoriesService.updateOrder(categories);
+
+      expect(BaseService.prototype.update).toHaveBeenCalledWith('1', { order: 2 });
+    });
+
     it('should handle errors', async () => {
       const categories = [{ id: '1', order: 0, column: 0 }];
 

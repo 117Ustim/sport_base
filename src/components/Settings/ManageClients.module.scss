@@ -173,6 +173,18 @@
   }
 }
 
+.itemInactive {
+  background: color-mix(in srgb, var(--bg-surface) 58%, #7f8f9f 42%);
+  border-color: color-mix(in srgb, var(--border-color) 60%, #8ea3b7 40%);
+  box-shadow: 0 3px 12px var(--shadow-color);
+  filter: saturate(0.62) brightness(0.88);
+
+  &:hover {
+    background: color-mix(in srgb, var(--bg-surface-hover) 62%, #8192a4 38%);
+    box-shadow: 0 5px 14px var(--shadow-color);
+  }
+}
+
 .itemContent {
   flex: 1;
   display: flex;
@@ -181,10 +193,32 @@
   gap: 15px;
 }
 
+.itemNameGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .itemName {
   font-size: 16px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+.inactiveBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  background: color-mix(in srgb, var(--button-danger) 28%, #8fa1b4 72%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 50%, #95abc0 50%);
+  color: color-mix(in srgb, var(--text-on-accent) 82%, #d6e0ea 18%);
+  white-space: nowrap;
 }
 
 .itemGym {

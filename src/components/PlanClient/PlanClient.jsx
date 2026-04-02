@@ -8,6 +8,7 @@ import { useOptimisticUpdate } from '../../hooks';
 import { useTranslation } from 'react-i18next';
 import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog';
+import WorkoutModal from '../CreateWorkout/components/WorkoutModal';
 import styles from './PlanClient.module.scss';
 import React from 'react';
 
@@ -25,6 +26,8 @@ export default function PlanClient() {
   const [isClientsLoading, setIsClientsLoading] = useState(false);
   const [transferWorkout, setTransferWorkout] = useState(null);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [isCreateWorkoutModalOpen, setIsCreateWorkoutModalOpen] = useState(false);
+  const [newWorkoutName, setNewWorkoutName] = useState('');
   const { notification, showNotification } = useNotification();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { executeOptimistic } = useOptimisticUpdate();
@@ -78,7 +81,26 @@ export default function PlanClient() {
   };
 
   const onButtonAddTraining = () => {
-    navigate(`/create_workout/${params.id}`);
+    setIsCreateWorkoutModalOpen(true);
+    setNewWorkoutName('');
+  };
+
+  const onCloseCreateWorkoutModal = () => {
+    setIsCreateWorkoutModalOpen(false);
+    setNewWorkoutName('');
+  };
+
+  const onCreateWorkoutFromModal = () => {
+    const trimmedName = newWorkoutName.trim();
+    if (!trimmedName) {
+      showNotification(t('createWorkout.newTrainingName'), 'error');
+      return;
+    }
+
+    onCloseCreateWorkoutModal();
+    navigate(`/create_workout/${params.id}`, {
+      state: { initialTrainingName: trimmedName }
+    });
   };
 
   const onWorkoutClick = (workoutId) => {
@@ -369,6 +391,13 @@ export default function PlanClient() {
         message={confirmDialog.message}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+      />
+      <WorkoutModal
+        isOpen={isCreateWorkoutModalOpen}
+        trainingName={newWorkoutName}
+        onNameChange={setNewWorkoutName}
+        onCreate={onCreateWorkoutFromModal}
+        onClose={onCloseCreateWorkoutModal}
       />
       {isTransferModalOpen && (
         <div className={styles.transferModal} onClick={closeTransferModal}>

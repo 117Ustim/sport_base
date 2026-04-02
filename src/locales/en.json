@@ -100,7 +100,8 @@
     "surname": "Surname",
     "name": "Name",
     "phone": "Phone",
-    "notSpecified": "Not specified"
+    "notSpecified": "Not specified",
+    "inactive": "Inactive"
   },
   "auth": {
     "login": "Login",

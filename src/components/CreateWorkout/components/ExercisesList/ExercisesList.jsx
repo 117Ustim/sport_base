@@ -42,6 +42,8 @@ export default function ExercisesList({
 
   const hasAnyExercises = Object.values(workout.weeks[selectedWeek]?.days || {})
     .some(day => day.exercises && day.exercises.length > 0);
+  const selectedDayExercises = workout.weeks[selectedWeek]?.days[selectedDay]?.exercises || [];
+  const hasSelectedDayExercises = selectedDayExercises.length > 0;
 
   return (
     <div className={styles.selectedDayExercises}>
@@ -132,7 +134,7 @@ export default function ExercisesList({
         </div>
       )}
       
-      {DAYS_OF_WEEK.map((day) => {
+      {hasSelectedDayExercises && DAYS_OF_WEEK.map((day) => {
         const dayExercises = workout.weeks[selectedWeek]?.days[day.key]?.exercises || [];
         
         if (dayExercises.length === 0) return null;

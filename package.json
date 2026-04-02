@@ -39,6 +39,8 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
+    "security:check-supply-chain": "node scripts/security/check-supply-chain.js",
+    "security:check-supply-chain:enforce": "node scripts/security/check-supply-chain.js --enforce",
     "eject": "react-scripts eject",
     "backup": "node scripts/backup-firestore.js",
     "restore": "node scripts/restore-firestore.js",

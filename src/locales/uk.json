@@ -102,7 +102,8 @@
     "surname": "Прізвище",
     "name": "Ім'я",
     "phone": "Телефон",
-    "notSpecified": "Не вказано"
+    "notSpecified": "Не вказано",
+    "inactive": "Не активний"
   },
   "auth": {
     "login": "Вхід",

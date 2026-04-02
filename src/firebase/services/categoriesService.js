@@ -141,11 +141,16 @@ class CategoriesService extends BaseService {
   async updateOrder(categories) {
     try {
       // Обновляем порядок и колонку для каждой категории
-      const updatePromises = categories.map((category) => {
-        return super.update(category.id, { 
-          order: category.order,
-          column: category.column 
-        });
+      const updatePromises = categories.map((category, index) => {
+        const updateData = {
+          order: category.order !== undefined ? category.order : index
+        };
+
+        if (category.column !== undefined) {
+          updateData.column = category.column;
+        }
+
+        return super.update(category.id, updateData);
       });
       
       await Promise.all(updatePromises);

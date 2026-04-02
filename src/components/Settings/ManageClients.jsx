@@ -9,6 +9,8 @@ import { EMPTY_CLIENT } from '../../constants';
 import ConfirmDialog from '../ConfirmDialog';
 import BackButton from '../BackButton';
 import SkeletonLoader from '../SkeletonLoader';
+import Notification from '../Notification';
+import { useNotification } from '../../hooks/useNotification';
 import styles from './ManageClients.module.scss';
 
 export default function ManageClients() {
@@ -25,6 +27,7 @@ export default function ManageClients() {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { executeOptimistic } = useOptimisticUpdate();
+  const { notification, showNotification } = useNotification();
 
   useEffect(() => {
     loadClients();
@@ -146,13 +149,23 @@ export default function ManageClients() {
 
   const onSaveClient = async () => {
     if (!editingClient) return;
+    
+    const normalizedGymName = (editingClient.data?.gym || '').trim();
+    const selectedGymById = gyms.find((gym) => gym.id === editingClient.data?.gymId);
+    const selectedGymByName = gyms.find((gym) => gym.name.trim() === normalizedGymName);
+    const selectedGym = selectedGymById || selectedGymByName;
+    const normalizedClientData = {
+      ...editingClient.data,
+      gym: selectedGym ? selectedGym.name : normalizedGymName,
+      gymId: selectedGym ? selectedGym.id : ''
+    };
 
     if (isAddingNew) {
       // Создание нового клиента
       const tempId = `temp_${Date.now()}`; // Временный ID для optimistic update
       const newClient = {
         id: tempId,
-        data: editingClient.data
+        data: normalizedClientData
       };
 
       await executeOptimistic({
@@ -164,7 +177,7 @@ export default function ManageClients() {
           setIsAddingNew(false);
         },
         // 2. Реальный API запрос
-        apiCall: () => clientsService.create(editingClient.data),
+        apiCall: () => clientsService.create(normalizedClientData),
         // 3. Откат при ошибке
         rollback: () => {
           setClients(prev => prev.filter(c => c.id !== tempId));
@@ -172,38 +185,32 @@ export default function ManageClients() {
         },
         // 4. При успехе заменяем временный ID на реальный
         onSuccess: () => {
+          showNotification(t('notifications.savedSuccess'), 'success');
           loadClients(); // Перезагружаем для получения реального ID
         },
         onError: (error) => {
           console.error('Error creating client:', error);
+          showNotification(t('notifications.saveError'), 'error');
         }
       });
     } else {
-      // Редактирование существующего клиента
-      const previousClients = [...clients];
-
-      await executeOptimistic({
-        // 1. Мгновенно обновляем в UI
-        optimisticUpdate: () => {
-          setClients(prev => prev.map(c => 
-            c.id === editingClient.id 
-              ? { ...c, data: editingClient.data }
-              : c
-          ));
-          setShowModal(false);
-          setEditingClient(null);
-        },
-        // 2. Реальный API запрос
-        apiCall: () => clientsService.update(editingClient.id, editingClient.data),
-        // 3. Откат при ошибке
-        rollback: () => {
-          setClients(previousClients);
-          setShowModal(true);
-        },
-        onError: (error) => {
-          console.error('Error updating client:', error);
-        }
-      });
+      // Редактирование существующего клиента (без optimistic, чтобы исключить тихие откаты)
+      try {
+        await clientsService.update(editingClient.id, normalizedClientData);
+        
+        setClients(prev => prev.map(c =>
+          c.id === editingClient.id
+            ? { ...c, data: normalizedClientData }
+            : c
+        ));
+        setShowModal(false);
+        setEditingClient(null);
+        showNotification(t('notifications.savedSuccess'), 'success');
+        loadClients();
+      } catch (error) {
+        console.error('Error updating client:', error);
+        showNotification(`${t('notifications.saveError')} ${error?.message || ''}`.trim(), 'error');
+      }
     }
   };
 
@@ -236,8 +243,19 @@ export default function ManageClients() {
     return cleaned;
   };
 
+  const getSelectedGymId = (clientData = {}) => {
+    if (clientData.gymId && gyms.some((gym) => gym.id === clientData.gymId)) {
+      return clientData.gymId;
+    }
+
+    const normalizedGymName = (clientData.gym || '').trim();
+    const gymByName = gyms.find((gym) => gym.name.trim() === normalizedGymName);
+    return gymByName?.id || '';
+  };
+
   return (
     <div className={styles.manageClients}>
+      <Notification notification={notification} />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         message={confirmDialog.message}
@@ -278,12 +296,17 @@ export default function ManageClients() {
           paginatedClients.map((client) => (
             <div 
               key={client.id} 
-              className={styles.item}
+              className={`${styles.item} ${client.data?.isActive === false ? styles.itemInactive : ''}`}
               onClick={() => onEditClient(client)}
             >
               <div className={styles.itemContent}>
-                <div className={styles.itemName}>
-                  {client.data?.surname || ''} {client.data?.name || ''}
+                <div className={styles.itemNameGroup}>
+                  <div className={styles.itemName}>
+                    {client.data?.surname || ''} {client.data?.name || ''}
+                  </div>
+                  {client.data?.isActive === false && (
+                    <span className={styles.inactiveBadge}>{t('manageClients.inactive')}</span>
+                  )}
                 </div>
                 <div className={styles.itemGym}>
                   {client.data?.gym || t('manageClients.notSpecified')}
@@ -354,13 +377,24 @@ export default function ManageClients() {
                 <option value='Жiноча'>{t('home.female')}</option>
               </select>
               <select
-                value={editingClient.data.gym || ''}
-                onChange={(e) => onModalChange('gym', e.target.value)}
+                value={getSelectedGymId(editingClient.data)}
+                onChange={(e) => {
+                  const selectedGymId = e.target.value;
+                  const selectedGym = gyms.find((gym) => gym.id === selectedGymId);
+                  setEditingClient((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      gym: selectedGym?.name || '',
+                      gymId: selectedGymId
+                    }
+                  }));
+                }}
                 className={styles.formInput}
               >
                 <option value=''>{t('home.gym')}</option>
                 {gyms.map((gym) => (
-                  <option key={gym.id} value={gym.name}>
+                  <option key={gym.id} value={gym.id}>
                     {gym.name}
                   </option>
                 ))}
