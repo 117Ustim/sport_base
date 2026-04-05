@@ -104,6 +104,14 @@
   }
 }
 
+.aerobicRepsButton {
+  background: #0ea5a4;
+
+  &:hover {
+    background: #0b8c8b;
+  }
+}
+
 .dayExercisesSection {
   margin-bottom: 30px;
 }

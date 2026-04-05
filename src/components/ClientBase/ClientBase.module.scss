@@ -302,6 +302,33 @@
   }
 }
 
+.columnRepsInput {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 25px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 16px var(--shadow-color);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--shadow-color-strong);
+    background: var(--bg-input);
+    border-color: var(--border-color-strong);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
 .sidebarButtons button.saveCategoryBtn {
   background: var(--button-danger);
 }

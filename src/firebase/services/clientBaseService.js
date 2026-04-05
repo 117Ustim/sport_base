@@ -128,11 +128,14 @@ export const clientBaseService = {
         // Очищаем данные от пустых значений
         const cleanedData = cleanExerciseData(exercise.data);
         
+        // Важно: перезаписываем документ полностью (без merge),
+        // чтобы удалённые значения в data действительно удалялись в Firestore.
         await setDoc(exerciseRef, {
           name: exercise.name,
           categoryId: exercise.category_id,
-          data: cleanedData
-        }, { merge: true });
+          data: cleanedData,
+          order: exercise.order !== undefined ? exercise.order : 999999
+        });
       }
       
       // Сохраняем метаданные (колонки)

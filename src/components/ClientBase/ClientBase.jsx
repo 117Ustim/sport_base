@@ -27,6 +27,11 @@ import ConfirmDialog from '../ConfirmDialog';
 import styles from './ClientBase.module.scss';
 import { useTranslation } from 'react-i18next';
 
+const LETTER_COLUMN_REGEX = /^[A-Za-zА-Яа-яЁёІіЇїЄєҐґ]+$/;
+
+const isNumericColumnName = (name) => /^\d+$/.test(String(name || '').trim());
+const isLetterColumnName = (name) => LETTER_COLUMN_REGEX.test(String(name || '').trim());
+
 export default function ClientBase() {
   const { t } = useTranslation();
   const params = useParams();
@@ -37,6 +42,7 @@ export default function ClientBase() {
   const [categories, setCategories] = useState([]);
   const [columns, setColumns] = useState([]);
   const [newColumnName, setNewColumnName] = useState('');
+  const [newColumnReps, setNewColumnReps] = useState('');
   const [deleteMode, setDeleteMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [clientName, setClientName] = useState('');
@@ -50,6 +56,8 @@ export default function ClientBase() {
   
   const exercisesRef = useRef(exercisesArray);
   const columnsRef = useRef(columns);
+  const trimmedNewColumnName = newColumnName.trim();
+  const isLetterColumnDraft = isLetterColumnName(trimmedNewColumnName);
   
   useEffect(() => {
     exercisesRef.current = exercisesArray;
@@ -152,6 +160,8 @@ export default function ClientBase() {
   const closeEditModal = () => {
     setShowEditModal(false);
     setDeleteMode(false);
+    setNewColumnName('');
+    setNewColumnReps('');
   };
 
   const editExercises = () => {
@@ -216,28 +226,39 @@ export default function ClientBase() {
 
   const addColumn = () => {
     const columnName = newColumnName.trim() || String(columns.length + 1);
-    const newColumnId = columns.length > 0 ? Math.max(...columns.map(c => c.id)) + 1 : 0;
+    const isNumericColumn = isNumericColumnName(columnName);
+    const isLetterColumn = isLetterColumnName(columnName);
+    const normalizedColumnName = isLetterColumn ? columnName.toUpperCase() : columnName;
+
+    let targetReps;
+
+    if (isLetterColumn) {
+      const parsedReps = parseInt(newColumnReps, 10);
+      if (!Number.isFinite(parsedReps) || parsedReps <= 0) {
+        showNotification(t('clientBase.enterRepsForLetterColumn'), 'error');
+        return;
+      }
+      targetReps = parsedReps;
+    }
+
+    const newColumnId = columns.length > 0 ? Math.max(...columns.map(c => Number(c.id) || 0)) + 1 : 0;
     const newColumn = {
       id: newColumnId,
-      name: columnName
+      name: normalizedColumnName,
+      ...(isLetterColumn ? { targetReps } : {})
     };
-    
-    // Определяем, является ли название колонки числом
-    const isNumericColumn = !isNaN(parseInt(columnName));
     
     let updatedColumns;
     
     if (isNumericColumn) {
       // Если колонка с числовым названием - вставляем в правильное место
-      const numericValue = parseInt(columnName);
-      
       // Разделяем колонки на числовые и нечисловые
-      const numericColumns = columns.filter(col => !isNaN(parseInt(col.name)));
-      const nonNumericColumns = columns.filter(col => isNaN(parseInt(col.name)));
+      const numericColumns = columns.filter(col => isNumericColumnName(col.name));
+      const nonNumericColumns = columns.filter(col => !isNumericColumnName(col.name));
       
       // Добавляем новую колонку к числовым и сортируем
       const updatedNumericColumns = [...numericColumns, newColumn].sort((a, b) => {
-        return parseInt(a.name) - parseInt(b.name);
+        return Number(a.name) - Number(b.name);
       });
       
       // Объединяем: сначала числовые (отсортированные), потом нечисловые
@@ -259,8 +280,9 @@ export default function ClientBase() {
     
     setExercisesArray(updatedExercises);
     setNewColumnName('');
+    setNewColumnReps('');
     setHasUnsavedChanges(true);
-    showNotification(t('clientBase.columnAdded', { name: columnName }), 'success');
+    showNotification(t('clientBase.columnAdded', { name: normalizedColumnName }), 'success');
   };
 
   const toggleDeleteMode = () => {
@@ -320,11 +342,11 @@ export default function ClientBase() {
     if (previousWeight !== newWeight && params.id) {
       try {
         // Находим название колонки (количество повторений)
-        const column = columns.find(col => col.id === key);
-        const reps = column ? parseInt(column.name) || 0 : 0;
-        
-        // Находим категорию упражнения
-        const category = categories.find(cat => cat.id === temp.category_id);
+        const column = columns.find(col => String(col.id) === String(key));
+        const parsedColumnReps = parseInt(column?.name, 10);
+        const reps = Number.isFinite(Number(column?.targetReps))
+          ? Number(column.targetReps)
+          : (Number.isFinite(parsedColumnReps) ? parsedColumnReps : 0);
         
         await exerciseHistoryService.addHistoryEntry({
           clientId: params.id,
@@ -582,6 +604,16 @@ export default function ClientBase() {
                 onChange={(e) => setNewColumnName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addColumn()}
               />
+              {isLetterColumnDraft && (
+                <input
+                  type="text"
+                  className={styles.columnRepsInput}
+                  placeholder={t('clientBase.letterColumnRepsPlaceholder')}
+                  value={newColumnReps}
+                  onChange={(e) => setNewColumnReps(e.target.value.replace(/[^\d]/g, ''))}
+                  onKeyPress={(e) => e.key === 'Enter' && addColumn()}
+                />
+              )}
               <button onClick={addColumn}>+ {t('common.addColumn')}</button>
             </div>
             <button 

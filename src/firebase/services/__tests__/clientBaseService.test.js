@@ -255,8 +255,8 @@ describe('clientBaseService', () => {
           name: 'Жим',
           categoryId: 'cat1',
           data: { col1: '100' }, // Empty values removed
-        },
-        { merge: true }
+          order: 999999,
+        }
       );
       expect(result).toBe(true);
     });

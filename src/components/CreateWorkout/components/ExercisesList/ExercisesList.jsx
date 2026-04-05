@@ -16,6 +16,8 @@ import SortableExerciseItem from '../SortableExerciseItem';
 import { DAYS_OF_WEEK } from '../../constants';
 import styles from './ExercisesList.module.scss';
 
+const LETTER_COLUMN_REGEX = /^[A-Za-zА-Яа-яЁёІіЇїЄєҐґ]+$/;
+
 export default function ExercisesList({ 
   workout, 
   selectedWeek, 
@@ -44,6 +46,22 @@ export default function ExercisesList({
     .some(day => day.exercises && day.exercises.length > 0);
   const selectedDayExercises = workout.weeks[selectedWeek]?.days[selectedDay]?.exercises || [];
   const hasSelectedDayExercises = selectedDayExercises.length > 0;
+  const starColumns = columns && columns.length > 0
+    ? columns.filter(col => String(col.name || '').trim().startsWith('* '))
+    : [];
+  const starRepsColumns = starColumns
+    .filter(col => /^\*\s*\d+$/.test(String(col.name || '').trim()))
+    .sort((a, b) => {
+      const aValue = parseInt(String(a.name).trim().replace(/^\*\s*/, ''), 10);
+      const bValue = parseInt(String(b.name).trim().replace(/^\*\s*/, ''), 10);
+      return aValue - bValue;
+    });
+  const letterColumns = columns && columns.length > 0
+    ? columns
+      .filter((col) => LETTER_COLUMN_REGEX.test(String(col.name || '').trim()))
+      .filter((col) => Number.isFinite(Number(col.targetReps)) && Number(col.targetReps) > 0)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+    : [];
 
   return (
     <div className={styles.selectedDayExercises}>
@@ -71,22 +89,31 @@ export default function ExercisesList({
             12
           </button>
           {/* Кнопки "*" для колонок "* X" */}
-          {columns && columns
-            .filter(col => col.name.startsWith('* ') && !isNaN(parseInt(col.name.substring(2))))
-            .map(col => {
-              const reps = parseInt(col.name.substring(2));
-              return (
-                <button 
-                  key={col.id}
-                  className={styles.starRepsButton} 
-                  onClick={() => onStarWeightClick(reps)}
-                  title={`Подставить вес из колонки "${col.name}" для последнего добавленного упражнения`}
-                >
-                  * {reps}
-                </button>
-              );
-            })
-          }
+          {starRepsColumns.map((col) => {
+            const reps = parseInt(String(col.name).trim().replace(/^\*\s*/, ''), 10);
+            return (
+              <button 
+                key={col.id}
+                className={styles.starRepsButton} 
+                onClick={() => onStarWeightClick(reps)}
+                title={`Подставить вес из колонки "${col.name}" для последнего добавленного упражнения`}
+              >
+                * {reps}
+              </button>
+            );
+          })}
+
+          {/* Кнопки для буквенных колонок (A, Б и т.д.) */}
+          {letterColumns.map((col) => (
+            <button
+              key={`letter-${col.id}`}
+              className={`${styles.starRepsButton} ${styles.aerobicRepsButton}`}
+              onClick={() => onStarWeightClick(col.name)}
+              title={`Подставить данные из колонки "${col.name}" для последней завершенной группы или последнего добавленного упражнения (${col.targetReps} повторений)`}
+            >
+              {col.name}
+            </button>
+          ))}
         </div>
       </div>
       
