@@ -40,6 +40,7 @@ export default function CreateWorkout() {
   const [deleteWeekDialog, setDeleteWeekDialog] = useState({ isOpen: false, weekIndex: null });
   const [lastAddedExerciseId, setLastAddedExerciseId] = useState(null); // ID последнего добавленного упражнения
   const [lastAddedGroupId, setLastAddedGroupId] = useState(null); // ID последней завершенной группы
+  const [selectedTarget, setSelectedTarget] = useState(null); // Выбранное упражнение/группа для быстрых кнопок повторений
   const { notification, showNotification } = useNotification();
   const { executeOptimistic } = useOptimisticUpdate();
 
@@ -252,6 +253,10 @@ export default function CreateWorkout() {
     }
   }, [isEditMode, editDraftStorageKey, workout, selectedWeek, selectedDay, addMode]);
 
+  useEffect(() => {
+    setSelectedTarget(null);
+  }, [selectedWeek, selectedDay]);
+
   const onButtonBack = () => {
     if (isEditMode) {
       navigate(`/plan_client/${params.id}/client`);
@@ -426,12 +431,18 @@ export default function CreateWorkout() {
       // 🎯 Сохраняем ID последнего добавленного упражнения
       setLastAddedExerciseId(newExercise.id);
       setLastAddedGroupId(null);
+      setSelectedTarget({
+        id: newExercise.id,
+        type: 'single',
+        dayKey: selectedDay,
+        isDraft: false
+      });
       
       if (isAerobic && addMode === 'group') {
          showNotification(t('createWorkout.aerobicAddedAsSingle'), "info");
       }
     }
-  }, [workout, selectedWeek, selectedDay, addMode, groupDraft, showNotification, t]);
+  }, [workout, selectedWeek, selectedDay, addMode, groupDraft, getWeightFromBase, showNotification, t]);
 
   const onConfirmGroup = () => {
     if (groupDraft.length < 2) {
@@ -463,6 +474,12 @@ export default function CreateWorkout() {
     setGroupDraft([]);
     setLastAddedGroupId(newGroup.id);
     setLastAddedExerciseId(null);
+    setSelectedTarget({
+      id: newGroup.id,
+      type: 'group',
+      dayKey: selectedDay,
+      isDraft: false
+    });
     showNotification(t('createWorkout.groupCreated'), "success");
   };
 
@@ -598,6 +615,13 @@ export default function CreateWorkout() {
   const handleUpdateExercise = useCallback((exerciseId, dayKey, field, value) => {
     // 🎯 При изменении параметров упражнения обновляем lastAddedExerciseId
     setLastAddedExerciseId(exerciseId);
+    setLastAddedGroupId(null);
+    setSelectedTarget({
+      id: exerciseId,
+      type: 'single',
+      dayKey,
+      isDraft: dayKey === 'draft'
+    });
     
     const draftExercise = groupDraft.find(ex => ex.id === exerciseId);
     
@@ -679,27 +703,93 @@ export default function CreateWorkout() {
       };
       setWorkout({ ...workout, weeks: updatedWeeks });
     }
-  }, [workout, selectedWeek, groupDraft]);
+  }, [workout, selectedWeek, groupDraft, getWeightFromBase]);
 
   const handleRemoveExercise = useCallback((exerciseId, dayKey) => {
     const draftExercise = groupDraft.find(ex => ex.id === exerciseId);
     
     if (draftExercise) {
       setGroupDraft(groupDraft.filter(ex => ex.id !== exerciseId));
+      if (selectedTarget?.id === exerciseId && selectedTarget?.isDraft) {
+        setSelectedTarget(null);
+      }
+      if (lastAddedExerciseId === exerciseId) {
+        setLastAddedExerciseId(null);
+      }
     } else {
+      const dayExercises = workout.weeks[selectedWeek].days[dayKey].exercises;
+      const removedExercise = dayExercises.find(ex => ex.id === exerciseId);
+      const removedGroupContainsSelected = removedExercise?.type === 'group'
+        && Array.isArray(removedExercise.exercises)
+        && selectedTarget?.type === 'single'
+        && removedExercise.exercises.some(ex => ex.id === selectedTarget.id);
+      const removedGroupContainsLastAdded = removedExercise?.type === 'group'
+        && Array.isArray(removedExercise.exercises)
+        && lastAddedExerciseId
+        && removedExercise.exercises.some(ex => ex.id === lastAddedExerciseId);
+
       const updatedWeeks = [...workout.weeks];
       updatedWeeks[selectedWeek] = {
         ...updatedWeeks[selectedWeek],
         days: {
           ...updatedWeeks[selectedWeek].days,
           [dayKey]: {
-            exercises: updatedWeeks[selectedWeek].days[dayKey].exercises.filter(ex => ex.id !== exerciseId)
+            exercises: dayExercises.filter(ex => ex.id !== exerciseId)
           }
         }
       };
       setWorkout({ ...workout, weeks: updatedWeeks });
+
+      if (selectedTarget?.id === exerciseId || removedGroupContainsSelected) {
+        setSelectedTarget(null);
+      }
+      if (lastAddedExerciseId === exerciseId || removedGroupContainsLastAdded) {
+        setLastAddedExerciseId(null);
+      }
+      if (lastAddedGroupId === exerciseId) {
+        setLastAddedGroupId(null);
+      }
     }
-  }, [workout, selectedWeek, groupDraft]);
+  }, [workout, selectedWeek, groupDraft, selectedTarget, lastAddedExerciseId, lastAddedGroupId]);
+
+  const handleSelectTarget = useCallback(({ id, type, dayKey, isDraft = false }) => {
+    setSelectedTarget({ id, type, dayKey, isDraft });
+
+    if (type === 'group') {
+      setLastAddedGroupId(id);
+      setLastAddedExerciseId(null);
+      return;
+    }
+
+    setLastAddedExerciseId(id);
+    setLastAddedGroupId(null);
+  }, []);
+
+  const applyRepsToExercise = useCallback((exercise, reps) => {
+    const isAerobic = exercise.category_id === '6';
+    if (isAerobic) {
+      return { updatedExercise: exercise, changed: false };
+    }
+
+    const updated = { ...exercise, numberTimes: reps };
+
+    if (exercise.exerciseData) {
+      const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps);
+
+      if (weightForNewReps) {
+        const { weightFromStar, ...dataWithoutStar } = exercise.exerciseData;
+        updated.exerciseData = {
+          ...dataWithoutStar,
+          weight: weightForNewReps
+        };
+      } else {
+        const { weight, weightFromStar, ...dataWithoutWeight } = exercise.exerciseData;
+        updated.exerciseData = dataWithoutWeight;
+      }
+    }
+
+    return { updatedExercise: updated, changed: true };
+  }, [getWeightFromBase]);
 
   const handleBulkChangeReps = useCallback((reps) => {
     if (!workout) {
@@ -707,84 +797,168 @@ export default function CreateWorkout() {
       return;
     }
 
-    const currentDayExercises = workout.weeks[selectedWeek].days[selectedDay].exercises || [];
-    
-    if (currentDayExercises.length === 0) {
+    const fallbackTarget = lastAddedGroupId
+      ? { id: lastAddedGroupId, type: 'group', dayKey: selectedDay, isDraft: false }
+      : lastAddedExerciseId
+        ? { id: lastAddedExerciseId, type: 'single', dayKey: selectedDay, isDraft: false }
+        : null;
+    const activeTarget = selectedTarget || fallbackTarget;
+
+    if (!activeTarget) {
+      showNotification("Сначала выберите упражнение или группу", "error");
+      return;
+    }
+
+    if (activeTarget.isDraft || activeTarget.dayKey === 'draft') {
+      if (activeTarget.type === 'group') {
+        showNotification("Для черновика группы выберите конкретное упражнение", "error");
+        return;
+      }
+
+      const draftExercise = groupDraft.find(ex => ex.id === activeTarget.id);
+      if (!draftExercise) {
+        showNotification("Выбранное упражнение не найдено", "error");
+        return;
+      }
+
+      const { updatedExercise, changed } = applyRepsToExercise(draftExercise, reps);
+      if (!changed) {
+        showNotification("Нельзя изменить повторения у аэробного упражнения", "error");
+        return;
+      }
+
+      setGroupDraft(groupDraft.map(ex => ex.id === activeTarget.id ? updatedExercise : ex));
+      showNotification(`Количество повторений изменено на ${reps} для "${draftExercise.name}"`, "success");
+      return;
+    }
+
+    const targetDayKey = activeTarget.dayKey || selectedDay;
+    const dayExercises = workout.weeks[selectedWeek]?.days?.[targetDayKey]?.exercises || [];
+
+    if (dayExercises.length === 0) {
       showNotification(t('createWorkout.noExercisesInDay'), "error");
       return;
     }
 
-    const updatedExercises = currentDayExercises.map(exercise => {
-      if (exercise.type === 'group') {
-        return {
-          ...exercise,
-          exercises: exercise.exercises.map(ex => {
-            const isAerobic = ex.category_id === '6';
-            if (isAerobic) return ex;
-            
-            const updated = { ...ex, numberTimes: reps };
-            
-            // 🔥 Автоматически обновляем вес для нового количества повторений
-            if (ex.exerciseData) {
-              const weightForNewReps = getWeightFromBase(ex.exercise_id, reps);
-              
-              if (weightForNewReps) {
-                const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
-                updated.exerciseData = {
-                  ...dataWithoutStar,
-                  weight: weightForNewReps
-                };
-              } else {
-                // Убираем вес если его нет для нового количества повторений
-                const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
-                updated.exerciseData = dataWithoutWeight;
-              }
-            }
-            
-            return updated;
-          })
-        };
-      } else {
-        const isAerobic = exercise.category_id === '6';
-        if (isAerobic) return exercise;
-        
-        const updated = { ...exercise, numberTimes: reps };
-        
-        // 🔥 Автоматически обновляем вес для нового количества повторений
-        if (exercise.exerciseData) {
-          const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps);
-          
-          if (weightForNewReps) {
-            const { weightFromStar, ...dataWithoutStar } = exercise.exerciseData;
-            updated.exerciseData = {
-              ...dataWithoutStar,
-              weight: weightForNewReps
-            };
-          } else {
-            // Убираем вес если его нет для нового количества повторений
-            const { weight, weightFromStar, ...dataWithoutWeight } = exercise.exerciseData;
-            updated.exerciseData = dataWithoutWeight;
+    if (activeTarget.type === 'group') {
+      const targetGroup = dayExercises.find(ex => ex.type === 'group' && ex.id === activeTarget.id);
+      if (!targetGroup) {
+        showNotification("Выбранная группа не найдена", "error");
+        return;
+      }
+
+      let updatedCount = 0;
+      const updatedGroupExercises = targetGroup.exercises.map((groupExercise) => {
+        const { updatedExercise, changed } = applyRepsToExercise(groupExercise, reps);
+        if (changed) {
+          updatedCount += 1;
+        }
+        return updatedExercise;
+      });
+
+      if (updatedCount === 0) {
+        showNotification("В выбранной группе нет упражнений с повторениями", "error");
+        return;
+      }
+
+      const updatedExercises = dayExercises.map((exercise) => (
+        exercise.id === activeTarget.id
+          ? { ...exercise, exercises: updatedGroupExercises }
+          : exercise
+      ));
+
+      const updatedWeeks = [...workout.weeks];
+      updatedWeeks[selectedWeek] = {
+        ...updatedWeeks[selectedWeek],
+        days: {
+          ...updatedWeeks[selectedWeek].days,
+          [targetDayKey]: {
+            exercises: updatedExercises
           }
         }
-        
-        return updated;
+      };
+
+      setWorkout({ ...workout, weeks: updatedWeeks });
+      showNotification(`Количество повторений изменено на ${reps} для группы (${updatedCount} упр.)`, "success");
+      return;
+    }
+
+    let targetName = '';
+    let foundTarget = false;
+    let changedTarget = false;
+
+    const updatedExercises = dayExercises.map((exercise) => {
+      if (exercise.type === 'group' && Array.isArray(exercise.exercises)) {
+        let foundInGroup = false;
+
+        const updatedGroupExercises = exercise.exercises.map((groupExercise) => {
+          if (groupExercise.id !== activeTarget.id) {
+            return groupExercise;
+          }
+
+          foundTarget = true;
+          foundInGroup = true;
+          targetName = groupExercise.name;
+          const { updatedExercise, changed } = applyRepsToExercise(groupExercise, reps);
+          if (changed) {
+            changedTarget = true;
+          }
+          return updatedExercise;
+        });
+
+        return foundInGroup
+          ? { ...exercise, exercises: updatedGroupExercises }
+          : exercise;
       }
+
+      if (exercise.id === activeTarget.id) {
+        foundTarget = true;
+        targetName = exercise.name;
+        const { updatedExercise, changed } = applyRepsToExercise(exercise, reps);
+        if (changed) {
+          changedTarget = true;
+        }
+        return updatedExercise;
+      }
+
+      return exercise;
     });
+
+    if (!foundTarget) {
+      showNotification("Выбранное упражнение не найдено", "error");
+      return;
+    }
+
+    if (!changedTarget) {
+      showNotification("Нельзя изменить повторения у аэробного упражнения", "error");
+      return;
+    }
 
     const updatedWeeks = [...workout.weeks];
     updatedWeeks[selectedWeek] = {
       ...updatedWeeks[selectedWeek],
       days: {
         ...updatedWeeks[selectedWeek].days,
-        [selectedDay]: {
+        [targetDayKey]: {
           exercises: updatedExercises
         }
       }
     };
 
     setWorkout({ ...workout, weeks: updatedWeeks });
-    showNotification(t('createWorkout.repsChanged', { reps }), "success");
-  }, [workout, selectedWeek, selectedDay, showNotification, t]);
+    showNotification(`Количество повторений изменено на ${reps} для "${targetName}"`, "success");
+  }, [
+    workout,
+    selectedWeek,
+    selectedDay,
+    selectedTarget,
+    lastAddedExerciseId,
+    lastAddedGroupId,
+    groupDraft,
+    applyRepsToExercise,
+    showNotification,
+    t
+  ]);
 
   // Функция для подстановки веса из колонки "*"
   const handleColumnWeightClick = useCallback((columnId) => {
@@ -1165,9 +1339,11 @@ export default function CreateWorkout() {
             groupDraft={groupDraft}
             addMode={addMode}
             columns={columns}
+            selectedTarget={selectedTarget}
             onDragEnd={handleDragEnd}
             onUpdateExercise={handleUpdateExercise}
             onRemoveExercise={handleRemoveExercise}
+            onSelectTarget={handleSelectTarget}
             onConfirmGroup={onConfirmGroup}
             getWeightForReps={getWeightForReps}
             onBulkChangeReps={handleBulkChangeReps}

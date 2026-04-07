@@ -219,7 +219,7 @@
     "selectedDay": "Selected day",
     "newExercisesHere": "new exercises will be added here",
     "times": "Times",
-    "setRepsTitle": "Set {{reps}} reps for all exercises of the day",
+    "setRepsTitle": "Set {{reps}} reps for the selected exercise or group",
     "creatingGroup": "Creating group",
     "finishGroupTitle": "Finish group",
     "noExercisesHint": "No exercises. Click on an exercise on the right to add"

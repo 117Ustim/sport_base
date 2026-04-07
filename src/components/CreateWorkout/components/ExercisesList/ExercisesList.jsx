@@ -25,9 +25,11 @@ export default function ExercisesList({
   groupDraft,
   addMode,
   columns,
+  selectedTarget,
   onDragEnd, 
   onUpdateExercise, 
   onRemoveExercise,
+  onSelectTarget,
   onConfirmGroup,
   getWeightForReps,
   onBulkChangeReps,
@@ -145,11 +147,17 @@ export default function ExercisesList({
                     key={exercise.id}
                     exercise={exercise}
                     index={index}
-                    dayKey={selectedDay}
+                    dayKey="draft"
                     onUpdate={onUpdateExercise}
                     onRemove={onRemoveExercise}
+                    onSelect={onSelectTarget}
                     onConfirm={null}
                     getWeightForReps={getWeightForReps}
+                    isSelected={
+                      selectedTarget?.id === exercise.id
+                      && selectedTarget?.type === 'single'
+                      && selectedTarget?.isDraft
+                    }
                     isInDraft={true}
                     columns={columns}
                     onStarWeightClick={onStarWeightClick}
@@ -187,7 +195,14 @@ export default function ExercisesList({
                       dayKey={day.key}
                       onUpdate={onUpdateExercise}
                       onRemove={onRemoveExercise}
+                      onSelect={onSelectTarget}
                       getWeightForReps={getWeightForReps}
+                      isSelected={
+                        selectedTarget?.id === exercise.id
+                        && selectedTarget?.dayKey === day.key
+                        && selectedTarget?.type === (exercise.type === 'group' ? 'group' : 'single')
+                        && !selectedTarget?.isDraft
+                      }
                       isInDraft={false}
                       columns={columns}
                       onStarWeightClick={onStarWeightClick}

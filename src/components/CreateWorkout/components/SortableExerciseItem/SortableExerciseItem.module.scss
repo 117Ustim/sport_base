@@ -32,6 +32,12 @@
     border: 2px solid var(--accent-primary);
     z-index: 100;
   }
+
+  &.selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: var(--bg-feature-hover);
+  }
 }
 
 .exerciseContent {

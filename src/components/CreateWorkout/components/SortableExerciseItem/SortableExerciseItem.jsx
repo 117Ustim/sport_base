@@ -5,7 +5,20 @@ import CustomSelect from '../CustomSelect';
 import { TIME_OPTIONS, SETS_OPTIONS, REPS_OPTIONS } from '../../constants';
 import styles from './SortableExerciseItem.module.scss';
 
-export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate, onRemove, onConfirm, getWeightForReps, isInDraft, columns, onStarWeightClick }) {
+export default function SortableExerciseItem({
+  exercise,
+  index,
+  dayKey,
+  onUpdate,
+  onRemove,
+  onSelect,
+  onConfirm,
+  getWeightForReps,
+  isSelected,
+  isInDraft,
+  columns,
+  onStarWeightClick
+}) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -38,7 +51,13 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
       <li 
         ref={setNodeRef} 
         style={style}
-        className={`${styles.exerciseRow} ${styles.groupRow} ${isDragging ? styles.dragging : ''}`}
+        className={`${styles.exerciseRow} ${styles.groupRow} ${isDragging ? styles.dragging : ''} ${isSelected ? styles.selected : ''}`}
+        onClick={() => onSelect?.({
+          id: exercise.id,
+          type: 'group',
+          dayKey: isInDraft ? 'draft' : dayKey,
+          isDraft: Boolean(isInDraft)
+        })}
       >
         <div className={styles.exerciseContent}>
           <span className={styles.dragHandle} {...attributes} {...listeners} title={t('createWorkout.dragToReorder')}>
@@ -79,7 +98,10 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
           
           <button
             className={styles.deleteExerciseButton}
-            onClick={() => onRemove(exercise.id, dayKey)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove(exercise.id, dayKey);
+            }}
             title={t('createWorkout.deleteGroup')}
           >
             ×
@@ -97,7 +119,13 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
     <li 
       ref={setNodeRef} 
       style={style}
-      className={`${styles.exerciseRow} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.exerciseRow} ${isDragging ? styles.dragging : ''} ${isSelected ? styles.selected : ''}`}
+      onClick={() => onSelect?.({
+        id: exercise.id,
+        type: 'single',
+        dayKey: isInDraft ? 'draft' : dayKey,
+        isDraft: Boolean(isInDraft)
+      })}
     >
       <div className={styles.exerciseContent}>
         <span className={styles.dragHandle} {...attributes} {...listeners} title={t('createWorkout.dragToReorder')}>
@@ -169,7 +197,10 @@ export default function SortableExerciseItem({ exercise, index, dayKey, onUpdate
         
         <button
           className={styles.deleteExerciseButton}
-          onClick={() => onRemove(exercise.id, dayKey)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(exercise.id, dayKey);
+          }}
           title={t('createWorkout.deleteExercise')}
         >
           ×
