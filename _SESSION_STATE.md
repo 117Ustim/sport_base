@@ -610,3 +610,85 @@ xattr -cr "/Applications/Sport Base.app"
 
 **Проверка:**
 - Поиск `exportData` по проекту не находит совпадений
+
+---
+
+## Последнее обновление: 09.04.2026
+
+### ✅ ExerciseHistory: переход на `exerciseId` (спорт-статистика клиент/админ)
+
+**Что зафиксировано по задаче:**
+- В `exerciseHistory` запись должна идти с обязательным `exerciseId` (не только `exerciseName`).
+- Все расчеты статистики по упражнениям (клиент и админ) должны фильтровать данные по `exerciseId`.
+- Таблица по повторам принята в формате `1..12` всегда; если данных нет, показывается `—`.
+
+### ✅ Что сделано в данных (Firebase)
+
+- Выполнен backfill существующей истории упражнений для клиентов: старые записи без `exerciseId` заполнены.
+- Итоговая проверка после backfill: `exerciseHistory total: 2098`, `withExerciseId: 2098`, `missingExerciseId: 0`.
+
+### ✅ Что сделано в приложении `gym-calendar` (код)
+
+**Сервисы:**
+- `src/services/ExerciseHistoryService.ts`
+  - Добавлена/усилена работа с `exerciseId` как ключом.
+  - `addHistoryEntry` валидирует обязательный `exerciseId`.
+  - `getExerciseHistory` и related-логика работают по `exerciseId`.
+  - Добавлен расчет статистики по повторениям `1..12` и 1RM (Brzycki для `1..8`, Epley для `9..12`).
+- `src/services/AssignedWorkoutsService.ts`
+  - При сохранении изменений упражнения в историю обязательно резолвится `exerciseId`:
+    1) из самого упражнения (`exercise_id`/`id`),
+    2) fallback через базу клиента по имени.
+  - В `exerciseHistory` теперь пишутся и `exerciseId`, и `exerciseName`.
+
+**Экраны статистики (клиент + админ):**
+- `app/(client)/exercise-stats.tsx`
+- `app/person/statistics/exercise-stats/[id].tsx`
+- `app/(client)/success-stats.tsx`
+- `app/person/statistics/success-stats/[id].tsx`
+- `app/(client)/achievements-stats.tsx`
+- `app/person/statistics/achievements-stats/[id].tsx`
+
+Во всех вышеуказанных экранах:
+- расчеты переведены на `exerciseHistory` и ключ `exerciseId + reps` (где применимо),
+- baseline/currency логика приведена к единой модели,
+- детальная таблица повторов приведена к формату `1..12` с `—` для отсутствующих данных.
+
+**Тесты:**
+- Обновлены тесты сервисов:
+  - `src/services/__tests__/ExerciseHistoryService.test.ts`
+  - `src/services/__tests__/AssignedWorkoutsService.updateExerciseData.test.ts`
+- Локально тесты по этим файлам проходят.
+
+### ✅ Firestore (gym-calendar)
+
+- Обновлены:
+  - `firestore.rules`
+  - `firestore.indexes.json` (индекс для `exerciseHistory` по `clientId + exerciseId + timestamp`).
+- Деплой выполнен успешно в проект `calendar-new-599f8`.
+
+### ⚠️ Выявленный регресс после деплоя правил (web admin / WorkoutDetails)
+
+**Симптом:**
+- На странице `WorkoutDetails` (web) ошибка:
+  - `workoutsService.getById -> Missing or insufficient permissions`.
+
+**Причина:**
+- В правилах `gym-calendar/firestore.rules` отсутствовал блок для subcollection:
+  - `match /workouts/{workoutId}/weeks/{weekId}`.
+- Экран `WorkoutDetails` загружает недели именно из `workouts/{id}/weeks/*`.
+
+**Исправление:**
+- В `gym-calendar/firestore.rules` добавлен блок доступа к `workouts/{workoutId}/weeks/{weekId}`:
+  - `read: if isAuthenticated()`
+  - `write/delete: if isAdmin()`
+
+**Текущий статус:**
+- Фикс в файле подготовлен.
+- Требуется повторный деплой только правил:
+  - `npx firebase-tools deploy --only firestore:rules`
+
+### Примечание по безопасности
+
+- Учетные данные пользователя использовались только для выполнения задач в рамках сессии.
+- В `_SESSION_STATE.md` пароли не сохраняются.

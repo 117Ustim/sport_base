@@ -17,6 +17,7 @@ import { validateClientData, sanitizeClientData } from './validators';
 
 // НОВАЯ СТРУКТУРА: коллекция clients (каждый клиент = отдельный документ)
 const COLLECTION_NAME = 'clients';
+const WORKOUT_NOTE_DOC_ID = 'workout';
 
 // Вспомогательная функция для очистки данных клиента от пустых значений
 const cleanClientData = (clientData) => {
@@ -30,6 +31,37 @@ const cleanClientData = (clientData) => {
   }
   
   return cleaned;
+};
+
+const extractWorkoutNoteText = (noteData = {}) => {
+  if (!noteData || typeof noteData !== 'object') {
+    return '';
+  }
+
+  const possibleFields = [
+    'text',
+    'message',
+    'note',
+    'content',
+    'description',
+    'comment',
+    'workout'
+  ];
+
+  for (const field of possibleFields) {
+    const value = noteData[field];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  for (const value of Object.values(noteData)) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return '';
 };
 
 export const clientsService = {
@@ -157,6 +189,44 @@ export const clientsService = {
       return null;
     } catch (error) {
       console.error('Error getting client:', error);
+      throw error;
+    }
+  },
+
+  // Получить заметку клиента для тренировок: clients/{clientId}/notes/workout
+  async getWorkoutNote(clientId) {
+    try {
+      const noteRef = doc(db, COLLECTION_NAME, clientId, 'notes', WORKOUT_NOTE_DOC_ID);
+      const noteSnap = await getDoc(noteRef);
+
+      if (!noteSnap.exists()) {
+        return null;
+      }
+
+      const noteData = noteSnap.data() || {};
+      const text = extractWorkoutNoteText(noteData);
+
+      return {
+        id: WORKOUT_NOTE_DOC_ID,
+        text,
+        data: noteData,
+        createdAt: noteData.createdAt || null,
+        updatedAt: noteData.updatedAt || null
+      };
+    } catch (error) {
+      console.error('Error getting workout note:', error);
+      throw error;
+    }
+  },
+
+  // Удалить заметку клиента для тренировок: clients/{clientId}/notes/workout
+  async deleteWorkoutNote(clientId) {
+    try {
+      const noteRef = doc(db, COLLECTION_NAME, clientId, 'notes', WORKOUT_NOTE_DOC_ID);
+      await deleteDoc(noteRef);
+      return true;
+    } catch (error) {
+      console.error('Error deleting workout note:', error);
       throw error;
     }
   },

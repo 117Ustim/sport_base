@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const logger = require("firebase-functions/logger");
@@ -10,6 +11,237 @@ const db = admin.firestore();
 setGlobalOptions({ maxInstances: 10, region: "europe-west1" });
 
 const BATCH_LIMIT = 450;
+const HISTORY_DEDUP_WINDOW_MS = 5 * 60 * 1000;
+
+function toFiniteNumber(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const match = String(value).trim().match(/-?\d+(?:[.,]\d+)?/);
+  if (!match) {
+    return null;
+  }
+
+  const normalized = match[0].replace(",", ".");
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function toStoredWeight(rawValue) {
+  const parsed = toFiniteNumber(rawValue);
+  return parsed === null ? 0 : parsed;
+}
+
+function toSignature({ reps, previousWeight, newWeight }) {
+  return `${reps}|${previousWeight}|${newWeight}`;
+}
+
+function toDateValue(rawTimestamp) {
+  if (!rawTimestamp) {
+    return 0;
+  }
+
+  const parsed = Date.parse(rawTimestamp);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function getRepsByColumnId(clientId) {
+  const repsByColumnId = new Map();
+
+  const metadataSnap = await db
+    .collection("clientBases")
+    .doc(clientId)
+    .collection("metadata")
+    .doc("settings")
+    .get();
+
+  if (!metadataSnap.exists) {
+    return repsByColumnId;
+  }
+
+  const metadata = metadataSnap.data() || {};
+  const columns = Array.isArray(metadata.columns) ? metadata.columns : [];
+
+  columns.forEach((column) => {
+    const columnId = String(column.id ?? "");
+    if (!columnId) {
+      return;
+    }
+
+    const targetReps = Number.parseInt(column.targetReps, 10);
+    const namedReps = Number.parseInt(column.name, 10);
+
+    if (Number.isFinite(targetReps) && targetReps > 0) {
+      repsByColumnId.set(columnId, targetReps);
+      return;
+    }
+
+    if (Number.isFinite(namedReps) && namedReps > 0) {
+      repsByColumnId.set(columnId, namedReps);
+    }
+  });
+
+  return repsByColumnId;
+}
+
+function resolveReps(columnId, repsByColumnId) {
+  const key = String(columnId);
+
+  if (repsByColumnId.has(key)) {
+    return repsByColumnId.get(key);
+  }
+
+  // Fallback для дефолтных колонок (id: 0 -> reps: 1)
+  const numericId = Number.parseInt(key, 10);
+  if (Number.isFinite(numericId) && numericId >= 0) {
+    return numericId + 1;
+  }
+
+  return 0;
+}
+
+function sanitizeIdPart(value) {
+  return String(value).replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+exports.captureClientBaseWeightHistory = onDocumentWritten(
+  "clientBases/{clientId}/exercises/{exerciseId}",
+  async (event) => {
+    try {
+      const beforeSnap = event.data.before;
+      const afterSnap = event.data.after;
+
+      if (!afterSnap.exists) {
+        return;
+      }
+
+      const { clientId, exerciseId } = event.params;
+      const beforeData = beforeSnap.exists ? (beforeSnap.data() || {}) : {};
+      const afterData = afterSnap.data() || {};
+      const beforeWeights = beforeData.data && typeof beforeData.data === "object" ? beforeData.data : {};
+      const afterWeights = afterData.data && typeof afterData.data === "object" ? afterData.data : {};
+
+      const columnIds = new Set([...Object.keys(beforeWeights), ...Object.keys(afterWeights)]);
+      if (columnIds.size === 0) {
+        return;
+      }
+
+      const repsByColumnId = await getRepsByColumnId(clientId);
+      const nowIso = new Date().toISOString();
+      const nowMs = Date.now();
+      const exerciseName = afterData.name || beforeData.name || "";
+      const categoryId = afterData.categoryId || beforeData.categoryId || null;
+
+      const recentHistorySnapshot = await db
+        .collection("exerciseHistory")
+        .where("clientId", "==", clientId)
+        .where("exerciseId", "==", String(exerciseId))
+        .orderBy("timestamp", "desc")
+        .limit(30)
+        .get();
+
+      const recentSignatures = new Set();
+      recentHistorySnapshot.forEach((docSnapshot) => {
+        const history = docSnapshot.data() || {};
+        const historyTimestampMs = toDateValue(history.timestamp || history.trainingDate);
+        if (!historyTimestampMs || nowMs - historyTimestampMs > HISTORY_DEDUP_WINDOW_MS) {
+          return;
+        }
+
+        recentSignatures.add(
+          toSignature({
+            reps: Number(history.reps) || 0,
+            previousWeight: toStoredWeight(history.previousWeight),
+            newWeight: toStoredWeight(history.newWeight),
+          })
+        );
+      });
+
+      const entries = [];
+      columnIds.forEach((columnId) => {
+        const previousWeight = toStoredWeight(beforeWeights[columnId]);
+        const newWeight = toStoredWeight(afterWeights[columnId]);
+
+        if (previousWeight === newWeight) {
+          return;
+        }
+
+        const reps = resolveReps(columnId, repsByColumnId);
+        if (!Number.isFinite(reps) || reps <= 0) {
+          return;
+        }
+
+        const entry = {
+          clientId,
+          exerciseId: String(exerciseId),
+          exerciseName,
+          sets: 0,
+          reps,
+          previousWeight,
+          newWeight,
+          previousReps: reps,
+          newReps: reps,
+          weightChange: newWeight - previousWeight,
+          repsChange: 0,
+          timestamp: nowIso,
+          trainingDate: nowIso,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          source: "server-client-base-trigger",
+          sourceColumnId: String(columnId),
+          sourceEventId: event.id,
+        };
+
+        if (categoryId) {
+          entry.categoryId = categoryId;
+        }
+
+        const signature = toSignature(entry);
+        if (recentSignatures.has(signature)) {
+          return;
+        }
+
+        recentSignatures.add(signature);
+        entries.push(entry);
+      });
+
+      if (entries.length === 0) {
+        return;
+      }
+
+      const batch = db.batch();
+      entries.forEach((entry) => {
+        const historyId = [
+          "cb",
+          sanitizeIdPart(event.id),
+          sanitizeIdPart(entry.sourceColumnId),
+        ].join("_");
+
+        const historyRef = db.collection("exerciseHistory").doc(historyId);
+        batch.set(historyRef, entry, { merge: true });
+      });
+
+      await batch.commit();
+
+      logger.info("exerciseHistory captured from clientBases update", {
+        clientId,
+        exerciseId,
+        entries: entries.length,
+      });
+    } catch (error) {
+      logger.error("captureClientBaseWeightHistory failed", {
+        error: error.message,
+        eventId: event.id,
+        params: event.params,
+      });
+      throw error;
+    }
+  }
+);
 
 function requireAuth(request) {
   const auth = request.auth;

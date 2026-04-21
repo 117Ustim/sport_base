@@ -60,6 +60,8 @@
     "noWorkouts": "Нет созданных тренировок. Нажмите \"Создать тренировку\" для добавления.",
     "transferTitle": "Перенести тренировку",
     "transferButton": "Перенос",
+    "workoutNoteButton": "Заметка по тренировкам",
+    "workoutNoteTitle": "Заметка клиента по тренировкам",
     "copySuffix": "копия",
     "noClients": "Клиенты не найдены"
   },
@@ -83,6 +85,8 @@
     "workoutTransferred": "Тренировка перенесена к клиенту {{name}}",
     "workoutTransferError": "Ошибка переноса тренировки",
     "workoutTransferMissingWeights": "Вес установлен в 0 для упражнений: {{count}}",
+    "workoutNoteDeleted": "Заметка по тренировкам удалена",
+    "workoutNoteDeleteError": "Не удалось удалить заметку по тренировкам",
     "lastColumnError": "Нельзя удалить последнюю колонку",
     "baseCreatedSuccess": "База успешно создана!",
     "baseCreatedError": "Ошибка создания базы",
@@ -92,6 +96,7 @@
   "dialogs": {
     "confirmDeleteColumn": "Вы уверены, что хотите удалить колонку \"{{name}}\"?",
     "confirmDeleteWorkout": "Вы уверены, что хотите удалить тренировку \"{{name}}\"?",
+    "confirmDeleteWorkoutNote": "Удалить эту заметку по тренировкам?",
     "confirmDeleteGym": "Вы уверены, что хотите удалить этот зал?",
     "confirmDeleteClient": "Вы уверены, что хотите удалить {{name}}?",
     "confirmDeleteWeek": "Вы уверены, что хотите удалить неделю {{number}}?",

@@ -15,6 +15,10 @@ export const authService = {
   async login(email, password) {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+      // Ждем токен, чтобы Firestore видел пользователя как авторизованного
+      if (typeof result.user.getIdToken === 'function') {
+        await result.user.getIdToken();
+      }
       
       // Главный админ всегда имеет доступ
       if (result.user.email === MAIN_ADMIN_EMAIL) {

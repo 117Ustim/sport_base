@@ -238,6 +238,62 @@ describe('clientsService', () => {
     });
   });
 
+  describe('workout note', () => {
+    it('should return null when workout note does not exist', async () => {
+      doc.mockReturnValue('note-ref');
+      getDoc.mockResolvedValue({
+        exists: () => false,
+      });
+
+      const result = await clientsService.getWorkoutNote('123');
+
+      expect(doc).toHaveBeenCalledWith({}, 'clients', '123', 'notes', 'workout');
+      expect(result).toBeNull();
+    });
+
+    it('should return parsed workout note text', async () => {
+      doc.mockReturnValue('note-ref');
+      getDoc.mockResolvedValue({
+        exists: () => true,
+        data: () => ({
+          message: 'Take it easy this week',
+          updatedAt: '2026-04-07T10:00:00.000Z',
+        }),
+      });
+
+      const result = await clientsService.getWorkoutNote('123');
+
+      expect(result).toEqual({
+        id: 'workout',
+        text: 'Take it easy this week',
+        data: {
+          message: 'Take it easy this week',
+          updatedAt: '2026-04-07T10:00:00.000Z',
+        },
+        createdAt: null,
+        updatedAt: '2026-04-07T10:00:00.000Z',
+      });
+    });
+
+    it('should delete workout note', async () => {
+      doc.mockReturnValue('note-ref');
+      deleteDoc.mockResolvedValue();
+
+      const result = await clientsService.deleteWorkoutNote('123');
+
+      expect(doc).toHaveBeenCalledWith({}, 'clients', '123', 'notes', 'workout');
+      expect(deleteDoc).toHaveBeenCalledWith('note-ref');
+      expect(result).toBe(true);
+    });
+
+    it('should throw when deleting workout note fails', async () => {
+      doc.mockReturnValue('note-ref');
+      deleteDoc.mockRejectedValue(new Error('Delete error'));
+
+      await expect(clientsService.deleteWorkoutNote('123')).rejects.toThrow('Delete error');
+    });
+  });
+
   describe('create', () => {
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValue(1234567890);

@@ -48,6 +48,8 @@
     "noWorkouts": "No workouts created. Click \"Create Workout\" to add one.",
     "transferTitle": "Transfer Workout",
     "transferButton": "Transfer",
+    "workoutNoteButton": "Workout note",
+    "workoutNoteTitle": "Client workout note",
     "copySuffix": "copy",
     "noClients": "No clients found"
   },
@@ -71,6 +73,8 @@
     "workoutTransferred": "Workout transferred to {{name}}",
     "workoutTransferError": "Error transferring workout",
     "workoutTransferMissingWeights": "Weight set to 0 for exercises: {{count}}",
+    "workoutNoteDeleted": "Workout note deleted",
+    "workoutNoteDeleteError": "Failed to delete workout note",
     "lastColumnError": "Cannot delete the last column",
     "baseCreatedSuccess": "Base created successfully!",
     "baseCreatedError": "Error creating base",
@@ -80,6 +84,7 @@
   "dialogs": {
     "confirmDeleteColumn": "Are you sure you want to delete column \"{{name}}\"?",
     "confirmDeleteWorkout": "Are you sure you want to delete workout \"{{name}}\"?",
+    "confirmDeleteWorkoutNote": "Delete this workout note?",
     "confirmDeleteGym": "Are you sure you want to delete this gym?",
     "confirmDeleteClient": "Are you sure you want to delete {{name}}?",
     "confirmDeleteWeek": "Are you sure you want to delete week {{number}}?",

@@ -44,6 +44,7 @@
     "eject": "react-scripts eject",
     "backup": "node scripts/backup-firestore.js",
     "restore": "node scripts/restore-firestore.js",
+    "backfill:exercise-history-ids": "node scripts/backfill-exercise-history-ids.js",
     "migrate": "node scripts/migrate-to-new-structure.js",
     "optimize": "node scripts/optimize-assigned-workouts.js",
     "cleanup": "node scripts/cleanup-legacy-data.js",

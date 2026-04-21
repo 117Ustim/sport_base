@@ -131,7 +131,7 @@
   padding: 0;
   border: 1px solid var(--border-color);
   background: var(--bg-input-focus);
-  color: var(--accent-primary);
+  color: var(--text-on-accent);
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
@@ -145,7 +145,7 @@
 
   &:hover {
     background: var(--bg-feature-hover);
-    color: var(--accent-primary);
+    color: var(--text-on-accent);
     transform: scale(1.1);
     box-shadow: 0 6px 16px var(--shadow-color-strong);
   }
@@ -157,7 +157,7 @@
   padding: 0;
   border: 1px solid var(--border-color);
   background: var(--bg-input-focus);
-  color: var(--accent-primary);
+  color: var(--text-on-accent);
   font-size: 14px;
   font-weight: bold;
   line-height: 1;
@@ -171,7 +171,7 @@
 
   &:hover:not(:disabled) {
     background: var(--bg-feature-hover);
-    color: var(--accent-primary);
+    color: var(--text-on-accent);
     transform: scale(1.1);
     box-shadow: 0 6px 16px var(--shadow-color-strong);
   }
@@ -180,6 +180,54 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+}
+
+.noteButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  background: var(--accent-danger);
+  color: var(--text-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  animation: notePulse 1.4s ease-in-out infinite;
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-danger) 85%, #000);
+    color: var(--text-on-accent);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px var(--shadow-color-strong);
+  }
+}
+
+.noteButtonLeft {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+@keyframes notePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-danger) 45%, transparent);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-danger) 0%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-danger) 0%, transparent);
   }
 }
 
@@ -307,6 +355,72 @@
   color: var(--text-muted);
   font-size: 14px;
   padding: 20px 0;
+}
+
+.noteModalContent {
+  background: var(--bg-panel);
+  border-radius: 22px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px var(--shadow-color-strong);
+  backdrop-filter: blur(10px);
+}
+
+.noteModalBody {
+  padding: 16px 20px 20px 20px;
+}
+
+.noteModalText {
+  margin: 0 0 16px 0;
+  font-size: 15px;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  line-height: 1.45;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.noteModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.noteDeleteButton,
+.noteCloseButton {
+  min-width: 110px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 19px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.noteDeleteButton {
+  background: color-mix(in srgb, var(--accent-danger) 14%, var(--bg-input));
+  color: var(--accent-danger);
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-danger) 22%, var(--bg-input));
+  }
+}
+
+.noteCloseButton {
+  background: var(--button-primary);
+  color: var(--text-on-accent);
+
+  &:hover {
+    background: var(--button-primary-hover);
+  }
 }
 
 .workoutCardTitle {

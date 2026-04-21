@@ -37,6 +37,14 @@ service cloud.firestore {
         allow write: if isAdmin();
         allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
       }
+
+      // Другие subcollections клиента (например notes, progress и т.д.)
+      // Нужны для мобильного приложения, которое читает вложенные документы.
+      match /{subcollection}/{docId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+        allow delete: if isAuthenticated();
+      }
     }
     
     // Коллекция gyms - только админы
@@ -49,6 +57,13 @@ service cloud.firestore {
     match /workouts/{workoutId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+
+      // Subcollection weeks - новая структура хранения недель тренировок
+      match /weeks/{weekId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+        allow delete: if isAuthenticated();
+      }
     }
     
     // Коллекция clientBases - только админы
@@ -99,6 +114,14 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update: if false;
       allow delete: if isAuthenticated(); // Разрешаем удаление при каскадном удалении клиента
+    }
+
+    // Коллекция exerciseHistory - история изменений веса по упражнениям
+    match /exerciseHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
     
     // Коллекция categories - только админы

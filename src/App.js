@@ -21,37 +21,63 @@ export default function App() {
 
   useEffect(() => {
     // Подписка на изменение состояния авторизации
-    const unsubscribe = authService.onAuthChange(async (currentUser) => {
-      if (currentUser) {
-        // Главный админ всегда имеет доступ
-        if (currentUser.email === 'ustimweb72@gmail.com') {
-          await authService.ensureAdminExists(currentUser.uid, currentUser.email);
-          setUser(currentUser);
-          initCategories();
-          setLoading(false);
-          return;
-        }
+    const unsubscribe = authService.onAuthChange((currentUser) => {
+      const handleAuthChange = async () => {
+        try {
+          if (currentUser) {
+            // Ждем актуальный токен перед Firestore запросами
+            if (typeof currentUser.getIdToken === 'function') {
+              await currentUser.getIdToken();
+            }
 
-        // Проверяем существует ли пользователь в базе данных и его роль
-        const isAdmin = await authService.checkUserIsAdmin(currentUser.uid);
-        
-        if (isAdmin) {
-          // Пользователь существует и является админом - разрешаем доступ
-          setUser(currentUser);
-          initCategories();
-        } else {
-          // Пользователь не админ или удален из базы - выходим
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('User is not admin or not found in database');
+            // Главный админ всегда имеет доступ
+            if (currentUser.email === 'ustimweb72@gmail.com') {
+              await authService.ensureAdminExists(currentUser.uid, currentUser.email);
+              setUser(currentUser);
+              try {
+                await initCategories();
+              } catch (error) {
+                console.error('Failed to initialize categories:', error);
+              }
+              return;
+            }
+
+            // Проверяем существует ли пользователь в базе данных и его роль
+            const isAdmin = await authService.checkUserIsAdmin(currentUser.uid);
+            
+            if (isAdmin) {
+              // Пользователь существует и является админом - разрешаем доступ
+              setUser(currentUser);
+              try {
+                await initCategories();
+              } catch (error) {
+                console.error('Failed to initialize categories:', error);
+              }
+            } else {
+              // Пользователь не админ или удален из базы - выходим
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('User is not admin or not found in database');
+              }
+              await authService.logout();
+              setUser(null);
+            }
+          } else {
+            setUser(null);
           }
-          await authService.logout();
+        } catch (error) {
+          console.error('Auth state handler error:', error);
+          try {
+            await authService.logout();
+          } catch (logoutError) {
+            console.error('Forced logout after auth error failed:', logoutError);
+          }
           setUser(null);
+        } finally {
+          setLoading(false);
         }
-      } else {
-        setUser(null);
-      }
-      
-      setLoading(false);
+      };
+
+      void handleAuthChange();
     });
 
     return () => unsubscribe();
