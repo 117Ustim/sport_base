@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { workoutsService, assignedWorkoutsService, clientsService, clientBaseService } from "../../firebase/services";
 import CustomDatePicker from "../CustomDatePicker";
@@ -45,8 +45,10 @@ export default function WorkoutDetails() {
   const [lastAssignedWeek, setLastAssignedWeek] = useState(null);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
+  const [selectedCommentKey, setSelectedCommentKey] = useState(''); // Ключ для удаления комментария
   const [exerciseComments, setExerciseComments] = useState({});
   const [clientBase, setClientBase] = useState([]); // 🔥 База упражнений клиента
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
 
   useEffect(() => {
     console.log('🚀 useEffect запущен - перезагрузка данных');
@@ -253,15 +255,136 @@ export default function WorkoutDetails() {
   };
 
   // Обработчик клика на иконку комментария
-  const handleCommentClick = (e, comment) => {
+  const handleCommentClick = (e, comment, commentKey) => {
     e.stopPropagation();
     setSelectedComment(comment);
+    setSelectedCommentKey(commentKey);
     setCommentModalOpen(true);
   };
 
   const handleCloseCommentModal = () => {
     setCommentModalOpen(false);
     setSelectedComment('');
+    setSelectedCommentKey('');
+  };
+
+  // Функция для удаления комментария
+  const handleDeleteComment = async () => {
+    if (!selectedCommentKey) return;
+    
+    try {
+      setIsDeletingComment(true);
+      
+      // Парсим ключ комментария: exerciseId_dayKey
+      const [exerciseId, dayKey] = selectedCommentKey.split('_');
+      
+      // Находим assignment для текущей недели
+      const assignments = await assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId);
+      const currentWeek = workout.weeks[selectedWeekIndex];
+      const assignment = assignments.find(a => a.workoutId === params.workoutId && a.weekNumber === currentWeek.weekNumber);
+      
+      if (!assignment) {
+        showNotification('Назначение не найдено', 'error');
+        return;
+      }
+      
+      // Находим упражнение в weekData
+      const dayExercises = assignment.weekData?.days?.[dayKey]?.exercises || [];
+      let exerciseFound = false;
+      
+      // Обновляем weekData
+      const updatedWeekData = { ...assignment.weekData };
+      if (!updatedWeekData.days) updatedWeekData.days = {};
+      if (!updatedWeekData.days[dayKey]) updatedWeekData.days[dayKey] = { exercises: [] };
+      
+      updatedWeekData.days[dayKey].exercises = dayExercises.map(exercise => {
+        // Проверяем обычное упражнение
+        if ((exercise.id === exerciseId || exercise.exercise_id === exerciseId) && exercise.exerciseData?.comment) {
+          exerciseFound = true;
+          return {
+            ...exercise,
+            exerciseData: {
+              ...exercise.exerciseData,
+              comment: '' // Удаляем комментарий
+            }
+          };
+        }
+        
+        // Проверяем упражнения в группе
+        if (exercise.type === 'group' && exercise.exercises) {
+          const updatedGroupExercises = exercise.exercises.map(subEx => {
+            if ((subEx.id === exerciseId || subEx.exercise_id === exerciseId) && subEx.exerciseData?.comment) {
+              exerciseFound = true;
+              return {
+                ...subEx,
+                exerciseData: {
+                  ...subEx.exerciseData,
+                  comment: '' // Удаляем комментарий
+                }
+              };
+            }
+            return subEx;
+          });
+          
+          return {
+            ...exercise,
+            exercises: updatedGroupExercises
+          };
+        }
+        
+        return exercise;
+      });
+      
+      if (!exerciseFound) {
+        showNotification('Упражнение не найдено', 'error');
+        return;
+      }
+      
+      // Обновляем в Firebase
+      const assignmentRef = doc(db, 'assignedWorkouts', assignment.id);
+      await updateDoc(assignmentRef, {
+        weekData: updatedWeekData
+      });
+      
+      // Также обновляем в workout если есть
+      if (assignment.workoutId && assignment.weekNumber) {
+        const workoutRef = doc(db, 'workouts', assignment.workoutId);
+        const workoutSnap = await getDoc(workoutRef);
+        
+        if (workoutSnap.exists()) {
+          const workoutData = workoutSnap.data();
+          
+          if (workoutData.totalWeeks && !workoutData.weeks) {
+            // Новая структура - subcollection
+            const weekRef = doc(db, 'workouts', assignment.workoutId, 'weeks', String(assignment.weekNumber));
+            await updateDoc(weekRef, updatedWeekData);
+          } else if (workoutData.weeks) {
+            // Старая структура - массив
+            const weeks = workoutData.weeks || [];
+            const weekIndex = weeks.findIndex(w => w.weekNumber === assignment.weekNumber);
+            
+            if (weekIndex !== -1) {
+              weeks[weekIndex] = updatedWeekData;
+              await updateDoc(workoutRef, { weeks });
+            }
+          }
+        }
+      }
+      
+      // Обновляем локальное состояние
+      const updatedComments = { ...exerciseComments };
+      delete updatedComments[selectedCommentKey];
+      setExerciseComments(updatedComments);
+      
+      handleCloseCommentModal();
+      showNotification('Комментарий удален', 'success');
+      
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      showNotification('Ошибка при удалении комментария', 'error');
+    } finally {
+      setIsDeletingComment(false);
+    }
   };
 
   // 🔥 Функция для получения актуального веса из client_base
@@ -612,7 +735,7 @@ export default function WorkoutDetails() {
                                           {hasComment && (
                                             <span 
                                               className={styles.commentIcon}
-                                              onClick={(e) => handleCommentClick(e, hasComment)}
+                                              onClick={(e) => handleCommentClick(e, hasComment, commentKey)}
                                               title={t('workoutDetails.viewComment') || 'Посмотреть комментарий'}
                                             >
                                               ⚠️
@@ -685,7 +808,7 @@ export default function WorkoutDetails() {
                                 {hasComment && (
                                   <span 
                                     className={styles.commentIcon}
-                                    onClick={(e) => handleCommentClick(e, hasComment)}
+                                    onClick={(e) => handleCommentClick(e, hasComment, commentKey)}
                                     title={t('workoutDetails.viewComment') || 'Посмотреть комментарий'}
                                   >
                                     ⚠️
@@ -764,9 +887,18 @@ export default function WorkoutDetails() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>Комментарий к упражнению</h3>
             <p className={styles.commentText}>{selectedComment}</p>
-            <button className={styles.closeButton} onClick={handleCloseCommentModal}>
-              Закрыть
-            </button>
+            <div className={styles.commentModalButtons}>
+              <button 
+                className={styles.deleteCommentButton} 
+                onClick={handleDeleteComment}
+                disabled={isDeletingComment}
+              >
+                {isDeletingComment ? 'Удаление...' : 'Удалить'}
+              </button>
+              <button className={styles.closeButton} onClick={handleCloseCommentModal}>
+                Закрыть
+              </button>
+            </div>
           </div>
         </div>
       )}

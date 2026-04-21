@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { clientsService, clientBaseService, workoutsService } from "../../firebase/services";
 import { useNotification } from '../../hooks/useNotification';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -19,6 +21,7 @@ export default function PlanClient() {
   
   const [clientName, setClientName] = useState('');
   const [workouts, setWorkouts] = useState([]);
+  const [workoutNotes, setWorkoutNotes] = useState({}); // Объект {workoutId: {assignmentId, noteText}}
   const [editingWorkoutId, setEditingWorkoutId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -28,49 +31,116 @@ export default function PlanClient() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [isCreateWorkoutModalOpen, setIsCreateWorkoutModalOpen] = useState(false);
   const [newWorkoutName, setNewWorkoutName] = useState('');
+  const [currentNote, setCurrentNote] = useState(null); // Текущая открытая заметка
+  const [isWorkoutNoteModalOpen, setIsWorkoutNoteModalOpen] = useState(false);
+  const [isWorkoutNoteLoading, setIsWorkoutNoteLoading] = useState(false);
   const { notification, showNotification } = useNotification();
   const { confirmDialog, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { executeOptimistic } = useOptimisticUpdate();
 
   useEffect(() => {
-    clientsService.getById(params.id).then((client) => {
-      if (client?.data) {
-        const fullName = `${client.data.surname} ${client.data.name}`;
-        setClientName(fullName);
-      }
-    });
+    let isCancelled = false;
 
-    workoutsService.getByClientId(params.id).then((data) => {
-      const migratedWorkouts = data.map(workout => {
-        if (workout.days && !workout.weeks) {
-          return {
-            ...workout,
-            weeks: [
-              {
-                weekNumber: 1,
-                days: workout.days
-              }
-            ]
-          };
+    const loadClient = async () => {
+      try {
+        const client = await clientsService.getById(params.id);
+        if (!isCancelled && client?.data) {
+          const fullName = `${client.data.surname} ${client.data.name}`;
+          setClientName(fullName);
         }
-        return workout;
-      });
-      
-      // Сортируем тренировки по названию с учётом чисел (натуральная сортировка)
-      const sortedWorkouts = migratedWorkouts.sort((a, b) => {
-        const nameA = (a.name || '').toLowerCase();
-        const nameB = (b.name || '').toLowerCase();
+      } catch (error) {
+        console.error('Error loading client:', error);
+      }
+    };
+
+    const loadWorkouts = async () => {
+      try {
+        const data = await workoutsService.getByClientId(params.id);
+        if (isCancelled) return;
+
+        const migratedWorkouts = data.map(workout => {
+          if (workout.days && !workout.weeks) {
+            return {
+              ...workout,
+              weeks: [
+                {
+                  weekNumber: 1,
+                  days: workout.days
+                }
+              ]
+            };
+          }
+          return workout;
+        });
         
-        // Используем localeCompare с numeric: true для правильной сортировки чисел
-        // Это обеспечит порядок: ТРЕНИРОВКА_1, ТРЕНИРОВКА_2, ..., ТРЕНИРОВКА_10
-        return nameA.localeCompare(nameB, 'ru', { numeric: true, sensitivity: 'base' });
-      });
-      
-      setWorkouts(sortedWorkouts);
-    }).catch((error) => {
-      showNotification(t('notifications.workoutLoadError'), 'error');
-    });
-  }, [params.id, t]); // Убрал showNotification из зависимостей - он вызывает бесконечный цикл
+        // Сортируем тренировки по названию с учётом чисел (натуральная сортировка)
+        const sortedWorkouts = migratedWorkouts.sort((a, b) => {
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          
+          // Используем localeCompare с numeric: true для правильной сортировки чисел
+          // Это обеспечит порядок: ТРЕНИРОВКА_1, ТРЕНИРОВКА_2, ..., ТРЕНИРОВКА_10
+          return nameA.localeCompare(nameB, 'ru', { numeric: true, sensitivity: 'base' });
+        });
+        
+        setWorkouts(sortedWorkouts);
+      } catch (error) {
+        if (!isCancelled) {
+          showNotification(t('notifications.workoutLoadError'), 'error');
+        }
+      }
+    };
+
+    const loadWorkoutNotes = async () => {
+      setIsWorkoutNoteLoading(true);
+      try {
+        // Загружаем все assignedWorkouts для этого клиента
+        const assignedWorkoutsRef = collection(db, 'assignedWorkouts');
+        const q = query(assignedWorkoutsRef, where('clientId', '==', params.id));
+        const snapshot = await getDocs(q);
+        
+        const notesMap = {};
+        
+        // Для каждого assignment проверяем есть ли заметка
+        snapshot.docs.forEach((docSnapshot) => {
+          const data = docSnapshot.data();
+          const workoutId = data.workoutId;
+          const note = data.note;
+          
+          // Если есть заметка, сохраняем её
+          if (note && note.text) {
+            notesMap[workoutId] = {
+              assignmentId: docSnapshot.id,
+              text: note.text,
+              updatedAt: note.updatedAt,
+              updatedByEmail: note.updatedByEmail
+            };
+          }
+        });
+        
+        if (!isCancelled) {
+          setWorkoutNotes(notesMap);
+        }
+      } catch (error) {
+        console.error('Error loading workout notes:', error);
+        if (!isCancelled) {
+          setWorkoutNotes({});
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsWorkoutNoteLoading(false);
+        }
+      }
+    };
+
+    void loadClient();
+    void loadWorkouts();
+    void loadWorkoutNotes();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [params.id, t, showNotification]);
 
   const onButtonBack = () => {
     navigate('/');
@@ -78,6 +148,53 @@ export default function PlanClient() {
 
   const onButtonBase = () => {
     navigate(`/client_base/${params.id}`);
+  };
+
+  const onOpenWorkoutNote = (event, workoutId) => {
+    event.stopPropagation();
+    const noteData = workoutNotes[workoutId];
+    if (!noteData?.text) return;
+    setCurrentNote(noteData);
+    setIsWorkoutNoteModalOpen(true);
+  };
+
+  const onCloseWorkoutNoteModal = () => {
+    setIsWorkoutNoteModalOpen(false);
+    setCurrentNote(null);
+  };
+
+  const onDeleteWorkoutNote = () => {
+    if (!currentNote) return;
+    
+    showConfirm(
+      t('dialogs.confirmDeleteWorkoutNote'),
+      async () => {
+        try {
+          // Удаляем заметку из assignedWorkout
+          const assignmentRef = doc(db, 'assignedWorkouts', currentNote.assignmentId);
+          await updateDoc(assignmentRef, {
+            note: null
+          });
+          
+          // Обновляем локальное состояние
+          const updatedNotes = { ...workoutNotes };
+          const workoutId = Object.keys(updatedNotes).find(
+            key => updatedNotes[key].assignmentId === currentNote.assignmentId
+          );
+          if (workoutId) {
+            delete updatedNotes[workoutId];
+          }
+          setWorkoutNotes(updatedNotes);
+          
+          setIsWorkoutNoteModalOpen(false);
+          setCurrentNote(null);
+          showNotification(t('notifications.workoutNoteDeleted'), 'success');
+        } catch (error) {
+          console.error('Error deleting workout note:', error);
+          showNotification(t('notifications.workoutNoteDeleteError'), 'error');
+        }
+      }
+    );
   };
 
   const onButtonAddTraining = () => {
@@ -399,6 +516,37 @@ export default function PlanClient() {
         onCreate={onCreateWorkoutFromModal}
         onClose={onCloseCreateWorkoutModal}
       />
+      {isWorkoutNoteModalOpen && currentNote?.text && (
+        <div className={styles.transferModal} onClick={onCloseWorkoutNoteModal}>
+          <div className={styles.noteModalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.transferModalHeader}>
+              <h2>{t('planClient.workoutNoteTitle')}</h2>
+              <button className={styles.transferClose} onClick={onCloseWorkoutNoteModal}>
+                ✕
+              </button>
+            </div>
+            <div className={styles.noteModalBody}>
+              <p className={styles.noteModalText}>{currentNote.text}</p>
+              <div className={styles.noteModalActions}>
+                <button
+                  type="button"
+                  className={styles.noteDeleteButton}
+                  onClick={onDeleteWorkoutNote}
+                >
+                  {t('common.delete')}
+                </button>
+                <button
+                  type="button"
+                  className={styles.noteCloseButton}
+                  onClick={onCloseWorkoutNoteModal}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {isTransferModalOpen && (
         <div className={styles.transferModal} onClick={closeTransferModal}>
           <div className={styles.transferModalContent} onClick={(e) => e.stopPropagation()}>
@@ -469,6 +617,16 @@ export default function PlanClient() {
               className={styles.workoutCard}
               onClick={() => editingWorkoutId !== workout.id && onWorkoutClick(workout.id)}
             >
+              {!isWorkoutNoteLoading && workoutNotes[workout.id]?.text && (
+                <button
+                  className={`${styles.noteButton} ${styles.noteButtonLeft}`}
+                  onClick={(e) => onOpenWorkoutNote(e, workout.id)}
+                  title={t('planClient.workoutNoteButton')}
+                >
+                  С
+                </button>
+              )}
+
               <div className={styles.cardActions}>
                 <button
                   className={styles.transferButton}
