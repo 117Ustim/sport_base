@@ -10,8 +10,14 @@ import { useNotification } from "../../hooks/useNotification";
 import styles from './WorkoutDetails.module.scss';
 import BackButton from "../BackButton";
 import SkeletonLoader from "../SkeletonLoader";
+import { getWeightFromBase } from "../../utils/weightUtils";
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const WEIGHT_SOURCE = {
+  LETTER: 'letter',
+  STAR: 'star'
+};
 
 // Функция для конвертации даты из YYYY-MM-DD в DD.MM.YYYY для отображения
 const formatDateForDisplay = (isoDate) => {
@@ -48,6 +54,7 @@ export default function WorkoutDetails() {
   const [selectedCommentKey, setSelectedCommentKey] = useState(''); // Ключ для удаления комментария
   const [exerciseComments, setExerciseComments] = useState({});
   const [clientBase, setClientBase] = useState([]); // 🔥 База упражнений клиента
+  const [columns, setColumns] = useState([]); // 🔥 Колонки из базы клиента
   const [isDeletingComment, setIsDeletingComment] = useState(false);
 
   useEffect(() => {
@@ -66,11 +73,12 @@ export default function WorkoutDetails() {
         console.log('📥 Начинаем параллельную загрузку данных');
         const startTime = Date.now();
         
-        const [client, workoutData, assignments, clientBaseData] = await Promise.all([
+        const [client, workoutData, assignments, clientBaseData, metadata] = await Promise.all([
           clientsService.getById(params.clientId),
           workoutsService.getById(params.workoutId),
           assignedWorkoutsService.getAssignedWorkoutsByClientId(params.clientId),
-          clientBaseService.getByClientId(params.clientId) // 🔥 Загружаем базу упражнений
+          clientBaseService.getByClientId(params.clientId), // 🔥 Загружаем базу упражнений
+          clientBaseService.getMetadata(params.clientId) // 🔥 Загружаем метаданные для колонок
         ]);
         
         console.log('✅ Все данные загружены за:', Date.now() - startTime, 'мс');
@@ -80,6 +88,7 @@ export default function WorkoutDetails() {
         
         setClientData(client);
         setClientBase(clientBaseData); // 🔥 Сохраняем базу упражнений
+        setColumns(metadata?.columns || []); // 🔥 Сохраняем колонки
         
         // Нормализация структуры недель
         if (workoutData) {
@@ -146,11 +155,15 @@ export default function WorkoutDetails() {
                if (weekIndex !== -1) {
                   const dateKey = `week${weekIndex}_${dayKey}`;
                   dates[dateKey] = latestAssignment.weekData.dates[dayKey];
-                  initialWeekIndex = weekIndex;
                }
             });
-            console.log('📅 Восстановлены даты из назначения:', dates);
           }
+        }
+
+        // 🔥 ПРИОРИТЕТ 1: Загружаем все сохранённые даты из самого шаблона тренировки
+        if (workoutData.dates) {
+          console.log('📅 Загружаем даты из шаблона тренировки:', workoutData.dates);
+          Object.assign(dates, workoutData.dates);
         }
 
         setLatestDates(dates);
@@ -219,29 +232,37 @@ export default function WorkoutDetails() {
   };
 
   const handleDateSelect = (date) => {
-    if (selectedDay && date && workout) {
-      const week = workout.weeks[selectedDay.weekIndex];
-      const dayExercises = week.days[selectedDay.dayKey]?.exercises || [];
-      
-      // Создаем сессию для сохранения
-      const session = {
-        workoutId: params.workoutId,
-        clientId: params.clientId,
-        weekNumber: week.weekNumber,
-        dayKey: selectedDay.dayKey,
-        date: date,
-        exercises: dayExercises
-      };
-      
-      // Добавляем в список ожидающих сохранения
-      setPendingSessions(prev => [...prev, session]);
-      
-      // Обновляем отображаемую дату
+    if (selectedDay && workout) {
       const key = `week${selectedDay.weekIndex}_${selectedDay.dayKey}`;
-      setLatestDates(prev => ({
-        ...prev,
-        [key]: date
-      }));
+      
+      if (date) {
+        // Установка даты
+        const week = workout.weeks[selectedDay.weekIndex];
+        const dayExercises = week.days[selectedDay.dayKey]?.exercises || [];
+        
+        const session = {
+          workoutId: params.workoutId,
+          clientId: params.clientId,
+          weekNumber: week.weekNumber,
+          dayKey: selectedDay.dayKey,
+          date: date,
+          exercises: dayExercises
+        };
+        
+        setPendingSessions(prev => [...prev, session]);
+        setLatestDates(prev => ({ ...prev, [key]: date }));
+      } else {
+        // Очистка даты ("Без даты")
+        setLatestDates(prev => {
+          const updated = { ...prev };
+          delete updated[key];
+          return updated;
+        });
+        // Удаляем из ожидающих сохранения если было
+        setPendingSessions(prev => prev.filter(s => 
+          !(s.weekNumber === workout.weeks[selectedDay.weekIndex].weekNumber && s.dayKey === selectedDay.dayKey)
+        ));
+      }
       
       setHasUnsavedChanges(true);
     }
@@ -387,37 +408,6 @@ export default function WorkoutDetails() {
     }
   };
 
-  // 🔥 Функция для получения актуального веса из client_base
-  const getActualWeight = (exerciseId, numberTimes) => {
-    if (!clientBase || clientBase.length === 0) return null;
-    
-    // Ищем упражнение в базе по exercise_id
-    const exercise = clientBase.find(ex => ex.exercise_id === exerciseId);
-    if (!exercise || !exercise.data) return null;
-    
-    // Индекс = количество раз - 1 (например, 8 раз = индекс 7)
-    const weightIndex = String(numberTimes - 1);
-    const weight = exercise.data[weightIndex];
-    
-    // Возвращаем вес только если он не пустой
-    if (weight && weight !== '' && weight !== '—') {
-      return weight;
-    }
-    
-    return null;
-  };
-
-  // Для упражнений из колонок "* X" приоритет у сохраненного веса со звездочкой
-  const hasStarWeight = (exercise) => {
-    const starWeight = exercise?.exerciseData?.weight;
-    return Boolean(
-      exercise?.exerciseData?.weightFromStar &&
-      starWeight &&
-      starWeight !== '' &&
-      starWeight !== '—'
-    );
-  };
-
   // 🔥 Функция для обновления весов в weekData перед отправкой клиенту
   const updateWeightsInWeekData = (weekData) => {
     const updatedWeekData = { ...weekData };
@@ -435,12 +425,15 @@ export default function WorkoutDetails() {
             const updatedGroupExercises = exercise.exercises.map(ex => {
               const isAerobic = ex.category_id === '6';
               if (isAerobic) return ex; // Аэробные упражнения не имеют веса
-
-              // Не перезаписываем вес, если он выбран из колонки "*"
-              if (hasStarWeight(ex)) return ex;
               
               const reps = ex.exerciseData?.reps || ex.numberTimes || 8;
-              const actualWeight = getActualWeight(ex.exercise_id, reps);
+              const isLetter = ex.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+              const isStarred = ex.exerciseData?.weightSource === WEIGHT_SOURCE.STAR || ex.exerciseData?.weightFromStar === true;
+              
+              const actualWeight = getWeightFromBase(ex.exercise_id, reps, clientBase, columns, {
+                isStarred,
+                preferAColumn: isLetter
+              });
               
               if (actualWeight) {
                 return {
@@ -461,15 +454,18 @@ export default function WorkoutDetails() {
             };
           }
           
-          // Обычное упражнение
+          // Для обычных упражнений
           const isAerobic = exercise.category_id === '6';
           if (isAerobic) return exercise; // Аэробные упражнения не имеют веса
-
-          // Не перезаписываем вес, если он выбран из колонки "*"
-          if (hasStarWeight(exercise)) return exercise;
           
           const reps = exercise.exerciseData?.reps || exercise.numberTimes || 8;
-          const actualWeight = getActualWeight(exercise.exercise_id, reps);
+          const isLetter = exercise.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+          const isStarred = exercise.exerciseData?.weightSource === WEIGHT_SOURCE.STAR || exercise.exerciseData?.weightFromStar === true;
+          
+          const actualWeight = getWeightFromBase(exercise.exercise_id, reps, clientBase, columns, {
+            isStarred,
+            preferAColumn: isLetter
+          });
           
           if (actualWeight) {
             return {
@@ -519,20 +515,14 @@ export default function WorkoutDetails() {
     // ✅ УБРАНА ПРОВЕРКА: Теперь можно отправлять любую неделю повторно
     // Это позволяет отправлять одну и ту же неделю несколько раз с разными датами
 
-    // Проверяем что все дни с упражнениями имеют даты
-    const daysWithExercises = DAYS_ORDER.filter(dayKey => {
+    const daysWithExercisesAndDates = DAYS_ORDER.filter(dayKey => {
       const dayExercises = weekData.days[dayKey]?.exercises || [];
-      return dayExercises.length > 0;
-    });
-
-    const daysWithoutDates = daysWithExercises.filter(dayKey => {
       const dateKey = `week${selectedWeekIndex}_${dayKey}`;
-      return !latestDates[dateKey];
+      return dayExercises.length > 0 && latestDates[dateKey];
     });
 
-    if (daysWithoutDates.length > 0) {
-      const missingDaysNames = daysWithoutDates.map(dayKey => t(`daysFull.${dayKey}`)).join(', ');
-      showNotification(t('workoutDetails.missingDates', { days: missingDaysNames }), 'error');
+    if (daysWithExercisesAndDates.length === 0) {
+      showNotification(t('workoutDetails.selectAtLeastOneDate'), 'error');
       return;
     }
 
@@ -544,31 +534,32 @@ export default function WorkoutDetails() {
       const weekDataWithUpdatedWeights = updateWeightsInWeekData(weekData);
       console.log('✅ Веса обновлены из client_base');
       
-      // Подготавливаем данные недели с датами
-      const weekDataWithDates = {
-        ...weekDataWithUpdatedWeights,
-        dates: {}
-      };
+      // Подготавливаем данные недели (только дни с датами!)
+      const filteredDays = {};
+      const sessionDates = {};
       
-      // Собираем даты для каждого дня недели
       DAYS_ORDER.forEach(dayKey => {
         const dateKey = `week${selectedWeekIndex}_${dayKey}`;
-        if (latestDates[dateKey]) {
-          // Конвертируем дату из DD.MM.YYYY в YYYY-MM-DD для совместимости с dayjs
-          const dateString = latestDates[dateKey]; // DD.MM.YYYY
-          const parts = dateString.split('.');
+        const dateString = latestDates[dateKey];
+        
+        if (dateString && weekDataWithUpdatedWeights.days[dayKey]) {
+          // Копируем только те дни, где есть дата
+          filteredDays[dayKey] = weekDataWithUpdatedWeights.days[dayKey];
           
-          // Проверяем что все части даты присутствуют
-          if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+          // Конвертируем дату для Firebase
+          const parts = dateString.split('.');
+          if (parts.length === 3) {
             const [day, month, year] = parts;
-            const isoDate = `${year}-${month}-${day}`; // YYYY-MM-DD
-            console.log(`📅 Дата для ${dayKey}:`, isoDate);
-            weekDataWithDates.dates[dayKey] = isoDate;
-          } else {
-            console.error(`❌ Некорректный формат даты для ${dayKey}:`, dateString);
+            sessionDates[dayKey] = `${year}-${month}-${day}`;
           }
         }
       });
+
+      const weekDataForAssignment = {
+        ...weekDataWithUpdatedWeights,
+        days: filteredDays,
+        dates: sessionDates
+      };
       
       console.log('📦 Данные подготовлены за:', Date.now() - startTime, 'мс');
       
@@ -581,14 +572,18 @@ export default function WorkoutDetails() {
       await assignedWorkoutsService.assignWeekToClient(
         params.clientId,
         clientData.data.userId,
-        weekDataWithDates,
+        weekDataForAssignment,
         workout.name,
         params.workoutId
       );
       console.log('✅ Отправка клиенту заняла:', Date.now() - assignTime, 'мс');
       
-      // НЕ сохраняем даты в workouts - шаблон должен оставаться без дат!
-      // Даты сохраняются только в assignedWorkouts
+      // 🔥 СОХРАНЯЕМ ДАТЫ В ШАБЛОН (теперь даты сохраняются навсегда для всех недель)
+      console.log('💾 Сохраняем даты в шаблон тренировки');
+      const workoutRef = doc(db, 'workouts', params.workoutId);
+      await updateDoc(workoutRef, {
+        dates: latestDates
+      });
       
       // Обновляем состояние
       setLastAssignedWeek(weekData.weekNumber);
@@ -701,6 +696,7 @@ export default function WorkoutDetails() {
                                   <div className={styles.groupExercises}>
                                     {exercise.exercises.map((ex, idx) => {
                                       const isAerobic = ex.category_id === '6';
+                                      const isAbs = ex.name && ex.name.toLowerCase().includes('прес');
                                       
                                       // Получаем вес из exerciseData (может быть объектом или массивом)
                                       let weight = '';
@@ -715,14 +711,20 @@ export default function WorkoutDetails() {
                                         }
                                       }
                                       
-                                      // Получаем подходы и повторения
                                       const sets = ex.exerciseData?.sets || ex.numberSteps || '';
                                       const reps = ex.exerciseData?.reps || ex.numberTimes || '';
-                                      const isStarWeight = hasStarWeight(ex);
                                       
-                                      // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
-                                      const actualWeight = isStarWeight ? null : getActualWeight(ex.exercise_id, reps);
-                                      const displayWeight = (isStarWeight ? ex.exerciseData?.weight : null) || actualWeight || weight;
+                                      const isLetter = ex.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+                                      const isStarred = ex.exerciseData?.weightSource === WEIGHT_SOURCE.STAR || ex.exerciseData?.weightFromStar === true;
+                                      
+                                      // 🔥 Получаем актуальный вес из client_base
+                                      const actualWeight = getWeightFromBase(ex.exercise_id, reps, clientBase, columns, {
+                                        isStarred,
+                                        preferAColumn: isLetter
+                                      });
+                                      
+                                      const displayWeight = actualWeight || weight;
+                                      const isStarWeight = isStarred;
                                       
                                       // Проверяем наличие комментария для этого упражнения
                                       const commentKey = `${ex.id || ex.exercise_id}_${dayKey}`;
@@ -748,7 +750,7 @@ export default function WorkoutDetails() {
                                           ) : (
                                             <>
                                               <span className={styles.exerciseParams}>
-                                                {sets}×{reps}
+                                                {sets}×{isAbs ? '∞' : reps}
                                               </span>
                                               {displayWeight && (
                                                 <span className={styles.exerciseWeight}>
@@ -772,6 +774,7 @@ export default function WorkoutDetails() {
                           
                           // Обычное упражнение
                           const isAerobic = exercise.category_id === '6';
+                          const isAbs = exercise.name && exercise.name.toLowerCase().includes('прес');
                           
                           // Получаем вес из exerciseData (может быть объектом или массивом)
                           let weight = '';
@@ -786,14 +789,20 @@ export default function WorkoutDetails() {
                             }
                           }
                           
-                          // Получаем подходы и повторения
                           const sets = exercise.exerciseData?.sets || exercise.numberSteps || '';
                           const reps = exercise.exerciseData?.reps || exercise.numberTimes || '';
-                          const isStarWeight = hasStarWeight(exercise);
                           
-                          // 🔥 Получаем актуальный вес из client_base (используем exercise_id, а не id!)
-                          const actualWeight = isStarWeight ? null : getActualWeight(exercise.exercise_id, reps);
-                          const displayWeight = (isStarWeight ? exercise.exerciseData?.weight : null) || actualWeight || weight;
+                          const isLetter = exercise.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+                          const isStarred = exercise.exerciseData?.weightSource === WEIGHT_SOURCE.STAR || exercise.exerciseData?.weightFromStar === true;
+                          
+                          // 🔥 Получаем актуальный вес из client_base
+                          const actualWeight = getWeightFromBase(exercise.exercise_id, reps, clientBase, columns, {
+                            isStarred,
+                            preferAColumn: isLetter
+                          });
+                          
+                          const displayWeight = actualWeight || weight;
+                          const isStarWeight = isStarred;
                           
                           // Проверяем наличие комментария для этого упражнения
                           const commentKey = `${exercise.id || exercise.exercise_id}_${dayKey}`;
@@ -821,7 +830,7 @@ export default function WorkoutDetails() {
                                 ) : (
                                   <>
                                     <span className={styles.exerciseParams}>
-                                      {sets} × {reps}
+                                      {sets} × {isAbs ? '∞' : reps}
                                     </span>
                                     {displayWeight && (
                                       <span className={styles.exerciseWeight}>

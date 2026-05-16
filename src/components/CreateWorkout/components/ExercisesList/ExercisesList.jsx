@@ -49,7 +49,7 @@ export default function ExercisesList({
   const selectedDayExercises = workout.weeks[selectedWeek]?.days[selectedDay]?.exercises || [];
   const hasSelectedDayExercises = selectedDayExercises.length > 0;
   const starColumns = columns && columns.length > 0
-    ? columns.filter(col => String(col.name || '').trim().startsWith('* '))
+    ? columns.filter(col => /^\*\s*\d+$/.test(String(col.name || '').trim()))
     : [];
   const starRepsColumns = starColumns
     .filter(col => /^\*\s*\d+$/.test(String(col.name || '').trim()))
@@ -97,7 +97,7 @@ export default function ExercisesList({
               <button 
                 key={col.id}
                 className={styles.starRepsButton} 
-                onClick={() => onStarWeightClick(reps)}
+                onClick={() => onStarWeightClick(`* ${reps}`)}
                 title={`Подставить вес из колонки "${col.name}" для последнего добавленного упражнения`}
               >
                 * {reps}

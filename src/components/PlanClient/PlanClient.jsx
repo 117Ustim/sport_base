@@ -73,14 +73,11 @@ export default function PlanClient() {
           return workout;
         });
         
-        // Сортируем тренировки по названию с учётом чисел (натуральная сортировка)
+        // Сортируем тренировки по дате создания (от старых к новым)
         const sortedWorkouts = migratedWorkouts.sort((a, b) => {
-          const nameA = (a.name || '').toLowerCase();
-          const nameB = (b.name || '').toLowerCase();
-          
-          // Используем localeCompare с numeric: true для правильной сортировки чисел
-          // Это обеспечит порядок: ТРЕНИРОВКА_1, ТРЕНИРОВКА_2, ..., ТРЕНИРОВКА_10
-          return nameA.localeCompare(nameB, 'ru', { numeric: true, sensitivity: 'base' });
+          const dateA = a.createdAt || a.id || '';
+          const dateB = b.createdAt || b.id || '';
+          return dateA.localeCompare(dateB);
         });
         
         setWorkouts(sortedWorkouts);

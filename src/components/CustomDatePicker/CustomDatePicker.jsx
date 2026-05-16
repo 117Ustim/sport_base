@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './CustomDatePicker.module.scss';
 
 const MONTHS = [
@@ -9,6 +10,7 @@ const MONTHS = [
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export default function CustomDatePicker({ onDateSelect, onCancel }) {
+  const { t } = useTranslation();
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -111,6 +113,9 @@ export default function CustomDatePicker({ onDateSelect, onCancel }) {
       <div className={styles.actions}>
         <button className={styles.cancelButton} onClick={onCancel}>
           Отмена
+        </button>
+        <button className={styles.noDateButton} onClick={() => onDateSelect(null)}>
+          {t('workoutDetails.noDate')}
         </button>
         <button 
           className={styles.confirmButton} 

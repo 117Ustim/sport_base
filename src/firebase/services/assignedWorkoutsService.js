@@ -87,11 +87,7 @@ export const assignedWorkoutsService = {
           days: weekData.days,
           dates: weekData.dates || {}
         },
-        assignedAt: new Date().toLocaleDateString('ru-RU', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '.'),
+        assignedAt: new Date().toISOString().split('T')[0],
         status: 'new'
       };
       

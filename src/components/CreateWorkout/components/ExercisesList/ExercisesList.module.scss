@@ -1,4 +1,7 @@
+@import '../../../../styles/mixins';
+
 .selectedDayExercises {
+  @include custom-scrollbar;
   flex: 1.17;
   overflow-y: auto;
   padding-right: 10px;
@@ -11,6 +14,9 @@
 }
 
 .infoMessageSmall {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   font-size: 13px;
   color: var(--text-muted);
   margin: 0 0 20px 0;
@@ -24,6 +30,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  box-shadow: 0 4px 12px var(--shadow-color);
 
   strong {
     color: var(--accent-primary);
@@ -113,15 +120,15 @@
 }
 
 .dayExercisesSection {
-  margin-bottom: 30px;
+  margin-bottom: 15px;
 }
 
 .daySectionTitle {
-  margin: 0 0 15px 0;
-  font-size: 18px;
+  margin: 0 0 8px 0;
+  font-size: 15px;
   color: var(--accent-warning);
   font-weight: 700;
-  padding-bottom: 8px;
+  padding-bottom: 4px;
   border-bottom: 2px solid var(--accent-warning);
 }
 

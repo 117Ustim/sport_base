@@ -1,10 +1,12 @@
 .weeksSelector {
+  display: block;
   .weeksHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 15px;
     gap: 8px;
+    flex-shrink: 0;
 
     .sidebarTitle {
       margin: 0;
@@ -20,23 +22,24 @@
 }
 
 .deleteWeekIconButton {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--button-danger);
   color: var(--text-on-accent);
-  font-size: 20px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 700;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
+  line-height: 18px;
   transition: all 0.2s;
-  line-height: 1;
   text-shadow: none;
   box-shadow: none;
+  flex-shrink: 0;
+  margin-top: -12px;
+
   &:hover {
     background: var(--button-danger-hover);
     transform: scale(1.1);
@@ -50,23 +53,23 @@
 }
 
 .addWeekIconButton {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--button-warning);
   color: var(--text-on-accent);
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
+  line-height: 20px;
   transition: all 0.2s;
-  line-height: 1;
   text-shadow: none;
   box-shadow: none;
+  flex-shrink: 0;
+  margin-top: -12px;
 
   &:hover {
     background: var(--button-warning-hover);
@@ -84,6 +87,27 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  max-height: 400px;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+  }
 }
 
 .weekButton {
@@ -124,11 +148,11 @@
   border-color: var(--border-color);
   background: var(--bg-feature);
   background-image: none;
-  box-shadow: -5px -5px 20px var(--shadow-color-strong), 5px 5px 20px var(--shadow-color);
+  box-shadow: none;
 
   &:hover {
     background: var(--bg-feature-hover);
-    box-shadow: -2px -2px 5px var(--shadow-color-strong), 2px 2px 5px var(--shadow-color);
+    box-shadow: none;
   }
 
   &:active {

@@ -1,8 +1,6 @@
 .daysSelectorSidebar {
-  width: 120px;
-  border-right: 1px solid var(--border-color);
-  padding-right: 20px;
-  overflow-y: auto;
+  width: 100%;
+  padding-bottom: 20px;
 }
 
 .sidebarTitle {
@@ -15,9 +13,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .dayButton {
@@ -33,8 +28,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   box-shadow: none;
 
   &:hover {
@@ -54,17 +49,29 @@
     border-color: transparent;
     box-shadow: none;
   }
+
+  &.isDragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    z-index: 10;
+  }
+
+  &.isOver {
+    border: 2px dashed var(--accent-primary);
+    background: var(--bg-feature-hover);
+    transform: scale(1.05);
+  }
 }
 
 :global(body.theme-dark) .dayButton {
   border-color: var(--border-color);
   background: var(--bg-feature);
   background-image: none;
-  box-shadow: -5px -5px 20px var(--shadow-color-strong), 5px 5px 20px var(--shadow-color);
+  box-shadow: none;
 
   &:hover {
     background: var(--bg-feature-hover);
-    box-shadow: -2px -2px 5px var(--shadow-color-strong), 2px 2px 5px var(--shadow-color);
+    box-shadow: none;
   }
 
   &:active {
@@ -79,7 +86,7 @@
 }
 
 .dayLabel {
-  font-size: 13px;
+  font-size: 12px;
   
 }
 
@@ -97,7 +104,8 @@
   font-weight: normal;
 
   .activeDay & {
-    background-color: var(--bg-feature);
-    color: var(--accent-primary);
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-weight: 700;
   }
 }

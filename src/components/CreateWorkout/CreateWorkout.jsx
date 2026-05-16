@@ -10,6 +10,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOptimisticUpdate } from '../../hooks';
 import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog';
+import { getWeightFromBase } from '../../utils/weightUtils';
 import TopBar from './components/TopBar';
 import WorkoutModal from './components/WorkoutModal';
 import DaySelector from './components/DaySelector';
@@ -19,7 +20,32 @@ import ExercisesPanel from './components/ExercisesPanel';
 import { DAYS_OF_WEEK } from './constants';
 import styles from './CreateWorkout.module.scss';
 
-const LETTER_COLUMN_REGEX = /^[A-Za-zА-Яа-яЁёІіЇїЄєҐґ]+$/;
+// Функция для нормализации похожих символов латиницы и кириллицы
+const normalizeHomoglyphs = (text) => {
+  if (!text) return '';
+  const map = {
+    'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T', 'Х': 'X', 'У': 'Y', 'І': 'I', 'Ї': 'I', 'Ј': 'J',
+    'а': 'a', 'в': 'b', 'с': 'c', 'е': 'e', 'н': 'h', 'к': 'k', 'м': 'm', 'о': 'o', 'р': 'p', 'т': 't', 'х': 'x', 'у': 'y', 'і': 'i', 'ї': 'i', 'ј': 'j'
+  };
+  return text.split('').map(char => map[char] || char).join('').toUpperCase();
+};
+
+const WEIGHT_SOURCE = {
+  LETTER: 'letter',
+  STAR: 'star'
+};
+
+const withoutColumnWeightMeta = (exerciseData = {}, removeWeight = false) => {
+  const nextData = { ...exerciseData };
+  delete nextData.weightFromStar;
+  delete nextData.weightSource;
+  delete nextData.weightSourceColumnId;
+  delete nextData.weightSourceColumnName;
+  if (removeWeight) {
+    delete nextData.weight;
+  }
+  return nextData;
+};
 
 export default function CreateWorkout() {
   const navigate = useNavigate();
@@ -77,44 +103,84 @@ export default function CreateWorkout() {
       if (!parsedDraft || typeof parsedDraft !== 'object' || !parsedDraft.workout) {
         return null;
       }
-
-      return parsedDraft;
-    } catch (error) {
-      console.error('Failed to parse edit workout draft:', error);
+      return parsedDraft; // Возвращаем весь объект черновика
+    } catch (e) {
+      console.error('Error reading draft:', e);
       return null;
     }
   }, [isEditMode, editDraftStorageKey]);
 
-  // 🔥 Функция для получения веса из client_base по exercise_id и количеству повторений
-  const getWeightFromBase = useCallback((exerciseId, numberTimes) => {
-    if (!exercises || exercises.length === 0) return '';
-    
-    // Ищем упражнение в базе по exercise_id
-    const exercise = exercises.find(ex => ex.exercise_id === exerciseId);
-    if (!exercise || !exercise.data) return '';
-    
-    let weight;
-    
-    // ✅ Пытаемся найти колонку по названию (например "8")
-    if (columns && columns.length > 0) {
-      const numericColumn = columns.find(col => String(col.name).trim() === String(numberTimes));
-      if (numericColumn) {
-        weight = exercise.data[numericColumn.id] ?? exercise.data[String(numericColumn.id)];
-      }
+
+  /**
+   * Функция для автоматической синхронизации весов всего плана с Базой
+   */
+  const syncWorkoutWithBase = useCallback((workoutData) => {
+    if (!workoutData || !workoutData.weeks || exercises.length === 0) return workoutData;
+
+    console.log('🔄 Синхронизация плана с Базой...');
+    let syncCount = 0;
+
+    const updatedWeeks = workoutData.weeks.map(week => {
+      const updatedDays = { ...week.days };
+      
+      Object.keys(updatedDays).forEach(dayKey => {
+        const day = updatedDays[dayKey];
+        if (!day.exercises || !Array.isArray(day.exercises)) return;
+
+        day.exercises = day.exercises.map(ex => {
+          // Обработка групп
+          if (ex.type === 'group' && Array.isArray(ex.exercises)) {
+            ex.exercises = ex.exercises.map(subEx => {
+              const isStarred = subEx.isFromStarColumn || subEx.exerciseData?.weightFromStar || String(subEx.exerciseData?.weight || '').includes('*');
+              const isLetter = subEx.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+              
+              // Для групп или буквенного источника предпочитаем колонку А
+              const freshWeight = getWeightFromBase(subEx.exercise_id, subEx.numberTimes, exercises, columns, { 
+                isStarred, 
+                isGroup: true,
+                preferAColumn: isLetter
+              });
+              
+              if (freshWeight && freshWeight !== String(subEx.exerciseData?.weight || '').replace(/\*/g, '').trim()) {
+                syncCount++;
+                return {
+                  ...subEx,
+                  exerciseData: { ...subEx.exerciseData, weight: freshWeight, weightSource: 'base_sync' }
+                };
+              }
+              return subEx;
+            });
+            return ex;
+          }
+
+          // Обработка обычных
+          const isStarred = ex.isFromStarColumn || ex.exerciseData?.weightFromStar || String(ex.exerciseData?.weight || '').includes('*');
+          const isLetter = ex.exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+          
+          const freshWeight = getWeightFromBase(ex.exercise_id, ex.numberTimes, exercises, columns, { 
+            isStarred,
+            preferAColumn: isLetter
+          });
+          
+          if (freshWeight && freshWeight !== String(ex.exerciseData?.weight || '').replace(/\*/g, '').trim()) {
+            syncCount++;
+            return {
+              ...ex,
+              exerciseData: { ...ex.exerciseData, weight: freshWeight, weightSource: 'base_sync' }
+            };
+          }
+          return ex;
+        });
+      });
+
+      return { ...week, days: updatedDays };
+    });
+
+    if (syncCount > 0) {
+      console.log(`✅ Синхронизировано упражнений: ${syncCount}`);
     }
-    
-    // Fallback: индекс = количество раз - 1 (старая логика)
-    if (weight === undefined) {
-      const weightIndex = String(numberTimes - 1);
-      weight = exercise.data[weightIndex];
-    }
-    
-    // Возвращаем вес только если он не пустой
-    if (weight && weight !== '' && weight !== '—') {
-      return weight;
-    }
-    
-    return '';
+
+    return { ...workoutData, weeks: updatedWeeks };
   }, [exercises, columns]);
 
   useEffect(() => {
@@ -259,7 +325,7 @@ export default function CreateWorkout() {
 
   const onButtonBack = () => {
     if (isEditMode) {
-      navigate(`/plan_client/${params.id}/client`);
+      navigate(`/workout_details/${params.id}/${params.workoutId}`);
       return;
     }
     navigate(-1);
@@ -396,7 +462,7 @@ export default function CreateWorkout() {
       newExercise.numberTimes = 8;
       
       // 🔥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ВЕСА ИЗ CLIENT_BASE
-      const weightByReps = getWeightFromBase(exercise.exercise_id, newExercise.numberTimes);
+      const weightByReps = getWeightFromBase(exercise.exercise_id, newExercise.numberTimes, exercises, columns);
       
       if (weightByReps) {
         newExercise.exerciseData = {
@@ -442,7 +508,7 @@ export default function CreateWorkout() {
          showNotification(t('createWorkout.aerobicAddedAsSingle'), "info");
       }
     }
-  }, [workout, selectedWeek, selectedDay, addMode, groupDraft, getWeightFromBase, showNotification, t]);
+  }, [workout, selectedWeek, selectedDay, addMode, groupDraft, exercises, columns, showNotification, t]);
 
   const onConfirmGroup = () => {
     if (groupDraft.length < 2) {
@@ -551,25 +617,37 @@ export default function CreateWorkout() {
   };
 
   const getWeightForReps = (exerciseData, reps, exerciseId) => {
-    // 🔥 ПРИОРИТЕТ 1: Если вес был выбран из колонки "*" — используем его
-    if (exerciseData && exerciseData.weightFromStar && exerciseData.weight) {
-      return exerciseData.weight;
-    }
-    
-    // 🔥 ПРИОРИТЕТ 2: Берём актуальный вес из client_base (всегда самый свежий!)
+    // 🔥 ПРИОРИТЕТ 1: Берём актуальный вес из client_base (всегда самый свежий!)
     if (exerciseId) {
-      const weightFromBase = getWeightFromBase(exerciseId, reps);
+      const isLetter = exerciseData?.weightSource === WEIGHT_SOURCE.LETTER;
+      const isStarred = exerciseData?.weightSource === WEIGHT_SOURCE.STAR || exerciseData?.weightFromStar === true;
+      
+      const weightFromBase = getWeightFromBase(exerciseId, reps, exercises, columns, { 
+        isStarred, 
+        preferAColumn: isLetter 
+      });
       if (weightFromBase) {
         return weightFromBase;
       }
     }
+
+    // 🔥 ПРИОРИТЕТ 2: Если актуального веса нет, используем сохранённое значение из быстрой колонки
+    if (
+      exerciseData &&
+      exerciseData.weight &&
+      (exerciseData.weightSource === WEIGHT_SOURCE.STAR ||
+        exerciseData.weightSource === WEIGHT_SOURCE.LETTER ||
+        exerciseData.weightFromStar === true)
+    ) {
+      return exerciseData.weight;
+    }
     
-    // 🔥 ПРИОРИТЕТ 3: Если есть сохранённый вес (fallback), используем его
+    // 🔥 ПРИОРИТЕТ 3: Если есть сохранённый обычный вес, используем его
     if (exerciseData && exerciseData.weight) {
       return exerciseData.weight;
     }
     
-    // 🔥 ПРИОРИТЕТ 3 (fallback): Берём вес из exerciseData по индексу (старая логика)
+    // 🔥 ПРИОРИТЕТ 4 (fallback): Берём вес из exerciseData по индексу (старая логика)
     if (!exerciseData || !exerciseData[reps - 1]) {
       return "—";
     }
@@ -634,22 +712,20 @@ export default function CreateWorkout() {
           // 🔥 Если изменили количество повторений → автоматически обновляем вес
           if (field === 'numberTimes' && ex.exerciseData) {
             const newReps = Number(value);
-            const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps);
+            const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps, exercises, columns);
             
             // Сбрасываем флаг isFromStarColumn при изменении повторений
             delete updated.isFromStarColumn;
             
             if (weightForNewReps) {
-              const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
               updated.exerciseData = {
-                ...dataWithoutStar,
+                ...withoutColumnWeightMeta(ex.exerciseData),
                 weight: weightForNewReps
               };
               console.log(`✅ Вес обновлен для "${ex.name}": ${weightForNewReps} кг (${newReps} повторений)`);
             } else {
               // Убираем вес если его нет для нового количества повторений
-              const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
-              updated.exerciseData = dataWithoutWeight;
+              updated.exerciseData = withoutColumnWeightMeta(ex.exerciseData, true);
               console.log(`ℹ️  Вес убран для "${ex.name}" (нет веса для ${newReps} повторений)`);
             }
           }
@@ -674,22 +750,20 @@ export default function CreateWorkout() {
                 // 🔥 Если изменили количество повторений → автоматически обновляем вес
                 if (field === 'numberTimes' && ex.exerciseData) {
                   const newReps = Number(value);
-                  const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps);
+                  const weightForNewReps = getWeightFromBase(ex.exercise_id, newReps, exercises, columns);
                   
                   // Сбрасываем флаг isFromStarColumn при изменении повторений
                   delete updated.isFromStarColumn;
                   
                   if (weightForNewReps) {
-                    const { weightFromStar, ...dataWithoutStar } = ex.exerciseData;
                     updated.exerciseData = {
-                      ...dataWithoutStar,
+                      ...withoutColumnWeightMeta(ex.exerciseData),
                       weight: weightForNewReps
                     };
                     console.log(`✅ Вес обновлен для "${ex.name}": ${weightForNewReps} кг (${newReps} повторений)`);
                   } else {
                     // Убираем вес если его нет для нового количества повторений
-                    const { weight, weightFromStar, ...dataWithoutWeight } = ex.exerciseData;
-                    updated.exerciseData = dataWithoutWeight;
+                    updated.exerciseData = withoutColumnWeightMeta(ex.exerciseData, true);
                     console.log(`ℹ️  Вес убран для "${ex.name}" (нет веса для ${newReps} повторений)`);
                   }
                 }
@@ -774,17 +848,15 @@ export default function CreateWorkout() {
     const updated = { ...exercise, numberTimes: reps };
 
     if (exercise.exerciseData) {
-      const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps);
+      const weightForNewReps = getWeightFromBase(exercise.exercise_id, reps, exercises, columns);
 
       if (weightForNewReps) {
-        const { weightFromStar, ...dataWithoutStar } = exercise.exerciseData;
         updated.exerciseData = {
-          ...dataWithoutStar,
+          ...withoutColumnWeightMeta(exercise.exerciseData),
           weight: weightForNewReps
         };
       } else {
-        const { weight, weightFromStar, ...dataWithoutWeight } = exercise.exerciseData;
-        updated.exerciseData = dataWithoutWeight;
+        updated.exerciseData = withoutColumnWeightMeta(exercise.exerciseData, true);
       }
     }
 
@@ -1060,28 +1132,24 @@ export default function CreateWorkout() {
       return;
     }
 
-    const normalizeValue = (value) => String(value || '').trim().toUpperCase();
     const targetString = String(targetValue || '').trim();
-    const targetNumber = Number(targetValue);
-    const isStarNumericTarget = Number.isFinite(targetNumber);
-    const isLetterTarget = LETTER_COLUMN_REGEX.test(targetString);
+    const normalizeValue = (val) => normalizeHomoglyphs(String(val || '').trim());
+    const targetNormalized = normalizeValue(targetString);
 
+    // Ищем подходящую колонку
     const selectedColumn = columns.find((col) => {
-      const columnName = String(col.name || '').trim();
+      const colName = String(col.name || '').trim();
+      const colNormalized = normalizeValue(colName);
 
-      if (isStarNumericTarget) {
-        const numericTarget = String(targetNumber);
-        return columnName === `* ${numericTarget}` || columnName === `*${numericTarget}`;
+      // Если нажата кнопка со звездочкой (например "*8")
+      if (targetString.startsWith('*')) {
+        const numPart = targetString.replace('*', '').trim();
+        // Соответствует "*8" или "* 8"
+        return colNormalized === targetNormalized || colNormalized === normalizeValue(`* ${numPart}`);
       }
 
-      if (isLetterTarget) {
-        const normalizedColumnName = normalizeValue(columnName);
-        const normalizedStarColumnName = normalizeValue(columnName.replace(/^\*\s*/, ''));
-        const normalizedTarget = normalizeValue(targetString);
-        return normalizedColumnName === normalizedTarget || normalizedStarColumnName === normalizedTarget;
-      }
-
-      return false;
+      // Если нажата обычная кнопка (например "A" или "8")
+      return colNormalized === targetNormalized;
     });
     const selectedColumnName = selectedColumn ? selectedColumn.name : String(targetValue || '');
 
@@ -1093,91 +1161,100 @@ export default function CreateWorkout() {
     const getValueFromStarColumn = (exerciseItem) => {
       const baseExercise = exercises.find(ex => ex.exercise_id === exerciseItem.exercise_id);
       const sourceData = baseExercise?.data || exerciseItem.exerciseData;
-      return sourceData?.[selectedColumn.id] ??
-        sourceData?.[String(selectedColumn.id)] ??
-        sourceData?.[selectedColumn.name];
+      if (!sourceData) return null;
+
+      // 1. Прямой поиск по ID
+      if (sourceData[selectedColumn.id] !== undefined) return sourceData[selectedColumn.id];
+      if (sourceData[String(selectedColumn.id)] !== undefined) return sourceData[String(selectedColumn.id)];
+
+      // 2. Поиск по имени колонки (с нормализацией)
+      const targetColName = normalizeValue(selectedColumn.name);
+      const foundKey = Object.keys(sourceData).find(key => normalizeValue(key) === targetColName);
+      if (foundKey) return sourceData[foundKey];
+
+      // 3. Поиск по имени колонки без "*" (если колонка в базе со звездой, а мы ищем "A")
+      const targetColNameClean = normalizeValue(selectedColumn.name.replace(/^\*\s*/, ''));
+      const foundKeyClean = Object.keys(sourceData).find(key => {
+        const cleanKey = normalizeValue(key.replace(/^\*\s*/, ''));
+        return cleanKey === targetColNameClean;
+      });
+      if (foundKeyClean) return sourceData[foundKeyClean];
+
+      return null;
     };
 
-    if (isLetterTarget) {
+    // Для "* X" подставляем значение для выбранного или последнего добавленного упражнения
+    const fallbackTarget = lastAddedGroupId
+      ? { id: lastAddedGroupId, type: 'group', dayKey: selectedDay, isDraft: false }
+      : lastAddedExerciseId
+        ? { id: lastAddedExerciseId, type: 'single', dayKey: selectedDay, isDraft: false }
+        : null;
+    const activeTarget = selectedTarget || fallbackTarget;
+
+    if (!activeTarget) {
+      showNotification("Сначала выберите упражнение или группу", "error");
+      return;
+    }
+
+    // 1) Обработка ОБЫЧНЫХ колонок (A, Б и т.д.)
+    if (!targetString.startsWith('*')) {
       const presetReps = Number(selectedColumn.targetReps);
       if (!Number.isFinite(presetReps) || presetReps <= 0) {
         showNotification(`Для колонки "${selectedColumnName}" не заданы повторения`, "error");
         return;
       }
 
-      const targetGroup = lastAddedGroupId
-        ? currentDayExercises.find(
-            (exercise) => exercise.type === 'group' && exercise.id === lastAddedGroupId
-          )
-        : null;
+      // Применяем к ГРУППЕ
+      if (activeTarget.type === 'group') {
+        const targetGroup = currentDayExercises.find(ex => ex.type === 'group' && ex.id === activeTarget.id);
+        if (targetGroup && Array.isArray(targetGroup.exercises)) {
+          let updatedCount = 0;
+          const updatedGroupExercises = targetGroup.exercises.map((groupExercise) => {
+            const valueFromColumn = getValueFromStarColumn(groupExercise);
+            const updatedExercise = { ...groupExercise, numberTimes: presetReps };
 
-      // 1) Применяем к последней завершённой группе (если есть)
-      if (targetGroup && Array.isArray(targetGroup.exercises)) {
-        let updatedCount = 0;
-        const updatedGroupExercises = targetGroup.exercises.map((groupExercise) => {
-          const valueFromColumn = getValueFromStarColumn(groupExercise);
-          const updatedExercise = {
-            ...groupExercise,
-            numberTimes: presetReps
+            if (!valueFromColumn || valueFromColumn === '' || valueFromColumn === '—') {
+              return updatedExercise;
+            }
+
+            updatedCount += 1;
+            return {
+              ...updatedExercise,
+              exerciseData: {
+                ...groupExercise.exerciseData,
+                weight: valueFromColumn,
+                weightFromStar: false,
+                weightSource: WEIGHT_SOURCE.LETTER,
+                weightSourceColumnId: selectedColumn.id,
+                weightSourceColumnName: selectedColumnName
+              },
+              isFromStarColumn: false
+            };
+          });
+
+          const updatedExercises = currentDayExercises.map((exercise) => {
+            if (exercise.id === targetGroup.id) {
+              return { ...exercise, exercises: updatedGroupExercises };
+            }
+            return exercise;
+          });
+
+          const updatedWeeks = [...workout.weeks];
+          updatedWeeks[selectedWeek] = {
+            ...updatedWeeks[selectedWeek],
+            days: { ...updatedWeeks[selectedWeek].days, [selectedDay]: { exercises: updatedExercises } }
           };
 
-          if (!valueFromColumn || valueFromColumn === '' || valueFromColumn === '—') {
-            return updatedExercise;
-          }
-
-          updatedCount += 1;
-          return {
-            ...updatedExercise,
-            exerciseData: {
-              ...groupExercise.exerciseData,
-              weight: valueFromColumn,
-              weightFromStar: true
-            },
-            isFromStarColumn: false
-          };
-        });
-
-        if (updatedCount === 0) {
-          showNotification(`Данные не найдены в колонке "${selectedColumnName}" для упражнений группы`, "error");
+          setWorkout({ ...workout, weeks: updatedWeeks });
+          showNotification(`Колонка "${selectedColumnName}": ${updatedCount} упр. обновлено (${presetReps} повт.)`, "success");
           return;
         }
-
-        const updatedExercises = currentDayExercises.map((exercise) => {
-          if (exercise.id === targetGroup.id) {
-            return {
-              ...exercise,
-              exercises: updatedGroupExercises
-            };
-          }
-          return exercise;
-        });
-
-        const updatedWeeks = [...workout.weeks];
-        updatedWeeks[selectedWeek] = {
-          ...updatedWeeks[selectedWeek],
-          days: {
-            ...updatedWeeks[selectedWeek].days,
-            [selectedDay]: {
-              exercises: updatedExercises
-            }
-          }
-        };
-
-        setWorkout({ ...workout, weeks: updatedWeeks });
-        showNotification(`Колонка "${selectedColumnName}": ${updatedCount} упражнений обновлено (${presetReps} повторений)`, "success");
-        return;
       }
 
-      // 2) Если группы нет — применяем к последнему одиночному упражнению (режим "Обычная")
-      if (!lastAddedExerciseId) {
-        showNotification("Сначала добавьте упражнение", "error");
-        return;
-      }
-
-      const targetExercise = currentDayExercises.find((exercise) => exercise.id === lastAddedExerciseId);
-
+      // Применяем к ОДИНОЧНОМУ упражнению
+      const targetExercise = currentDayExercises.find(ex => ex.id === activeTarget.id);
       if (!targetExercise || targetExercise.type === 'group') {
-        showNotification("Последнее упражнение не найдено в текущем дне", "error");
+        showNotification("Упражнение не найдено", "error");
         return;
       }
 
@@ -1188,19 +1265,22 @@ export default function CreateWorkout() {
 
       const valueFromColumn = getValueFromStarColumn(targetExercise);
       if (!valueFromColumn || valueFromColumn === '' || valueFromColumn === '—') {
-        showNotification(`Данные не найдены в колонке "${selectedColumnName}" для упражнения "${targetExercise.name}"`, "error");
+        showNotification(`Данные не найдены в "${selectedColumnName}" для "${targetExercise.name}"`, "error");
         return;
       }
 
       const updatedExercises = currentDayExercises.map((exercise) => {
-        if (exercise.id === lastAddedExerciseId) {
+        if (exercise.id === activeTarget.id) {
           return {
             ...exercise,
             numberTimes: presetReps,
             exerciseData: {
               ...exercise.exerciseData,
               weight: valueFromColumn,
-              weightFromStar: true
+              weightFromStar: false,
+              weightSource: WEIGHT_SOURCE.LETTER,
+              weightSourceColumnId: selectedColumn.id,
+              weightSourceColumnName: selectedColumnName
             },
             isFromStarColumn: false
           };
@@ -1211,26 +1291,59 @@ export default function CreateWorkout() {
       const updatedWeeks = [...workout.weeks];
       updatedWeeks[selectedWeek] = {
         ...updatedWeeks[selectedWeek],
-        days: {
-          ...updatedWeeks[selectedWeek].days,
-          [selectedDay]: {
-            exercises: updatedExercises
-          }
-        }
+        days: { ...updatedWeeks[selectedWeek].days, [selectedDay]: { exercises: updatedExercises } }
       };
 
       setWorkout({ ...workout, weeks: updatedWeeks });
-      showNotification(`Колонка "${selectedColumnName}" применена к "${targetExercise.name}" (${presetReps} повторений)`, "success");
+      showNotification(`Колонка "${selectedColumnName}" применена к "${targetExercise.name}" (${presetReps} повт.)`, "success");
       return;
     }
 
-    // Для "* X" подставляем значение для последнего добавленного одиночного упражнения
-    if (!lastAddedExerciseId) {
-      showNotification("Сначала добавьте упражнение", "error");
+    // 2) Обработка ЗВЕЗДНЫХ колонок (*8, *12)
+    const targetReps = Number(targetString.replace('*', '').trim());
+    if (!Number.isFinite(targetReps)) {
+      showNotification(`Некорректный формат колонки: ${targetString}`, "error");
       return;
     }
 
-    const targetExercise = currentDayExercises.find(ex => ex.id === lastAddedExerciseId);
+    // 🎯 Применяем к ГРУППЕ
+    if (activeTarget.type === 'group') {
+      const targetGroup = currentDayExercises.find(ex => ex.type === 'group' && ex.id === activeTarget.id);
+      if (targetGroup && Array.isArray(targetGroup.exercises)) {
+        let updatedCount = 0;
+        const updatedGroupExercises = targetGroup.exercises.map((groupExercise) => {
+          const valueFromColumn = getValueFromStarColumn(groupExercise);
+          const updatedExercise = { ...groupExercise, numberTimes: targetReps };
+          if (!valueFromColumn || valueFromColumn === '' || valueFromColumn === '—') return updatedExercise;
+          updatedCount++;
+          return {
+            ...updatedExercise,
+            exerciseData: {
+              ...groupExercise.exerciseData,
+              weight: valueFromColumn,
+              weightFromStar: true,
+              weightSource: WEIGHT_SOURCE.STAR,
+              weightSourceColumnId: selectedColumn.id,
+              weightSourceColumnName: selectedColumnName
+            },
+            isFromStarColumn: true
+          };
+        });
+        const updatedExercises = currentDayExercises.map((exercise) => 
+          exercise.id === activeTarget.id ? { ...exercise, exercises: updatedGroupExercises } : exercise
+        );
+        const updatedWeeks = [...workout.weeks];
+        updatedWeeks[selectedWeek] = {
+          ...updatedWeeks[selectedWeek],
+          days: { ...updatedWeeks[selectedWeek].days, [selectedDay]: { exercises: updatedExercises } }
+        };
+        setWorkout({ ...workout, weeks: updatedWeeks });
+        showNotification(`Колонка "${selectedColumnName}": ${updatedCount} упр. обновлено (${targetReps} повт.)`, "success");
+        return;
+      }
+    }
+
+    const targetExercise = currentDayExercises.find(ex => ex.id === activeTarget.id);
 
     if (!targetExercise) {
       showNotification("Упражнение не найдено в текущем дне", "error");
@@ -1242,11 +1355,6 @@ export default function CreateWorkout() {
       return;
     }
 
-    if (targetExercise.numberTimes !== targetNumber) {
-      showNotification(`У упражнения "${targetExercise.name}" количество повторений ${targetExercise.numberTimes}, а не ${targetValue}`, "error");
-      return;
-    }
-
     const valueFromColumn = getValueFromStarColumn(targetExercise);
     
     if (!valueFromColumn || valueFromColumn === '' || valueFromColumn === '—') {
@@ -1255,13 +1363,17 @@ export default function CreateWorkout() {
     }
 
     const updatedExercises = currentDayExercises.map(exercise => {
-      if (exercise.id === lastAddedExerciseId) {
+      if (exercise.id === activeTarget.id) {
         return {
           ...exercise,
+          numberTimes: targetReps, // 🔥 ОБНОВЛЯЕМ ПОВТОРЕНИЯ АВТОМАТИЧЕСКИ
           exerciseData: {
             ...exercise.exerciseData,
             weight: valueFromColumn,
-            weightFromStar: true
+            weightFromStar: true,
+            weightSource: WEIGHT_SOURCE.STAR,
+            weightSourceColumnId: selectedColumn.id,
+            weightSourceColumnName: selectedColumnName
           },
           isFromStarColumn: true // Флаг что вес взят из колонки "*"
         };
@@ -1281,8 +1393,31 @@ export default function CreateWorkout() {
     };
 
     setWorkout({ ...workout, weeks: updatedWeeks });
-    showNotification(`Вес ${valueFromColumn} кг подставлен для упражнения "${targetExercise.name}" из колонки "${selectedColumnName}"`, "success");
-  }, [workout, selectedWeek, selectedDay, columns, lastAddedExerciseId, lastAddedGroupId, exercises, showNotification, t]);
+    showNotification(`Колонка "${selectedColumnName}" применена к "${targetExercise.name}" (${targetReps} повт.)`, "success");
+  }, [workout, selectedWeek, selectedDay, columns, lastAddedExerciseId, lastAddedGroupId, selectedTarget, exercises, showNotification, t]);
+
+  const handleSwapDays = useCallback((fromDayKey, toDayKey) => {
+    if (!workout || !workout.weeks[selectedWeek]) return;
+    if (fromDayKey === toDayKey) return;
+
+    const updatedWeeks = [...workout.weeks];
+    const currentDays = updatedWeeks[selectedWeek].days;
+
+    // Свап данных между днями
+    const newDays = {
+      ...currentDays,
+      [fromDayKey]: currentDays[toDayKey] || { exercises: [] },
+      [toDayKey]: currentDays[fromDayKey] || { exercises: [] }
+    };
+
+    updatedWeeks[selectedWeek] = {
+      ...updatedWeeks[selectedWeek],
+      days: newDays
+    };
+
+    setWorkout({ ...workout, weeks: updatedWeeks });
+    showNotification(`Расписание обменено: ${t(`days.${fromDayKey}`)} ⇄ ${t(`days.${toDayKey}`)}`, "success");
+  }, [workout, selectedWeek, showNotification, t]);
 
   return (
     <div className={styles.workoutCreator}>
@@ -1315,12 +1450,13 @@ export default function CreateWorkout() {
       {workout && workout.weeks && workout.weeks.length > 0 ? (
         <div className={styles.mainContentArea}>
           
-          <div>
+          <div className={styles.sidebar}>
             <DaySelector
               selectedDay={selectedDay}
               workout={workout}
               selectedWeek={selectedWeek}
               onSelectDay={setSelectedDay}
+              onSwapDays={handleSwapDays}
             />
 
             <WeekSelector

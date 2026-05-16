@@ -1,4 +1,7 @@
+@import '../../../../styles/mixins';
+
 .exercisesSelectorPanel {
+  @include custom-scrollbar;
   flex: 1.84025875;
   overflow-y: auto;
   padding-left: 7px;
